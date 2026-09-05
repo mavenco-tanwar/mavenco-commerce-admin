@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
   Save,
@@ -52,6 +52,8 @@ export default function HeaderBuilderStudio() {
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [activeTab, setActiveTab] = useState<'canvas' | 'navigation' | 'theme' | 'mobile' | 'sticky'>('canvas');
   const [activeTenant, setActiveTenant] = useState(PlatformService.getActiveTenant());
+  const isFetchingRef = useRef(false);
+  const activeTenantRef = useRef<string>(PlatformService.getActiveTenant()?.slug || '');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -100,62 +102,23 @@ export default function HeaderBuilderStudio() {
   };
 
   const fetchHeaderConfig = async (overrideSlug?: string) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       setIsLoading(true);
 
-      // Step 1: Fetch tenants from DB
-      let liveTenants: any[] = [];
-      try {
-        liveTenants = await PlatformService.fetchTenantsFromDb();
-        console.log('[HeaderBuilder] Step 1 - Live tenants fetched:', liveTenants.length, liveTenants.map((t: any) => t.slug));
-      } catch (tenantErr) {
-        console.error('[HeaderBuilder] Step 1 FAILED - fetchTenantsFromDb error:', tenantErr);
+      const tenant = PlatformService.getActiveTenant();
+      const slug = (overrideSlug || tenant?.slug || 'lumina').toLowerCase().trim();
+      activeTenantRef.current = slug;
+      if (tenant) {
+        setActiveTenant(tenant);
       }
 
-      // Step 2: Resolve active tenant
-      const currentTenantId = PlatformService.getActiveTenantId();
-      console.log('[HeaderBuilder] Step 2 - currentTenantId:', currentTenantId);
-
-      const matched =
-        liveTenants.find(
-          (t: any) =>
-            t.id === currentTenantId ||
-            t.slug === currentTenantId ||
-            currentTenantId.includes(t.slug) ||
-            t.id.includes(currentTenantId) ||
-            (t.code && t.code.toLowerCase() === currentTenantId.toLowerCase())
-        ) ||
-        PlatformService.getActiveTenant() ||
-        liveTenants[0];
-
-      console.log('[HeaderBuilder] Step 2 - matched tenant:', matched?.slug, matched?.id);
-
-      if (matched) {
-        setActiveTenant(matched);
-      }
-
-      const slug = overrideSlug || matched?.slug || 'lumina';
-      console.log('[HeaderBuilder] Step 3 - Using slug:', slug);
-
-      // Step 3: Fetch header config from API
+      // Fetch header config from API
       const apiUrl = `/api/v1/content/header?tenant=${slug}&_t=${Date.now()}`;
-      console.log('[HeaderBuilder] Step 3 - Fetching:', apiUrl);
-
       const res = await ApiClient.get<any>(apiUrl);
-      console.log('[HeaderBuilder] Step 4 - API response keys:', Object.keys(res || {}));
-      console.log('[HeaderBuilder] Step 4 - res.data exists:', !!res?.data);
-      console.log('[HeaderBuilder] Step 4 - res.source:', (res as any)?.source);
-      console.log('[HeaderBuilder] Step 4 - res.data keys:', Object.keys(res?.data || {}));
 
       const raw = res?.data?.config || res?.data?.data || res?.data || res;
-      console.log('[HeaderBuilder] Step 5 - raw resolution path:', 
-        res?.data?.config ? 'res.data.config' : 
-        res?.data?.data ? 'res.data.data' : 
-        res?.data ? 'res.data' : 'res');
-      console.log('[HeaderBuilder] Step 5 - raw.announcementBar.blocks count:', raw?.announcementBar?.blocks?.length);
-      console.log('[HeaderBuilder] Step 5 - raw.mainHeader.blocks count:', raw?.mainHeader?.blocks?.length);
-      console.log('[HeaderBuilder] Step 5 - raw.navigationMenu count:', raw?.navigationMenu?.length);
-
       const base = getDefaultHeaderConfig(slug);
 
       if (raw && (raw.navigationMenu || raw.mainHeader || raw.announcementBar)) {
@@ -206,26 +169,20 @@ export default function HeaderBuilderStudio() {
             : base.navigationMenu,
         };
 
-        console.log('[HeaderBuilder] Step 6 - MERGED config blocks:',
-          'ann:', merged.announcementBar.blocks.length,
-          'main:', merged.mainHeader.blocks.length,
-          'nav:', merged.navigationMenu.length
-        );
-
         setConfig(merged);
         pushHistory(merged);
       } else {
-        console.warn('[HeaderBuilder] Step 6 - NO DB data found, using default. raw:', !!raw, 'navMenu:', !!raw?.navigationMenu, 'mainHeader:', !!raw?.mainHeader, 'annBar:', !!raw?.announcementBar);
         setConfig(base);
         pushHistory(base);
       }
     } catch (err: any) {
-      console.error('[HeaderBuilder] CATCH - Failed to fetch header from MongoDB Atlas:', err?.message, err);
-      const def = getDefaultHeaderConfig(activeTenant.slug || 'lumina');
+      console.error('[HeaderBuilder] Failed to fetch header configuration:', err?.message || err);
+      const def = getDefaultHeaderConfig(activeTenantRef.current || 'lumina');
       setConfig(def);
       pushHistory(def);
     } finally {
       setIsLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
@@ -234,19 +191,21 @@ export default function HeaderBuilderStudio() {
   useEffect(() => {
     fetchHeaderConfig();
 
-    const handleTenantUpdate = () => {
-      fetchHeaderConfig();
+    const handleTenantUpdate = (e: any) => {
+      const updatedTenant = e?.detail || PlatformService.getActiveTenant();
+      const nextSlug = (updatedTenant?.slug || '').toLowerCase().trim();
+      if (nextSlug && nextSlug !== activeTenantRef.current) {
+        fetchHeaderConfig(nextSlug);
+      }
     };
 
-    window.addEventListener('storage', handleTenantUpdate);
-    window.addEventListener('tenantChanged', handleTenantUpdate);
+    window.addEventListener('tenant_updated', handleTenantUpdate);
     return () => {
-      window.removeEventListener('storage', handleTenantUpdate);
-      window.removeEventListener('tenantChanged', handleTenantUpdate);
+      window.removeEventListener('tenant_updated', handleTenantUpdate);
     };
   }, []);
 
-  const handlePublishLive = async () => {
+    const handlePublishLive = async () => {
     try {
       setIsPublishing(true);
       const slug = activeTenant.slug || config.tenantSlug || 'lumina';
