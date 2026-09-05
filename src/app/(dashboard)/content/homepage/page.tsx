@@ -93,6 +93,52 @@ interface HomepageDocument {
 
 const SECTION_TEMPLATES = [
   {
+    type: 'collections',
+    name: 'Curated Collections & Lookbooks',
+    description: 'Showcase seasonal lookbooks, bridal edits, and curated boutique stories with dynamic catalog bindings.',
+    icon: Boxes,
+    category: 'COMMERCE',
+    defaultData: {
+      tagline: 'CURATED ATELIER STORIES',
+      heading: 'Collections & Lookbooks',
+      subheading: 'Curate seasonal edits, attach lookbook products, and organize fashion stories for your boutique.',
+      primaryBtnText: 'VIEW ALL COLLECTIONS & LOOKBOOKS',
+      primaryBtnLink: '/collections',
+    },
+  },
+  {
+    type: 'value_props',
+    name: 'Brand Value Propositions & Guarantees',
+    description: '4-column highlight cards showcasing brand guarantees, quality commitments, and doorstep shipping perks.',
+    icon: Sparkles,
+    category: 'CONTENT',
+    defaultData: {
+      heading: 'Brand Value Propositions',
+      items: [
+        {
+          icon: 'sparkles',
+          title: 'Trendy Collections',
+          description: 'Handpicked, fashion-forward silhouettes updated every week.',
+        },
+        {
+          icon: 'award',
+          title: 'Premium Quality',
+          description: 'Breathable, skin-friendly fabrics crafted with utmost attention to detail.',
+        },
+        {
+          icon: 'tag',
+          title: 'Affordable Luxury',
+          description: 'Runway-inspired luxury aesthetics at direct-to-consumer prices.',
+        },
+        {
+          icon: 'truck',
+          title: 'Easy Delivery & Returns',
+          description: 'Complimentary express delivery with hassle-free doorstep returns.',
+        },
+      ],
+    },
+  },
+  {
     type: 'hero',
     name: 'Full-Width Hero Banner',
     description: 'Immersive visual header with headline, subtitle, dual CTAs, and background media.',
@@ -1514,6 +1560,129 @@ export default function HomepageBuilderStudio() {
                   </div>
                 </div>
               )}
+
+              {/* Value Propositions / Guarantees Cards Editor */}
+              {(editingSection.type === 'value_props' || editingSection.type === 'value-props' || Array.isArray(editingSection.data?.items)) && (
+                <div className="space-y-4 pt-4 border-t border-slate-800/80">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-200">Brand Value Proposition Cards</span>
+                      <p className="text-[11px] text-slate-400">
+                        Highlight your store customer promises, material quality, authentic craftsmanship, and shipping perks.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {((editingSection.data?.items as any[]) || []).map((vItem, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-400">
+                            Card #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = [...(editingSection.data?.items || [])];
+                              list.splice(idx, 1);
+                              handleUpdateEditingSection({
+                                data: { ...editingSection.data, items: list },
+                              });
+                            }}
+                            className="p-1 rounded text-slate-500 hover:text-rose-400"
+                            title="Remove Card"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                          <div>
+                            <label className="block text-[11px] text-slate-400 mb-1 font-medium">Icon</label>
+                            <select
+                              value={vItem.icon || 'sparkles'}
+                              onChange={(e) => {
+                                const list = [...(editingSection.data?.items || [])];
+                                list[idx] = { ...list[idx], icon: e.target.value };
+                                handleUpdateEditingSection({
+                                  data: { ...editingSection.data, items: list },
+                                });
+                              }}
+                              className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
+                            >
+                              <option value="sparkles">Sparkles (Trends)</option>
+                              <option value="award">Award (Premium Quality)</option>
+                              <option value="tag">Tag (Affordable Luxury)</option>
+                              <option value="truck">Truck (Easy Delivery)</option>
+                              <option value="shield">Shield (Authenticity)</option>
+                              <option value="heart">Heart (Handmade)</option>
+                              <option value="refresh">Refresh (Easy Exchange)</option>
+                              <option value="clock">Clock (Fast Dispatch)</option>
+                            </select>
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-[11px] text-slate-400 mb-1 font-medium">Card Title</label>
+                            <input
+                              type="text"
+                              value={vItem.title || ''}
+                              onChange={(e) => {
+                                const list = [...(editingSection.data?.items || [])];
+                                list[idx] = { ...list[idx], title: e.target.value };
+                                handleUpdateEditingSection({
+                                  data: { ...editingSection.data, items: list },
+                                });
+                              }}
+                              className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
+                              placeholder="e.g. Trendy Collections"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1 font-medium">Card Description</label>
+                          <textarea
+                            rows={2}
+                            value={vItem.description || ''}
+                            onChange={(e) => {
+                              const list = [...(editingSection.data?.items || [])];
+                              list[idx] = { ...list[idx], description: e.target.value };
+                              handleUpdateEditingSection({
+                                data: { ...editingSection.data, items: list },
+                              });
+                            }}
+                            className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
+                            placeholder="e.g. Handpicked, fashion-forward silhouettes updated every week."
+                          />
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const list = [...(editingSection.data?.items || [])];
+                        list.push({
+                          icon: 'sparkles',
+                          title: 'New Value Proposition',
+                          description: 'Runway-inspired luxury aesthetics crafted with utmost attention to detail.',
+                        });
+                        handleUpdateEditingSection({
+                          data: { ...editingSection.data, items: list },
+                        });
+                      }}
+                      className="w-full py-2.5 rounded-xl border border-dashed border-slate-700 hover:border-rose-500/50 bg-slate-900/40 hover:bg-rose-500/5 text-slate-300 hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 text-rose-400" />
+                      <span>+ Add Value Proposition Card</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
 
             <div className="pt-3 border-t border-slate-800 flex justify-end">
