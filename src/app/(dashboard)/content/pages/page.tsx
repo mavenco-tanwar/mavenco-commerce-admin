@@ -12,6 +12,7 @@ import {
   Layers,
   Image as ImageIcon,
   CheckCircle2,
+  Wand2,
 } from 'lucide-react';
 import { ContentService } from '@/services/content';
 import { PlatformService } from '@/services/platform';
@@ -169,13 +170,24 @@ export default function PagesManagerPage() {
           </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-md shadow-rose-950/40 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ Create Page</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <a
+            href={getTenantStorefrontUrl(PlatformService.getActiveTenant().slug, 'admin/storefront/pages')}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs rounded-lg shadow-md shadow-amber-500/20 transition-all"
+          >
+            <Wand2 className="w-4 h-4" />
+            <span>Elementor Visual Builder</span>
+          </a>
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-md shadow-rose-950/40 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Create Page</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-[#161822] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
@@ -211,11 +223,20 @@ export default function PagesManagerPage() {
                   <Eye className="w-3.5 h-3.5 text-rose-400" />
                   <span>View</span>
                 </a>
+                <a
+                  href={getTenantStorefrontUrl(PlatformService.getActiveTenant().slug, 'admin/storefront/pages/' + p.id + '/edit')}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-lg font-semibold flex items-center gap-1 transition-colors"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>Visual Builder</span>
+                </a>
                 <button
                   onClick={() => openEditModal(p)}
                   className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-semibold shadow-xs"
                 >
-                  Edit
+                  Quick Edit
                 </button>
                 <button
                   onClick={() => handleDelete(p.id)}
