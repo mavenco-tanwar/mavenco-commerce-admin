@@ -85,21 +85,40 @@ export function useBuilder() {
 }
 
 interface BuilderProviderProps {
-  initialPage: PageDocument;
+  initialPage?: PageDocument;
+  initialDocument?: PageDocument;
   onSaveDraft?: (page: PageDocument) => Promise<void>;
   onPublishLive?: (page: PageDocument) => Promise<void>;
+  onPublish?: (page: PageDocument) => Promise<void>;
   children: React.ReactNode;
 }
 
 export function BuilderProvider({
   initialPage,
+  initialDocument,
   onSaveDraft,
   onPublishLive,
+  onPublish,
   children,
 }: BuilderProviderProps) {
-  const [page, setPage] = useState<PageDocument>(initialPage);
+  const resolvedPage: PageDocument = initialPage || initialDocument || {
+    id: 'page_new',
+    tenantId: 'default',
+    storeId: 'store_primary',
+    name: 'New Storefront Page',
+    slug: 'new-page',
+    type: 'standard',
+    status: 'draft',
+    version: 1,
+    schemaVersion: '1.0',
+    content: { root: createDefaultRootNode() },
+  };
+
+  const publishHandler = onPublishLive || onPublish;
+
+  const [page, setPage] = useState<PageDocument>(resolvedPage);
   const [rootNode, setRootNode] = useState<BuilderNode>(
-    initialPage.content?.root || createDefaultRootNode()
+    resolvedPage?.content?.root || createDefaultRootNode()
   );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -354,14 +373,14 @@ export function BuilderProvider({
         updatedAt: new Date().toISOString(),
       };
       setPage(pubPage);
-      if (onPublishLive) {
-        await onPublishLive(pubPage);
+      if (publishHandler) {
+        await publishHandler(pubPage);
       }
       setIsDirty(false);
     } finally {
       setIsPublishing(false);
     }
-  }, [page, rootNode, onPublishLive]);
+  }, [page, rootNode, publishHandler]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {

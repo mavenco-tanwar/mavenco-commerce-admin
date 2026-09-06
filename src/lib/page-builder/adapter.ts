@@ -68,8 +68,8 @@ export function ensurePageDocument(raw: any, defaultTenantId: string = 'lumina')
     };
   }
 
-  // Convert legacy sections array to content.root
-  const root = adaptLegacySectionsToTree(raw?.sections);
+  // Convert legacy sections or blocks array to content.root
+  const root = adaptLegacySectionsToTree(raw?.sections || raw?.blocks);
 
   return {
     id,

@@ -17,9 +17,11 @@ import { BuilderInspector } from './BuilderInspector';
 import { X, Save, Layers, Clock, RotateCcw } from 'lucide-react';
 
 interface VisualPageBuilderProps {
-  initialPage: PageDocument;
+  initialPage?: PageDocument;
+  initialDocument?: PageDocument;
   onSaveDraft?: (page: PageDocument) => Promise<void>;
   onPublishLive?: (page: PageDocument) => Promise<void>;
+  onPublish?: (page: PageDocument) => Promise<void>;
   onBackUrl?: string;
   versions?: any[];
   onRollback?: (versionNumber: number) => Promise<void>;
@@ -212,17 +214,24 @@ function BuilderLayout({
 
 export function VisualPageBuilder({
   initialPage,
+  initialDocument,
   onSaveDraft,
   onPublishLive,
+  onPublish,
   onBackUrl,
   versions,
   onRollback,
 }: VisualPageBuilderProps) {
+  const doc = initialPage || initialDocument;
+  const publish = onPublishLive || onPublish;
+
   return (
     <BuilderProvider
-      initialPage={initialPage}
+      initialPage={doc}
+      initialDocument={doc}
       onSaveDraft={onSaveDraft}
-      onPublishLive={onPublishLive}
+      onPublishLive={publish}
+      onPublish={publish}
     >
       <BuilderLayout
         onBackUrl={onBackUrl}
