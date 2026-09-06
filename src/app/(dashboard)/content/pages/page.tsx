@@ -12,7 +12,6 @@ import {
   Layers,
   Image as ImageIcon,
   CheckCircle2,
-  Wand2,
 } from 'lucide-react';
 import { ContentService } from '@/services/content';
 import { PlatformService } from '@/services/platform';
@@ -20,8 +19,6 @@ import { getTenantStorefrontUrl } from '@/services/api';
 import { useToast } from '@/lib/toast-context';
 import { Modal } from '@/components/ui/Modal';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
-import { VisualPageBuilder } from '@/components/page-builder/VisualPageBuilder';
-import { ensurePageDocument } from '@/lib/page-builder/adapter';
 import type { Page } from '@/types';
 
 export default function PagesManagerPage() {
@@ -29,7 +26,6 @@ export default function PagesManagerPage() {
   const [pages, setPages] = useState<Page[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<Page | null>(null);
-  const [visualPage, setVisualPage] = useState<any | null>(null);
 
   // General Form
   const [title, setTitle] = useState('');
@@ -160,43 +156,6 @@ export default function PagesManagerPage() {
     fetchPages();
   };
 
-  if (visualPage) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#111111] overflow-hidden flex flex-col">
-        <div className="h-10 bg-zinc-950 border-b border-zinc-800 px-4 flex items-center justify-between z-50">
-          <div className="flex items-center gap-2 text-xs text-zinc-300 font-semibold">
-            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-            <span>Editing Page: {visualPage.title || visualPage.name}</span>
-          </div>
-          <button
-            onClick={() => setVisualPage(null)}
-            className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold rounded transition"
-          >
-            ← Back to Pages List
-          </button>
-        </div>
-        <div className="flex-1 relative overflow-hidden">
-          <VisualPageBuilder
-            initialDocument={ensurePageDocument(visualPage, PlatformService.getActiveTenant().slug)}
-            onSaveDraft={async (updated) => {
-              await ContentService.updatePage(visualPage.id, updated as any);
-              showToast('Draft saved successfully', 'success');
-            }}
-            onPublish={async (published) => {
-              await ContentService.updatePage(visualPage.id, { ...published, status: 'published' } as any);
-              showToast('Page published live to storefront!', 'success');
-              setVisualPage(null);
-              fetchPages();
-            }}
-            onRollback={async (ver) => {
-              showToast('Rolled back to version ' + ver, 'info');
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 pb-20 select-none max-w-5xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#161822] p-5 rounded-xl border border-slate-800 shadow-md">
@@ -210,24 +169,13 @@ export default function PagesManagerPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <a
-            href={getTenantStorefrontUrl(PlatformService.getActiveTenant().slug, 'admin/storefront/pages')}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs rounded-lg shadow-md shadow-amber-500/20 transition-all"
-          >
-            <Wand2 className="w-4 h-4" />
-            <span>Elementor Visual Builder</span>
-          </a>
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-md shadow-rose-950/40 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ Create Page</span>
-          </button>
-        </div>
+        <button
+          onClick={openCreateModal}
+          className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-md shadow-rose-950/40 transition-all"
+        >
+          <Plus className="w-4 h-4" />
+          <span>+ Create Page</span>
+        </button>
       </div>
 
       <div className="bg-[#161822] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
@@ -264,17 +212,10 @@ export default function PagesManagerPage() {
                   <span>View</span>
                 </a>
                 <button
-                  onClick={() => setVisualPage(p)}
-                  className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold rounded-lg text-xs flex items-center gap-1 shadow-md shadow-amber-500/20 transition-all"
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>Visual Builder</span>
-                </button>
-                <button
                   onClick={() => openEditModal(p)}
                   className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-semibold shadow-xs"
                 >
-                  Quick Edit
+                  Edit
                 </button>
                 <button
                   onClick={() => handleDelete(p.id)}
