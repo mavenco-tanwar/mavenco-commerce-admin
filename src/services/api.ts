@@ -191,6 +191,7 @@ export class ApiClient {
     let effectiveBaseUrl = baseUrl;
     if (typeof window !== "undefined") {
       const isInternalRoute =
+        finalEndpoint.startsWith("/api/v1/content") ||
         finalEndpoint.startsWith("/api/v1/products") ||
         finalEndpoint.startsWith("/api/v1/categories") ||
         finalEndpoint.startsWith("/api/v1/collections") ||

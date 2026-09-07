@@ -167,6 +167,7 @@ export default function ProductPageBuilder() {
         tenant: tenantSlug,
         templateId: activeTemplateId,
         status: 'published',
+        isDefault: true,
         config,
       });
       showToast('🎉 Product Page published live to Storefront!', 'success');
@@ -185,7 +186,34 @@ export default function ProductPageBuilder() {
       pushHistory(updated);
       setActiveTemplateId(key);
       setIsPresetModalOpen(false);
-      showToast(`Applied preset: ${preset.name}`, 'success');
+      showToast(`Applied preset: ${preset.name}. Click "Publish Live" to deploy to Storefront.`, 'info');
+    }
+  };
+
+  const handleApplyAndPublishPreset = async (key: string) => {
+    const preset = PDP_PRESET_TEMPLATES[key];
+    if (!preset) return;
+
+    const updated = JSON.parse(JSON.stringify(preset.config));
+    setConfig(updated);
+    pushHistory(updated);
+    setActiveTemplateId(key);
+    setIsPresetModalOpen(false);
+
+    setIsPublishing(true);
+    try {
+      await ApiClient.post('/api/v1/content/product-page', {
+        tenant: tenantSlug,
+        templateId: key,
+        status: 'published',
+        isDefault: true,
+        config: updated,
+      });
+      showToast(`🎉 "${preset.name}" preset applied & published live to Storefront!`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Published locally.', 'info');
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -1264,15 +1292,41 @@ export default function ProductPageBuilder() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-[65vh] overflow-y-auto pr-1">
               {Object.entries(PDP_PRESET_TEMPLATES).map(([key, item]) => (
                 <div
                   key={key}
-                  onClick={() => handleApplyPreset(key)}
-                  className="p-4 rounded-xl bg-[#090D15] hover:bg-slate-900 border border-slate-800 hover:border-rose-500 transition-all cursor-pointer space-y-2"
+                  className="p-4 rounded-xl bg-[#090D15] border border-slate-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between"
                 >
-                  <h4 className="font-bold text-white text-xs">{item.name}</h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">{item.description}</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-white text-xs">{item.name}</h4>
+                      {activeTemplateId === key && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{item.description}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset(key)}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold transition-all cursor-pointer text-center"
+                    >
+                      Preview in Studio
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyAndPublishPreset(key)}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Apply &amp; Publish</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
