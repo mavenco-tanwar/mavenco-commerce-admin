@@ -4,43 +4,29 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   Save,
-  Eye,
   RotateCcw,
   Clock,
-  CheckCircle2,
   Monitor,
   Tablet,
   Smartphone,
   Layers,
   ShoppingBag,
-  Sliders,
-  Check,
-  ShieldCheck,
+  Palette,
+  Boxes,
   Truck,
-  RefreshCw,
   Star,
   Zap,
-  ChevronDown,
-  Info,
   Heart,
   Share2,
-  MessageSquare,
-  LayoutGrid,
   Image as ImageIcon,
-  Palette,
   Package,
   Ruler,
-  Boxes,
   Gift,
-  Globe,
   Loader2,
   X,
-  Plus,
-  Trash2,
   MoveUp,
   MoveDown,
-  Play,
-  Check as CheckIcon,
+  ChevronDown,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
@@ -51,7 +37,6 @@ import {
   AspectRatioType,
   ZoomModeType,
   VariantOptionDisplayType,
-  PurchaseElementKey,
 } from '@/types/pdp-template.types';
 import { getDefaultPdpConfig, PDP_PRESET_TEMPLATES } from '@/lib/pdp-presets';
 
@@ -74,7 +59,6 @@ export default function ProductPageBuilder() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
-  const [isLivePreviewOpen, setIsLivePreviewOpen] = useState(true);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
 
@@ -93,9 +77,14 @@ export default function ProductPageBuilder() {
   // Mock product state for interactive canvas
   const [mockSelectedColor, setMockSelectedColor] = useState('Rose');
   const [mockSelectedSize, setMockSelectedSize] = useState('M');
-  const [mockQuantity, setMockQuantity] = useState(1);
   const [isAddedToBag, setIsAddedToBag] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+
+  // Extra state for reviews & recommendation toggles
+  const [verifiedBadgeEnabled, setVerifiedBadgeEnabled] = useState(true);
+  const [reviewModerationEnabled, setReviewModerationEnabled] = useState(true);
+  const [relatedCarouselEnabled, setRelatedCarouselEnabled] = useState(true);
+  const [recentlyViewedEnabled, setRecentlyViewedEnabled] = useState(true);
 
   const pushHistory = (newConfig: ProductPageConfig) => {
     const updatedHistory = history.slice(0, historyIndex + 1);
@@ -244,84 +233,101 @@ export default function ProductPageBuilder() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 select-none">
-      {/* 1. TOP HEADER BAR */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
-              Visual PDP Studio
+    <div className="space-y-6">
+      {/* 1. TOP HEADER BAR (Collection Page Builder Aesthetic) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs uppercase font-bold tracking-widest text-rose-400">
+              Visual Headless CMS
             </span>
-            <span className="text-xs text-slate-400 font-mono">
-              Store: <strong className="text-white">{activeTenant.name} ({tenantSlug})</strong>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+              Product Detail Page Studio (PDP)
+            </span>
+            <span className="text-xs text-slate-400 font-mono hidden md:inline">
+              Store: <strong className="text-white">{activeTenant?.name || 'Store'} ({tenantSlug})</strong>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <Package className="w-6 h-6 text-rose-400" />
-            Product Detail Page Builder
-          </h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-2xl font-bold text-white mt-1">Product Detail Page Builder</h1>
+          <p className="text-xs text-slate-400 mt-0.5">
             Configure product gallery, buy box, variant swatches, stock alerts, accordions, and customer reviews in real-time.
           </p>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setIsPresetModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-rose-500/20 hover:from-amber-500/30 hover:to-rose-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Layout Presets</span>
-          </button>
+        {/* Action Buttons Toolbar */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Device Switcher */}
+          <div className="flex items-center bg-[#161822] p-1 rounded-xl border border-slate-800">
+            <button
+              type="button"
+              onClick={() => setDevice('desktop')}
+              className={`p-1.5 rounded-lg transition-all ${device === 'desktop' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+              title="Desktop View"
+            >
+              <Monitor className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setDevice('tablet')}
+              className={`p-1.5 rounded-lg transition-all ${device === 'tablet' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+              title="Tablet View"
+            >
+              <Tablet className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setDevice('mobile')}
+              className={`p-1.5 rounded-lg transition-all ${device === 'mobile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+              title="Mobile View"
+            >
+              <Smartphone className="w-4 h-4" />
+            </button>
+          </div>
 
           <button
             type="button"
-            onClick={() => setIsLivePreviewOpen(!isLivePreviewOpen)}
-            className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              isLivePreviewOpen
-                ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/40'
-                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
-            }`}
+            onClick={() => setIsPresetModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
+            title="Layout Presets"
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>{isLivePreviewOpen ? 'Live Canvas Active' : 'Show Canvas'}</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Presets</span>
           </button>
 
           <button
             type="button"
             onClick={handleUndo}
             disabled={historyIndex <= 0}
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all disabled:opacity-40 cursor-pointer"
             title="Undo"
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
             onClick={handleResetToDefault}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
             title="Reset to default template"
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer"
           >
-            <RotateCcw className="w-4 h-4 rotate-180" />
+            <RotateCcw className="w-3.5 h-3.5 rotate-180" />
+            <span>Reset</span>
           </button>
 
           <button
             type="button"
             onClick={loadVersionHistory}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
             title="Version History"
           >
-            <Clock className="w-4 h-4" />
+            <Clock className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
             onClick={handleSaveDraft}
             disabled={isSaving || isPublishing}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-slate-700"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all disabled:opacity-50 cursor-pointer"
           >
             <Save className="w-3.5 h-3.5" />
             <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
@@ -331,443 +337,55 @@ export default function ProductPageBuilder() {
             type="button"
             onClick={handlePublishLive}
             disabled={isSaving || isPublishing}
-            className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow-lg shadow-rose-900/30 transition-all cursor-pointer flex items-center gap-2"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50 cursor-pointer"
           >
-            {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             <span>{isPublishing ? 'Publishing...' : 'Publish Live'}</span>
           </button>
         </div>
       </div>
 
-      {/* 2. NAVIGATION TABS BAR */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/80 scrollbar-none">
-        <button
-          onClick={() => setActiveTab('gallery')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-            activeTab === 'gallery'
-              ? 'bg-rose-600 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <ImageIcon className="w-3.5 h-3.5" />
-          <span>Gallery &amp; Media</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('purchase')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-            activeTab === 'purchase'
-              ? 'bg-rose-600 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <ShoppingBag className="w-3.5 h-3.5" />
-          <span>Purchase Box &amp; Buy Bar</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('variants')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-            activeTab === 'variants'
-              ? 'bg-rose-600 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <Palette className="w-3.5 h-3.5" />
-          <span>Variants &amp; Swatches</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('inventory')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-            activeTab === 'inventory'
-              ? 'bg-rose-600 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <Boxes className="w-3.5 h-3.5" />
-          <span>Inventory &amp; Stock Alerts</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('shipping')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-            activeTab === 'shipping'
-              ? 'bg-rose-600 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <Truck className="w-3.5 h-3.5" />
-          <span>Shipping &amp; Delivery Estimator</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('details')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-            activeTab === 'details'
-              ? 'bg-rose-600 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Tabs &amp; Accordions</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('reviews')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-            activeTab === 'reviews'
-              ? 'bg-rose-600 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <Star className="w-3.5 h-3.5" />
-          <span>Reviews &amp; Social Proof</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('recommendations')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-            activeTab === 'recommendations'
-              ? 'bg-rose-600 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <Gift className="w-3.5 h-3.5" />
-          <span>Recommendations</span>
-        </button>
-      </div>
-
-      {/* 3. EMBEDDED LIVE REAL-TIME STOREFRONT CANVAS PREVIEW */}
-      {isLivePreviewOpen && (
-        <div className="p-5 rounded-2xl bg-[#0F1117] border-2 border-emerald-500/50 shadow-2xl space-y-4 animate-in slide-in-from-top duration-300">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800 flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-400">
-                Live Storefront Real-Time Preview
-              </h3>
-              <span className="text-[11px] text-slate-400">
-                (Interactive WYSIWYG render of active product page draft)
-              </span>
-            </div>
-
-            {/* Viewport Width Controls */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center p-1 rounded-xl bg-slate-950 border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setDevice('desktop')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                    device === 'desktop' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                  <span>Desktop (1280px)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDevice('tablet')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                    device === 'tablet' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Tablet className="w-3.5 h-3.5" />
-                  <span>Tablet (768px)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDevice('mobile')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                    device === 'mobile' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Mobile (390px)</span>
-                </button>
-              </div>
-
+      {/* 2. MAIN 2-COLUMN WORK AREA (Collection Page Builder Studio Structure) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT SETTINGS SIDEBAR (5 Cols) */}
+        <div className="lg:col-span-5 space-y-4 bg-[#121522] border border-slate-800 p-5 rounded-2xl shadow-xl">
+          {/* Customizer Horizontal Tabs */}
+          <div className="flex border-b border-slate-800 pb-2 gap-1 overflow-x-auto text-xs scrollbar-none">
+            {[
+              { id: 'gallery', label: '1. Media Gallery' },
+              { id: 'purchase', label: '2. Buy Box & CTA' },
+              { id: 'variants', label: '3. Swatches & Size' },
+              { id: 'inventory', label: '4. Stock Alerts' },
+              { id: 'shipping', label: '5. Shipping & Returns' },
+              { id: 'details', label: '6. Tabs & Accordions' },
+              { id: 'reviews', label: '7. Reviews & Proof' },
+              { id: 'recommendations', label: '8. Recommendations' },
+            ].map((t) => (
               <button
+                key={t.id}
                 type="button"
-                onClick={() => setIsLivePreviewOpen(false)}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Actual Storefront Product Page Simulator Container */}
-          <div className="flex justify-center bg-slate-950/60 p-4 rounded-xl border border-slate-800 overflow-x-auto">
-            <div
-              className={`bg-[#FFFDFC] text-slate-900 rounded-2xl border border-slate-200 shadow-2xl p-6 transition-all space-y-8 ${
-                device === 'mobile'
-                  ? 'w-[390px]'
-                  : device === 'tablet'
-                  ? 'w-[768px]'
-                  : 'w-full max-w-5xl'
-              }`}
-            >
-              {/* Breadcrumb Hierarchy */}
-              <div className="flex items-center gap-2 text-xs text-slate-400 font-sans">
-                <span className="hover:text-rose-600">Home</span>
-                <span>/</span>
-                <span className="hover:text-rose-600">Dresses</span>
-                <span>/</span>
-                <span className="text-slate-900 font-bold">Blush Floral Tiered Midi Dress</span>
-              </div>
-
-              {/* Product Main Section: Gallery + Purchase Panel Split */}
-              <div
-                className={`grid gap-8 items-start ${
-                  device === 'mobile'
-                    ? 'grid-cols-1'
-                    : 'grid-cols-12'
+                onClick={() => setActiveTab(t.id as any)}
+                className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === t.id
+                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                {/* 1. Left Gallery Simulator */}
-                <div
-                  className={
-                    device === 'mobile'
-                      ? 'w-full'
-                      : config.gallery.galleryWidthPercent >= 60
-                      ? 'col-span-7'
-                      : 'col-span-6'
-                  }
-                >
-                  <div className="space-y-3">
-                    <div className="relative aspect-4/5 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm group">
-                      <img
-                        src="https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=1000"
-                        alt="Blush Floral Tiered Midi Dress"
-                        className="w-full h-full object-cover"
-                      />
-                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs">
-                        {config.gallery.layout.toUpperCase()}
-                      </span>
-                    </div>
-
-                    {config.gallery.thumbnailsPosition !== 'hidden' && (
-                      <div className="flex gap-2.5 overflow-x-auto py-1">
-                        {[
-                          'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=200',
-                          'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=200',
-                          'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=200',
-                        ].map((thumb, idx) => (
-                          <div
-                            key={idx}
-                            className={`w-16 h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all shrink-0 ${
-                              idx === 0 ? 'border-rose-600 ring-2 ring-rose-500/30' : 'border-slate-200 opacity-70 hover:opacity-100'
-                            }`}
-                          >
-                            <img src={thumb} alt="Thumb" className="w-full h-full object-cover" />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 2. Right Purchase Panel Simulator */}
-                <div
-                  className={
-                    device === 'mobile'
-                      ? 'w-full'
-                      : config.gallery.galleryWidthPercent >= 60
-                      ? 'col-span-5'
-                      : 'col-span-6'
-                  }
-                >
-                  <div className="space-y-4 p-5 sm:p-6 rounded-2xl bg-[#FAF6F2] border border-[#E8DED8]">
-                    {/* Badges */}
-                    {config.purchasePanel.showBadges && (
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200">
-                          Handcrafted Atelier
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          32% OFF
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Brand */}
-                    {config.purchasePanel.showBrand && (
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">
-                        Lumina Haute Couture
-                      </span>
-                    )}
-
-                    {/* Title */}
-                    {config.purchasePanel.showTitle && (
-                      <h2 className="text-xl sm:text-2xl font-serif font-black text-slate-900 leading-tight">
-                        Blush Floral Tiered Midi Dress
-                      </h2>
-                    )}
-
-                    {/* Rating */}
-                    {config.purchasePanel.showRating && (
-                      <div className="flex items-center gap-1.5 text-xs text-amber-500">
-                        <Star className="w-4 h-4 fill-amber-400" />
-                        <span className="font-bold text-slate-900">4.9</span>
-                        <span className="text-slate-400 font-normal">(42 Verified Reviews)</span>
-                      </div>
-                    )}
-
-                    {/* Price */}
-                    {config.purchasePanel.showPrice && (
-                      <div className="flex items-baseline gap-3 py-1 flex-wrap">
-                        <span className="text-2xl font-bold font-mono text-slate-900">$1,499</span>
-                        {config.purchasePanel.showComparePrice && (
-                          <span className="text-sm line-through text-slate-400 font-mono">$2,199</span>
-                        )}
-                        {config.purchasePanel.showDiscount && (
-                          <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-black">
-                            32% OFF
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Color Swatches */}
-                    <div className="space-y-1.5 pt-1">
-                      <span className="text-xs font-bold uppercase text-slate-900">
-                        Color: <span className="font-normal text-slate-600">{mockSelectedColor}</span>
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {[
-                          { name: 'Rose', hex: '#E8B8B5' },
-                          { name: 'Black', hex: '#0A0A0B' },
-                          { name: 'Emerald', hex: '#064E3B' },
-                        ].map((c) => (
-                          <button
-                            key={c.name}
-                            type="button"
-                            onClick={() => setMockSelectedColor(c.name)}
-                            className={`w-7 h-7 rounded-full border transition-all ${
-                              mockSelectedColor === c.name ? 'ring-2 ring-rose-500 scale-110' : 'hover:scale-105 opacity-90'
-                            }`}
-                            style={{ backgroundColor: c.hex }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Size Selector */}
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase text-slate-900">
-                          Size: <span className="font-normal text-slate-600">{mockSelectedSize}</span>
-                        </span>
-                        <button type="button" className="text-xs font-bold text-rose-600 flex items-center gap-1">
-                          <Ruler className="w-3.5 h-3.5" />
-                          <span>Size Guide</span>
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-5 gap-1.5">
-                        {['XS', 'S', 'M', 'L', 'XL'].map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() => setMockSelectedSize(s)}
-                            className={`py-2 rounded-xl text-xs font-bold border transition-colors ${
-                              mockSelectedSize === s
-                                ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                                : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
-                            }`}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Quantity + Actions */}
-                    <div className="pt-2 space-y-2.5">
-                      <div className="flex items-center gap-2">
-                        {config.purchasePanel.showAddToCart && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsAddedToBag(true);
-                              setTimeout(() => setIsAddedToBag(false), 2000);
-                            }}
-                            className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer ${
-                              isAddedToBag ? 'bg-emerald-600 text-white' : 'bg-slate-950 hover:bg-rose-600 text-white'
-                            }`}
-                          >
-                            <ShoppingBag className="w-3.5 h-3.5" />
-                            <span>{isAddedToBag ? 'Added to Bag ✓' : 'Add to Bag'}</span>
-                          </button>
-                        )}
-
-                        {config.purchasePanel.showBuyNow && (
-                          <button
-                            type="button"
-                            className="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-                          >
-                            <Zap className="w-3.5 h-3.5 fill-white" />
-                            <span>Instant Buy</span>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Wishlist */}
-                      {config.purchasePanel.showWishlist && (
-                        <div className="flex justify-between items-center text-xs pt-1">
-                          <button
-                            type="button"
-                            onClick={() => setIsWishlisted(!isWishlisted)}
-                            className={`flex items-center gap-1 font-bold ${
-                              isWishlisted ? 'text-rose-600' : 'text-slate-500 hover:text-slate-900'
-                            }`}
-                          >
-                            <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-rose-600' : ''}`} />
-                            <span>{isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
-                          </button>
-                          <button type="button" className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1">
-                            <Share2 className="w-3.5 h-3.5" />
-                            <span>Share</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Shipping & Delivery Guarantee */}
-                    {config.purchasePanel.showShippingInfo && (
-                      <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 flex items-center gap-2">
-                        <Truck className="w-4 h-4 text-rose-600 shrink-0" />
-                        <span>{config.purchasePanel.shippingText}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+                {t.label}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
 
-      {/* 4. MAIN CONFIGURATION CARDS CONTAINER */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* TAB 1: GALLERY & MEDIA */}
-        {activeTab === 'gallery' && (
-          <div className="lg:col-span-12 p-6 sm:p-8 rounded-2xl bg-[#0F1117] border border-slate-800/90 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                <ImageIcon className="w-5 h-5" />
+          {/* TAB 1: GALLERY & MEDIA */}
+          {activeTab === 'gallery' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
+                <ImageIcon className="w-4 h-4" />
+                <span>Product Media Gallery Settings</span>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-wide">Product Media Gallery Settings</h3>
-                <p className="text-xs text-slate-400">Configure gallery layout, aspect ratios, zoom modes, and thumbnail positioning.</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Gallery Layout
-                </label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Gallery Layout</label>
                 <select
                   value={config.gallery.layout}
                   onChange={(e) => {
@@ -778,7 +396,7 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
                   <option value="left-thumbs">Left Thumbnails (Lookbook Standard)</option>
                   <option value="bottom-thumbs">Bottom Thumbnails</option>
@@ -789,10 +407,8 @@ export default function ProductPageBuilder() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Image Aspect Ratio
-                </label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Image Aspect Ratio</label>
                 <select
                   value={config.gallery.aspectRatio}
                   onChange={(e) => {
@@ -803,7 +419,7 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
                   <option value="4:5">4:5 Fashion Portrait (Recommended)</option>
                   <option value="1:1">1:1 Square (Studio / Modern)</option>
@@ -812,10 +428,8 @@ export default function ProductPageBuilder() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Zoom Mode
-                </label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Zoom Mode</label>
                 <select
                   value={config.gallery.zoomMode}
                   onChange={(e) => {
@@ -826,7 +440,7 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
                   <option value="hover">Hover Magnifier</option>
                   <option value="click">Click to Zoom</option>
@@ -835,10 +449,8 @@ export default function ProductPageBuilder() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Thumbnails Position
-                </label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Thumbnails Position</label>
                 <select
                   value={config.gallery.thumbnailsPosition}
                   onChange={(e) => {
@@ -849,7 +461,7 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
                   <option value="left">Left Side Bar</option>
                   <option value="bottom">Bottom Horizontal Strip</option>
@@ -857,10 +469,8 @@ export default function ProductPageBuilder() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Gallery Width Split
-                </label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Gallery Width Split</label>
                 <select
                   value={config.gallery.galleryWidthPercent}
                   onChange={(e) => {
@@ -871,7 +481,7 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
                   <option value={50}>50% Gallery / 50% Purchase Box</option>
                   <option value={55}>55% Gallery / 45% Purchase Box (Default)</option>
@@ -880,13 +490,15 @@ export default function ProductPageBuilder() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Video Reels &amp; 360 Support
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
+              <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                <div>
+                  <div className="font-semibold text-white">Video Reels &amp; 360 Support</div>
+                  <div className="text-[10px] text-slate-400">Enable interactive catwalk clips &amp; reels</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={config.gallery.enableVideo}
+                  onChange={() => {
                     const updated = {
                       ...config,
                       gallery: { ...config.gallery, enableVideo: !config.gallery.enableVideo },
@@ -894,170 +506,263 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className={`w-full py-2.5 rounded-xl border text-xs font-bold transition-all ${
-                    config.gallery.enableVideo
-                      ? 'border-emerald-500 bg-emerald-950/30 text-emerald-400'
-                      : 'border-slate-800 bg-[#090D15] text-slate-400'
-                  }`}
-                >
-                  {config.gallery.enableVideo ? 'Video Reels Enabled' : 'Disabled'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: PURCHASE BOX & BUY BAR */}
-        {activeTab === 'purchase' && (
-          <div className="lg:col-span-12 p-6 sm:p-8 rounded-2xl bg-[#0F1117] border border-slate-800/90 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                <ShoppingBag className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-wide">Purchase Panel &amp; Buy Controls</h3>
-                <p className="text-xs text-slate-400">Reorder elements, configure discount formats, and customize action buttons.</p>
-              </div>
-            </div>
-
-            {/* Elements Reordering Pipeline */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                Element Display Pipeline (Order Top to Bottom)
+                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                />
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {config.purchasePanel.elementsOrder.map((key, idx) => (
-                  <div
-                    key={key}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-white"
-                  >
-                    <span className="font-bold capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => moveElement(idx, 'up')}
-                        disabled={idx === 0}
-                        className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white disabled:opacity-30"
-                      >
-                        <MoveUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveElement(idx, 'down')}
-                        disabled={idx === config.purchasePanel.elementsOrder.length - 1}
-                        className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white disabled:opacity-30"
-                      >
-                        <MoveDown className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
+          )}
 
-            {/* Action Buttons Toggles */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800">
-              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-center">
-                <span className="text-xs font-bold text-slate-300 block">Add to Cart</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, showAddToCart: !config.purchasePanel.showAddToCart },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className={`w-full py-1.5 rounded-lg text-xs font-bold ${
-                    config.purchasePanel.showAddToCart ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  {config.purchasePanel.showAddToCart ? 'Active (ON)' : 'Hidden'}
-                </button>
+          {/* TAB 2: PURCHASE BOX & BUY BAR */}
+          {activeTab === 'purchase' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+                <ShoppingBag className="w-4 h-4" />
+                <span>Purchase Panel &amp; Buy Controls</span>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-center">
-                <span className="text-xs font-bold text-slate-300 block">Instant Buy Now</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, showBuyNow: !config.purchasePanel.showBuyNow },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className={`w-full py-1.5 rounded-lg text-xs font-bold ${
-                    config.purchasePanel.showBuyNow ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  {config.purchasePanel.showBuyNow ? 'Active (ON)' : 'Hidden'}
-                </button>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-center">
-                <span className="text-xs font-bold text-slate-300 block">Wishlist Button</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, showWishlist: !config.purchasePanel.showWishlist },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className={`w-full py-1.5 rounded-lg text-xs font-bold ${
-                    config.purchasePanel.showWishlist ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  {config.purchasePanel.showWishlist ? 'Active (ON)' : 'Hidden'}
-                </button>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-center">
-                <span className="text-xs font-bold text-slate-300 block">Mobile Sticky Bar</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, mobileStickyBar: !config.purchasePanel.mobileStickyBar },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className={`w-full py-1.5 rounded-lg text-xs font-bold ${
-                    config.purchasePanel.mobileStickyBar ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  {config.purchasePanel.mobileStickyBar ? 'Active (ON)' : 'Hidden'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: VARIANTS & SWATCHES */}
-        {activeTab === 'variants' && (
-          <div className="lg:col-span-12 p-6 sm:p-8 rounded-2xl bg-[#0F1117] border border-slate-800/90 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                <Palette className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-wide">Variants &amp; Swatches Display</h3>
-                <p className="text-xs text-slate-400">Configure visual display types for color swatches and size button selectors.</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Elements Reordering Pipeline */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Color Display Mode
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                  Element Display Pipeline (Order Top to Bottom)
                 </label>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-none">
+                  {config.purchasePanel.elementsOrder.map((key, idx) => (
+                    <div
+                      key={key}
+                      className="flex items-center justify-between p-2 rounded-xl bg-[#0C0E17] border border-slate-800 text-xs text-white"
+                    >
+                      <span className="font-semibold capitalize text-slate-300 text-[11px]">
+                        {idx + 1}. {key.replace(/([A-Z])/g, ' $1')}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveElement(idx, 'up')}
+                          disabled={idx === 0}
+                          className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                        >
+                          <MoveUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveElement(idx, 'down')}
+                          disabled={idx === config.purchasePanel.elementsOrder.length - 1}
+                          className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                        >
+                          <MoveDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons Toggles */}
+              <div className="space-y-2 pt-1 border-t border-slate-800/80">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                  Purchase Action Elements
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">"Add to Bag" Primary Button</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showAddToCart}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showAddToCart: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">"Instant Buy Now" Accelerated CTA</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showBuyNow}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showBuyNow: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Wishlist Heart &amp; Share Links</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showWishlist}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showWishlist: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Mobile Sticky Bottom Buy Bar</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.mobileStickyBar}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, mobileStickyBar: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Promotional &amp; Atelier Badges</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showBadges}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showBadges: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Brand Name Display</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showBrand}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showBrand: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Star Rating &amp; Review Count</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showRating}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showRating: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Product Price &amp; Original MSRP</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showPrice}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showPrice: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Strike-through Comparison MSRP</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showComparePrice}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showComparePrice: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Discount Percentage Badge (% OFF)</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showDiscount}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showDiscount: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <span className="text-slate-300">Shipping Guarantee Badge</span>
+                  <input
+                    type="checkbox"
+                    checked={config.purchasePanel.showShippingInfo}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, showShippingInfo: e.target.checked },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: VARIANTS & SWATCHES */}
+          {activeTab === 'variants' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-sky-400 font-bold uppercase tracking-wider text-[11px]">
+                <Palette className="w-4 h-4" />
+                <span>Variants &amp; Swatches Display</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Color Display Mode</label>
                 <select
                   value={config.purchasePanel.colorDisplayType}
                   onChange={(e) => {
@@ -1068,7 +773,7 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
                   <option value="swatches">Circular Color Swatches</option>
                   <option value="chips">Text Chips / Pills</option>
@@ -1076,10 +781,8 @@ export default function ProductPageBuilder() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Size Display Mode
-                </label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Size Display Mode</label>
                 <select
                   value={config.purchasePanel.sizeDisplayType}
                   onChange={(e) => {
@@ -1090,7 +793,7 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
                   <option value="buttons">Square Size Grid (XS, S, M, L)</option>
                   <option value="chips">Rounded Size Pills</option>
@@ -1098,26 +801,19 @@ export default function ProductPageBuilder() {
                 </select>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB 4: INVENTORY & STOCK */}
-        {activeTab === 'inventory' && (
-          <div className="lg:col-span-12 p-6 sm:p-8 rounded-2xl bg-[#0F1117] border border-slate-800/90 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <Boxes className="w-5 h-5" />
+          {/* TAB 4: INVENTORY & STOCK */}
+          {activeTab === 'inventory' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
+                <Boxes className="w-4 h-4" />
+                <span>Inventory &amp; Stock Scarcity</span>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-wide">Inventory &amp; Stock Scarcity</h3>
-                <p className="text-xs text-slate-400">Low stock urgency alerts and out-of-stock behaviors.</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Low Stock Alert Threshold
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                  Low Stock Alert Threshold (Units)
                 </label>
                 <input
                   type="number"
@@ -1132,12 +828,12 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs font-mono"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
                   Out of Stock Behavior
                 </label>
                 <select
@@ -1150,7 +846,7 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
                   <option value="notifyMe">Notify Me Button (Customer Waitlist)</option>
                   <option value="disabled">Disabled Out of Stock</option>
@@ -1159,25 +855,18 @@ export default function ProductPageBuilder() {
                 </select>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB 5: SHIPPING & DELIVERY */}
-        {activeTab === 'shipping' && (
-          <div className="lg:col-span-12 p-6 sm:p-8 rounded-2xl bg-[#0F1117] border border-slate-800/90 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400">
-                <Truck className="w-5 h-5" />
+          {/* TAB 5: SHIPPING & DELIVERY */}
+          {activeTab === 'shipping' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-pink-400 font-bold uppercase tracking-wider text-[11px]">
+                <Truck className="w-4 h-4" />
+                <span>Shipping &amp; Delivery Guarantees</span>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-wide">Shipping &amp; Delivery Guarantees</h3>
-                <p className="text-xs text-slate-400">Postal code delivery estimator, return guarantees, and policies.</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
                   Shipping Policy Banner Text
                 </label>
                 <input
@@ -1191,12 +880,12 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
                   Return Policy Guarantee Text
                 </label>
                 <input
@@ -1210,134 +899,390 @@ export default function ProductPageBuilder() {
                     setConfig(updated);
                     pushHistory(updated);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs"
                 />
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB 6: TABS & ACCORDIONS */}
-        {activeTab === 'details' && (
-          <div className="lg:col-span-12 p-6 sm:p-8 rounded-2xl bg-[#0F1117] border border-slate-800/90 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                <Layers className="w-5 h-5" />
+          {/* TAB 6: TABS & ACCORDIONS */}
+          {activeTab === 'details' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-indigo-400 font-bold uppercase tracking-wider text-[11px]">
+                <Layers className="w-4 h-4" />
+                <span>Product Details, Tabs &amp; Accordions</span>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-wide">Product Details, Tabs &amp; Accordions</h3>
-                <p className="text-xs text-slate-400">Configure below-the-fold content blocks, fabric care, and specifications.</p>
+
+              <div className="space-y-2">
+                {config.sections.map((sec) => (
+                  <div
+                    key={sec.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#0C0E17] border border-slate-800 text-xs text-white"
+                  >
+                    <div>
+                      <span className="font-semibold text-slate-200 block">{sec.title}</span>
+                      <span className="text-[10px] text-slate-500 font-mono">Type: {sec.type}</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = {
+                          ...config,
+                          sections: config.sections.map((s) =>
+                            s.id === sec.id ? { ...s, enabled: !s.enabled } : s
+                          ),
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className={`px-3 py-1 rounded-lg font-bold text-xs cursor-pointer transition-all ${
+                        sec.enabled ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {sec.enabled ? 'Active (ON)' : 'Hidden'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7: REVIEWS */}
+          {activeTab === 'reviews' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+                <Star className="w-4 h-4" />
+                <span>Customer Reviews &amp; Social Proof</span>
+              </div>
+
+              <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                <div>
+                  <h4 className="font-semibold text-white text-xs">Verified Buyer Badge</h4>
+                  <p className="text-[10px] text-slate-400">Display verified authenticity badge on confirmed purchases.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={verifiedBadgeEnabled}
+                  onChange={(e) => setVerifiedBadgeEnabled(e.target.checked)}
+                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                <div>
+                  <h4 className="font-semibold text-white text-xs">Review Submission Moderation</h4>
+                  <p className="text-[10px] text-slate-400">Require tenant admin approval before reviews go live.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={reviewModerationEnabled}
+                  onChange={(e) => setReviewModerationEnabled(e.target.checked)}
+                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                />
+              </label>
+            </div>
+          )}
+
+          {/* TAB 8: RECOMMENDATIONS */}
+          {activeTab === 'recommendations' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
+                <Gift className="w-4 h-4" />
+                <span>Cross-Sell &amp; Recommendation Feeds</span>
+              </div>
+
+              <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                <div>
+                  <h4 className="font-semibold text-white text-xs">Related Products Carousel</h4>
+                  <p className="text-[10px] text-slate-400">Matches category and style attributes.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={relatedCarouselEnabled}
+                  onChange={(e) => setRelatedCarouselEnabled(e.target.checked)}
+                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                <div>
+                  <h4 className="font-semibold text-white text-xs">Recently Viewed Storage</h4>
+                  <p className="text-[10px] text-slate-400">Client-side isolated browser storage.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={recentlyViewedEnabled}
+                  onChange={(e) => setRecentlyViewedEnabled(e.target.checked)}
+                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT LIVE REACTIVE DEVICE CANVAS (7 Cols, Sticky) */}
+        <div className="lg:col-span-7 bg-[#0A0C10] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-2xl flex flex-col items-center sticky top-6">
+          <div className="w-full text-xs font-mono text-slate-400 flex items-center justify-between mb-3">
+            <span className="font-bold tracking-wider">LIVE PDP STOREFRONT PREVIEW</span>
+            <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+              ● Active Visual Engine
+            </span>
+          </div>
+
+          {/* Actual Storefront Product Page Simulator Container */}
+          <div
+            className={`w-full transition-all duration-300 border border-slate-700/60 rounded-2xl overflow-hidden bg-[#FFFDFC] text-slate-900 p-4 sm:p-6 space-y-6 shadow-2xl ${
+              device === 'mobile' ? 'max-w-[375px]' : device === 'tablet' ? 'max-w-[620px]' : 'w-full'
+            }`}
+          >
+            {/* Breadcrumb Hierarchy */}
+            <div className="flex items-center gap-2 text-xs text-slate-400 font-sans">
+              <span className="hover:text-rose-600">Home</span>
+              <span>/</span>
+              <span className="hover:text-rose-600">Dresses</span>
+              <span>/</span>
+              <span className="text-slate-900 font-bold truncate">Blush Floral Tiered Midi Dress</span>
+            </div>
+
+            {/* Product Main Section: Gallery + Purchase Panel Split */}
+            <div
+              className={`grid gap-6 items-start ${
+                device === 'mobile' ? 'grid-cols-1' : 'grid-cols-12'
+              }`}
+            >
+              {/* 1. Gallery Simulator */}
+              <div
+                className={
+                  device === 'mobile'
+                    ? 'w-full'
+                    : config.gallery.galleryWidthPercent >= 60
+                    ? 'col-span-7'
+                    : 'col-span-6'
+                }
+              >
+                <div className="space-y-3">
+                  <div className="relative aspect-4/5 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm group">
+                    <img
+                      src="https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=1000"
+                      alt="Blush Floral Tiered Midi Dress"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs">
+                      {config.gallery.layout.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {config.gallery.thumbnailsPosition !== 'hidden' && (
+                    <div className="flex gap-2 overflow-x-auto py-1">
+                      {[
+                        'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=200',
+                        'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=200',
+                        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=200',
+                      ].map((thumb, idx) => (
+                        <div
+                          key={idx}
+                          className={`w-14 h-18 rounded-xl overflow-hidden border-2 cursor-pointer transition-all shrink-0 ${
+                            idx === 0 ? 'border-rose-600 ring-2 ring-rose-500/30' : 'border-slate-200 opacity-70 hover:opacity-100'
+                          }`}
+                        >
+                          <img src={thumb} alt="Thumb" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Purchase Panel Simulator */}
+              <div
+                className={
+                  device === 'mobile'
+                    ? 'w-full'
+                    : config.gallery.galleryWidthPercent >= 60
+                    ? 'col-span-5'
+                    : 'col-span-6'
+                }
+              >
+                <div className="space-y-3.5 p-4 sm:p-5 rounded-2xl bg-[#FAF6F2] border border-[#E8DED8]">
+                  {/* Badges */}
+                  {config.purchasePanel.showBadges && (
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200">
+                        Handcrafted Atelier
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        32% OFF
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Brand */}
+                  {config.purchasePanel.showBrand && (
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">
+                      Lumina Haute Couture
+                    </span>
+                  )}
+
+                  {/* Title */}
+                  {config.purchasePanel.showTitle && (
+                    <h2 className="text-lg sm:text-xl font-serif font-black text-slate-900 leading-tight">
+                      Blush Floral Tiered Midi Dress
+                    </h2>
+                  )}
+
+                  {/* Rating */}
+                  {config.purchasePanel.showRating && (
+                    <div className="flex items-center gap-1.5 text-xs text-amber-500">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <span className="font-bold text-slate-900">4.9</span>
+                      <span className="text-slate-400 font-normal text-[11px]">(42 Verified Reviews)</span>
+                    </div>
+                  )}
+
+                  {/* Price */}
+                  {config.purchasePanel.showPrice && (
+                    <div className="flex items-baseline gap-2.5 py-0.5 flex-wrap">
+                      <span className="text-xl font-bold font-mono text-slate-900">$1,499</span>
+                      {config.purchasePanel.showComparePrice && (
+                        <span className="text-xs line-through text-slate-400 font-mono">$2,199</span>
+                      )}
+                      {config.purchasePanel.showDiscount && (
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-black">
+                          32% OFF
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Color Swatches */}
+                  <div className="space-y-1 pt-0.5">
+                    <span className="text-[11px] font-bold uppercase text-slate-900">
+                      Color: <span className="font-normal text-slate-600">{mockSelectedColor}</span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {[
+                        { name: 'Rose', hex: '#E8B8B5' },
+                        { name: 'Black', hex: '#0A0A0B' },
+                        { name: 'Emerald', hex: '#064E3B' },
+                      ].map((c) => (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => setMockSelectedColor(c.name)}
+                          className={`w-6 h-6 rounded-full border transition-all ${
+                            mockSelectedColor === c.name ? 'ring-2 ring-rose-500 scale-110' : 'hover:scale-105 opacity-90'
+                          }`}
+                          style={{ backgroundColor: c.hex }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Size Selector */}
+                  <div className="space-y-1 pt-0.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase text-slate-900">
+                        Size: <span className="font-normal text-slate-600">{mockSelectedSize}</span>
+                      </span>
+                      <button type="button" className="text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                        <Ruler className="w-3 h-3" />
+                        <span>Size Guide</span>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1">
+                      {['XS', 'S', 'M', 'L', 'XL'].map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setMockSelectedSize(s)}
+                          className={`py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                            mockSelectedSize === s
+                              ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                              : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actions (Add to Bag / Buy Now) */}
+                  <div className="pt-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      {config.purchasePanel.showAddToCart && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddedToBag(true);
+                            setTimeout(() => setIsAddedToBag(false), 2000);
+                          }}
+                          className={`flex-1 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer ${
+                            isAddedToBag ? 'bg-emerald-600 text-white' : 'bg-slate-950 hover:bg-rose-600 text-white'
+                          }`}
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>{isAddedToBag ? 'Added ✓' : 'Add to Bag'}</span>
+                        </button>
+                      )}
+
+                      {config.purchasePanel.showBuyNow && (
+                        <button
+                          type="button"
+                          className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                        >
+                          <Zap className="w-3.5 h-3.5 fill-white" />
+                          <span>Instant Buy</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Wishlist & Share */}
+                    {config.purchasePanel.showWishlist && (
+                      <div className="flex justify-between items-center text-xs pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsWishlisted(!isWishlisted)}
+                          className={`flex items-center gap-1 font-bold ${
+                            isWishlisted ? 'text-rose-600' : 'text-slate-500 hover:text-slate-900'
+                          }`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-rose-600' : ''}`} />
+                          <span className="text-[11px]">{isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
+                        </button>
+                        <button type="button" className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 text-[11px]">
+                          <Share2 className="w-3 h-3" />
+                          <span>Share</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Shipping Guarantee */}
+                  {config.purchasePanel.showShippingInfo && (
+                    <div className="pt-2.5 border-t border-slate-200 text-[11px] text-slate-600 flex items-center gap-1.5">
+                      <Truck className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      <span>{config.purchasePanel.shippingText}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {config.sections.map((sec) => (
-                <div
-                  key={sec.id}
-                  className="flex items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-white"
-                >
-                  <div>
-                    <span className="font-bold text-sm">{sec.title}</span>
-                    <span className="text-xs text-slate-400 font-mono ml-3">({sec.type})</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = {
-                        ...config,
-                        sections: config.sections.map((s) =>
-                          s.id === sec.id ? { ...s, enabled: !s.enabled } : s
-                        ),
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className={`px-3.5 py-1.5 rounded-lg font-bold text-xs cursor-pointer ${
-                      sec.enabled ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {sec.enabled ? 'Active (ON)' : 'Hidden'}
-                  </button>
+            {/* Accordions / Tabs Simulator */}
+            <div className="border-t border-slate-200 pt-4 space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Product Details &amp; Specifications</h4>
+              {config.sections.filter(s => s.enabled).slice(0, 3).map((sec, idx) => (
+                <div key={sec.id || idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
+                  <span className="font-bold text-slate-800">{sec.title}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </div>
               ))}
             </div>
           </div>
-        )}
-
-        {/* TAB 7: REVIEWS */}
-        {activeTab === 'reviews' && (
-          <div className="lg:col-span-12 p-6 sm:p-8 rounded-2xl bg-[#0F1117] border border-slate-800/90 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                <Star className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-wide">Customer Reviews &amp; Social Proof</h3>
-                <p className="text-xs text-slate-400">Verified buyer ratings and review submission moderation workflow.</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-white text-sm">Verified Buyer Badge</h4>
-                  <p className="text-xs text-slate-400">Display verified authenticity badge on confirmed purchases.</p>
-                </div>
-                <span className="px-3 py-1 rounded-lg bg-emerald-950 text-emerald-400 font-bold text-xs border border-emerald-800">
-                  Active
-                </span>
-              </div>
-
-              <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-white text-sm">Review Submission Moderation</h4>
-                  <p className="text-xs text-slate-400">Require tenant admin approval before reviews go live.</p>
-                </div>
-                <span className="px-3 py-1 rounded-lg bg-emerald-950 text-emerald-400 font-bold text-xs border border-emerald-800">
-                  Moderated
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 8: RECOMMENDATIONS */}
-        {activeTab === 'recommendations' && (
-          <div className="lg:col-span-12 p-6 sm:p-8 rounded-2xl bg-[#0F1117] border border-slate-800/90 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                <Gift className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-wide">Cross-Sell &amp; Recommendation Feeds</h3>
-                <p className="text-xs text-slate-400">Related creations and recently viewed catalog queries.</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-white text-sm">Related Products Carousel</h4>
-                  <p className="text-xs text-slate-400">Matches category and style attributes.</p>
-                </div>
-                <span className="px-3 py-1 rounded-lg bg-emerald-950 text-emerald-400 font-bold text-xs border border-emerald-800">
-                  Active
-                </span>
-              </div>
-
-              <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-white text-sm">Recently Viewed Storage</h4>
-                  <p className="text-xs text-slate-400">Client-side isolated browser storage.</p>
-                </div>
-                <span className="px-3 py-1 rounded-lg bg-emerald-950 text-emerald-400 font-bold text-xs border border-emerald-800">
-                  Active
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* MODAL 1: PRESETS */}
