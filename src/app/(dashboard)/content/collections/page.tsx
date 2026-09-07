@@ -224,7 +224,38 @@ export default function CollectionPageBuilderStudio() {
     setConfig(next);
     pushHistory(next);
     setIsPresetsModalOpen(false);
-    showToast(`Applied ${preset.name} Preset`, 'info');
+    showToast(`Applied ${preset.name} Preset. Click "Publish Live" to deploy to Storefront.`, 'info');
+  };
+
+  const handleApplyAndPublishPreset = async (presetId: string) => {
+    const preset = COLLECTION_PAGE_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    const slug = activeTenant?.slug || 'lumina';
+    const next = preset.getConfig(slug);
+    const nextVersion = (config.version || 1) + 1;
+    const pubDoc: CollectionPageConfig = {
+      ...next,
+      tenantId: slug,
+      templateId: preset.id,
+      version: nextVersion,
+      status: 'published',
+      publishedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setConfig(pubDoc);
+    pushHistory(pubDoc);
+    setIsPresetsModalOpen(false);
+    setIsPublishing(true);
+
+    try {
+      await ApiClient.put(`/api/v1/content/collection-page?tenant=${slug}`, pubDoc);
+      showToast(`🎉 ${preset.name} applied & published live to Storefront!`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to publish live', 'error');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   // Version History Handlers
@@ -1219,15 +1250,34 @@ export default function CollectionPageBuilderStudio() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-[65vh] overflow-y-auto pr-1">
               {COLLECTION_PAGE_PRESETS.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => handleApplyPreset(p.id)}
-                  className="p-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-rose-500 transition-all cursor-pointer group"
+                  className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between"
                 >
-                  <h4 className="text-sm font-bold text-white group-hover:text-rose-400 mb-1">{p.name}</h4>
-                  <p className="text-xs text-slate-400">{p.description}</p>
+                  <div className="space-y-1.5">
+                    <h4 className="text-sm font-bold text-white">{p.name}</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">{p.description}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset(p.id)}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold transition-all cursor-pointer text-center"
+                    >
+                      Preview in Studio
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyAndPublishPreset(p.id)}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Apply &amp; Publish</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
