@@ -27,6 +27,7 @@ import {
   MoveUp,
   MoveDown,
   ChevronDown,
+  Eye,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
@@ -50,6 +51,17 @@ type ActivePdpTab =
   | 'reviews'
   | 'recommendations';
 
+const PDP_TABS = [
+  { id: 'gallery', label: 'Gallery & Media', icon: ImageIcon },
+  { id: 'purchase', label: 'Purchase Box & Buy Bar', icon: ShoppingBag },
+  { id: 'variants', label: 'Variants & Swatches', icon: Palette },
+  { id: 'inventory', label: 'Inventory & Stock Alerts', icon: Boxes },
+  { id: 'shipping', label: 'Shipping & Delivery Estimator', icon: Truck },
+  { id: 'details', label: 'Tabs & Accordions', icon: Layers },
+  { id: 'reviews', label: 'Reviews & Social Proof', icon: Star },
+  { id: 'recommendations', label: 'Recommendations', icon: Gift },
+] as const;
+
 export default function ProductPageBuilder() {
   const { showToast } = useToast();
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
@@ -58,6 +70,7 @@ export default function ProductPageBuilder() {
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLivePreviewOpen, setIsLivePreviewOpen] = useState(false); // Default false as requested
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
@@ -234,8 +247,8 @@ export default function ProductPageBuilder() {
 
   return (
     <div className="space-y-6">
-      {/* 1. TOP HEADER BAR (Collection Page Builder Aesthetic) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* 1. TOP HEADER BAR */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs uppercase font-bold tracking-widest text-rose-400">
@@ -248,7 +261,7 @@ export default function ProductPageBuilder() {
               Store: <strong className="text-white">{activeTenant?.name || 'Store'} ({tenantSlug})</strong>
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-white mt-1">Product Detail Page Builder</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mt-1">Product Detail Page Builder</h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Configure product gallery, buy box, variant swatches, stock alerts, accordions, and customer reviews in real-time.
           </p>
@@ -284,16 +297,33 @@ export default function ProductPageBuilder() {
             </button>
           </div>
 
+          {/* Layout Presets */}
           <button
             type="button"
             onClick={() => setIsPresetModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30 transition-all cursor-pointer"
             title="Layout Presets"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Presets</span>
+            <span>Layout Presets</span>
           </button>
 
+          {/* Live Canvas Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsLivePreviewOpen(!isLivePreviewOpen)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              isLivePreviewOpen
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-950/40'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+            }`}
+            title={isLivePreviewOpen ? 'Click to hide Live Canvas' : 'Click to enable Live Canvas'}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>{isLivePreviewOpen ? 'Live Canvas Active' : 'Show Canvas'}</span>
+          </button>
+
+          {/* Undo */}
           <button
             type="button"
             onClick={handleUndo}
@@ -304,16 +334,17 @@ export default function ProductPageBuilder() {
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
+          {/* Reset */}
           <button
             type="button"
             onClick={handleResetToDefault}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
             title="Reset to default template"
           >
             <RotateCcw className="w-3.5 h-3.5 rotate-180" />
-            <span>Reset</span>
           </button>
 
+          {/* Version History */}
           <button
             type="button"
             onClick={loadVersionHistory}
@@ -323,6 +354,7 @@ export default function ProductPageBuilder() {
             <Clock className="w-3.5 h-3.5" />
           </button>
 
+          {/* Save Draft */}
           <button
             type="button"
             onClick={handleSaveDraft}
@@ -333,6 +365,7 @@ export default function ProductPageBuilder() {
             <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
           </button>
 
+          {/* Publish Live */}
           <button
             type="button"
             onClick={handlePublishLive}
@@ -345,177 +378,200 @@ export default function ProductPageBuilder() {
         </div>
       </div>
 
-      {/* 2. MAIN 2-COLUMN WORK AREA (Collection Page Builder Studio Structure) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT SETTINGS SIDEBAR (5 Cols) */}
-        <div className="lg:col-span-5 space-y-4 bg-[#121522] border border-slate-800 p-5 rounded-2xl shadow-xl">
-          {/* Customizer Horizontal Tabs */}
-          <div className="flex border-b border-slate-800 pb-2 gap-1 overflow-x-auto text-xs scrollbar-none">
-            {[
-              { id: 'gallery', label: '1. Media Gallery' },
-              { id: 'purchase', label: '2. Buy Box & CTA' },
-              { id: 'variants', label: '3. Swatches & Size' },
-              { id: 'inventory', label: '4. Stock Alerts' },
-              { id: 'shipping', label: '5. Shipping & Returns' },
-              { id: 'details', label: '6. Tabs & Accordions' },
-              { id: 'reviews', label: '7. Reviews & Proof' },
-              { id: 'recommendations', label: '8. Recommendations' },
-            ].map((t) => (
+      {/* 2. RESPONSIVE NAVIGATION TABS BAR */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2.5">
+        {PDP_TABS.map((t) => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTab(t.id as ActivePdpTab)}
+              className={`p-3 rounded-2xl text-xs font-bold flex items-center justify-start gap-2.5 transition-all cursor-pointer border ${
+                isActive
+                  ? 'bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-lg shadow-rose-950/40 border-rose-400/40'
+                  : 'bg-[#121522] hover:bg-[#181C2B] text-slate-400 hover:text-slate-200 border-slate-800/90'
+              }`}
+            >
+              <div className={`p-1.5 rounded-lg shrink-0 ${isActive ? 'bg-white/15 text-white' : 'bg-slate-800/80 text-slate-400'}`}>
+                <Icon className="w-4 h-4" />
+              </div>
+              <span className="leading-tight text-left truncate">{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3. MAIN WORK AREA (Side-by-Side when Live Canvas is active, Full-Width when closed) */}
+      <div className={`grid grid-cols-1 ${isLivePreviewOpen ? 'lg:grid-cols-12' : 'grid-cols-1'} gap-6 items-start`}>
+        {/* SETTINGS CARD CONTAINER */}
+        <div className={`${isLivePreviewOpen ? 'lg:col-span-5' : 'w-full'} space-y-4 bg-[#121522] border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl transition-all duration-300`}>
+          {/* Active Tab Header Banner */}
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <div className="flex items-center gap-2.5">
+              <span className="px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-400 border border-rose-500/30 text-xs font-bold capitalize">
+                {activeTab.replace(/([A-Z])/g, ' $1')} Configuration
+              </span>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">
+                Fine-tune store layout and interactive behaviors
+              </span>
+            </div>
+            {!isLivePreviewOpen && (
               <button
-                key={t.id}
                 type="button"
-                onClick={() => setActiveTab(t.id as any)}
-                className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  activeTab === t.id
-                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                    : 'text-slate-400 hover:text-white'
-                }`}
+                onClick={() => setIsLivePreviewOpen(true)}
+                className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
               >
-                {t.label}
+                <Eye className="w-3 h-3" />
+                <span>Open Live Canvas</span>
               </button>
-            ))}
+            )}
           </div>
 
           {/* TAB 1: GALLERY & MEDIA */}
           {activeTab === 'gallery' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
+              <div className="flex items-center gap-2 pb-1 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
                 <ImageIcon className="w-4 h-4" />
                 <span>Product Media Gallery Settings</span>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Gallery Layout</label>
-                <select
-                  value={config.gallery.layout}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      gallery: { ...config.gallery, layout: e.target.value as GalleryLayoutType },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
-                >
-                  <option value="left-thumbs">Left Thumbnails (Lookbook Standard)</option>
-                  <option value="bottom-thumbs">Bottom Thumbnails</option>
-                  <option value="grid-2">2-Column Grid (Haute Couture Luxury)</option>
-                  <option value="stacked">Stacked Vertical (Minimalist)</option>
-                  <option value="carousel">Carousel Slider</option>
-                  <option value="masonry">Editorial Masonry</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Image Aspect Ratio</label>
-                <select
-                  value={config.gallery.aspectRatio}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      gallery: { ...config.gallery, aspectRatio: e.target.value as AspectRatioType },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
-                >
-                  <option value="4:5">4:5 Fashion Portrait (Recommended)</option>
-                  <option value="1:1">1:1 Square (Studio / Modern)</option>
-                  <option value="3:4">3:4 Classic Proportion</option>
-                  <option value="16:9">16:9 Cinematic Wide</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Zoom Mode</label>
-                <select
-                  value={config.gallery.zoomMode}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      gallery: { ...config.gallery, zoomMode: e.target.value as ZoomModeType },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
-                >
-                  <option value="hover">Hover Magnifier</option>
-                  <option value="click">Click to Zoom</option>
-                  <option value="fullscreen">Fullscreen Lightbox</option>
-                  <option value="disabled">Disabled</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Thumbnails Position</label>
-                <select
-                  value={config.gallery.thumbnailsPosition}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      gallery: { ...config.gallery, thumbnailsPosition: e.target.value as any },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
-                >
-                  <option value="left">Left Side Bar</option>
-                  <option value="bottom">Bottom Horizontal Strip</option>
-                  <option value="hidden">Hidden</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Gallery Width Split</label>
-                <select
-                  value={config.gallery.galleryWidthPercent}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      gallery: { ...config.gallery, galleryWidthPercent: Number(e.target.value) },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
-                >
-                  <option value={50}>50% Gallery / 50% Purchase Box</option>
-                  <option value={55}>55% Gallery / 45% Purchase Box (Default)</option>
-                  <option value={60}>60% Gallery / 40% Purchase Box (Luxury)</option>
-                  <option value={65}>65% Gallery / 35% Purchase Box (High Drama)</option>
-                </select>
-              </div>
-
-              <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                <div>
-                  <div className="font-semibold text-white">Video Reels &amp; 360 Support</div>
-                  <div className="text-[10px] text-slate-400">Enable interactive catwalk clips &amp; reels</div>
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'} gap-4`}>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Gallery Layout</label>
+                  <select
+                    value={config.gallery.layout}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        gallery: { ...config.gallery, layout: e.target.value as GalleryLayoutType },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                  >
+                    <option value="left-thumbs">Left Thumbnails (Lookbook Standard)</option>
+                    <option value="bottom-thumbs">Bottom Thumbnails</option>
+                    <option value="grid-2">2-Column Grid (Haute Couture Luxury)</option>
+                    <option value="stacked">Stacked Vertical (Minimalist)</option>
+                    <option value="carousel">Carousel Slider</option>
+                    <option value="masonry">Editorial Masonry</option>
+                  </select>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={config.gallery.enableVideo}
-                  onChange={() => {
-                    const updated = {
-                      ...config,
-                      gallery: { ...config.gallery, enableVideo: !config.gallery.enableVideo },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                />
-              </label>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Image Aspect Ratio</label>
+                  <select
+                    value={config.gallery.aspectRatio}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        gallery: { ...config.gallery, aspectRatio: e.target.value as AspectRatioType },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                  >
+                    <option value="4:5">4:5 Fashion Portrait (Recommended)</option>
+                    <option value="1:1">1:1 Square (Studio / Modern)</option>
+                    <option value="3:4">3:4 Classic Proportion</option>
+                    <option value="16:9">16:9 Cinematic Wide</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Zoom Mode</label>
+                  <select
+                    value={config.gallery.zoomMode}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        gallery: { ...config.gallery, zoomMode: e.target.value as ZoomModeType },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                  >
+                    <option value="hover">Hover Magnifier</option>
+                    <option value="click">Click to Zoom</option>
+                    <option value="fullscreen">Fullscreen Lightbox</option>
+                    <option value="disabled">Disabled</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Thumbnails Position</label>
+                  <select
+                    value={config.gallery.thumbnailsPosition}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        gallery: { ...config.gallery, thumbnailsPosition: e.target.value as any },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                  >
+                    <option value="left">Left Side Bar</option>
+                    <option value="bottom">Bottom Horizontal Strip</option>
+                    <option value="hidden">Hidden</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Gallery Width Split</label>
+                  <select
+                    value={config.gallery.galleryWidthPercent}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        gallery: { ...config.gallery, galleryWidthPercent: Number(e.target.value) },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                  >
+                    <option value={50}>50% Gallery / 50% Purchase Box</option>
+                    <option value={55}>55% Gallery / 45% Purchase Box (Default)</option>
+                    <option value={60}>60% Gallery / 40% Purchase Box (Luxury)</option>
+                    <option value={65}>65% Gallery / 35% Purchase Box (High Drama)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5 flex flex-col justify-end">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer h-[42px]">
+                    <div>
+                      <div className="font-semibold text-white">Video Reels &amp; 360</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={config.gallery.enableVideo}
+                      onChange={() => {
+                        const updated = {
+                          ...config,
+                          gallery: { ...config.gallery, enableVideo: !config.gallery.enableVideo },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
           )}
 
           {/* TAB 2: PURCHASE BOX & BUY BAR */}
           {activeTab === 'purchase' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+              <div className="flex items-center gap-2 pb-1 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
                 <ShoppingBag className="w-4 h-4" />
                 <span>Purchase Panel &amp; Buy Controls</span>
               </div>
@@ -525,11 +581,11 @@ export default function ProductPageBuilder() {
                 <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
                   Element Display Pipeline (Order Top to Bottom)
                 </label>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-none">
+                <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'} gap-2 max-h-56 overflow-y-auto pr-1 scrollbar-none`}>
                   {config.purchasePanel.elementsOrder.map((key, idx) => (
                     <div
                       key={key}
-                      className="flex items-center justify-between p-2 rounded-xl bg-[#0C0E17] border border-slate-800 text-xs text-white"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 text-xs text-white"
                     >
                       <span className="font-semibold capitalize text-slate-300 text-[11px]">
                         {idx + 1}. {key.replace(/([A-Z])/g, ' $1')}
@@ -541,7 +597,7 @@ export default function ProductPageBuilder() {
                           disabled={idx === 0}
                           className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
                         >
-                          <MoveUp className="w-3 h-3" />
+                          <MoveUp className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
@@ -549,7 +605,7 @@ export default function ProductPageBuilder() {
                           disabled={idx === config.purchasePanel.elementsOrder.length - 1}
                           className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
                         >
-                          <MoveDown className="w-3 h-3" />
+                          <MoveDown className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -558,197 +614,199 @@ export default function ProductPageBuilder() {
               </div>
 
               {/* Action Buttons Toggles */}
-              <div className="space-y-2 pt-1 border-t border-slate-800/80">
+              <div className="space-y-2 pt-2 border-t border-slate-800/80">
                 <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
                   Purchase Action Elements
                 </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">"Add to Bag" Primary Button</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showAddToCart}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showAddToCart: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'} gap-2.5`}>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">"Add to Bag" Primary CTA</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showAddToCart}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showAddToCart: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">"Instant Buy Now" Accelerated CTA</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showBuyNow}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showBuyNow: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">"Instant Buy Now" Accelerated CTA</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showBuyNow}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showBuyNow: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Wishlist Heart &amp; Share Links</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showWishlist}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showWishlist: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Wishlist &amp; Social Share</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showWishlist}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showWishlist: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Mobile Sticky Bottom Buy Bar</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.mobileStickyBar}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, mobileStickyBar: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Mobile Sticky Buy Bar</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.mobileStickyBar}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, mobileStickyBar: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Promotional &amp; Atelier Badges</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showBadges}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showBadges: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Handcrafted / Sale Badges</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showBadges}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showBadges: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Brand Name Display</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showBrand}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showBrand: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Brand Name Display</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showBrand}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showBrand: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Star Rating &amp; Review Count</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showRating}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showRating: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Star Rating &amp; Review Count</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showRating}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showRating: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Product Price &amp; Original MSRP</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showPrice}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showPrice: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Active Price Display</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showPrice}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showPrice: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Strike-through Comparison MSRP</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showComparePrice}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showComparePrice: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Comparison MSRP (Strikethrough)</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showComparePrice}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showComparePrice: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Discount Percentage Badge (% OFF)</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showDiscount}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showDiscount: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Discount Pill (% OFF)</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showDiscount}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showDiscount: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                  <span className="text-slate-300">Shipping Guarantee Badge</span>
-                  <input
-                    type="checkbox"
-                    checked={config.purchasePanel.showShippingInfo}
-                    onChange={(e) => {
-                      const updated = {
-                        ...config,
-                        purchasePanel: { ...config.purchasePanel, showShippingInfo: e.target.checked },
-                      };
-                      setConfig(updated);
-                      pushHistory(updated);
-                    }}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                    <span className="text-slate-300">Shipping Guarantee Row</span>
+                    <input
+                      type="checkbox"
+                      checked={config.purchasePanel.showShippingInfo}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          purchasePanel: { ...config.purchasePanel, showShippingInfo: e.target.checked },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
           )}
@@ -756,49 +814,51 @@ export default function ProductPageBuilder() {
           {/* TAB 3: VARIANTS & SWATCHES */}
           {activeTab === 'variants' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-sky-400 font-bold uppercase tracking-wider text-[11px]">
+              <div className="flex items-center gap-2 pb-1 text-sky-400 font-bold uppercase tracking-wider text-[11px]">
                 <Palette className="w-4 h-4" />
                 <span>Variants &amp; Swatches Display</span>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Color Display Mode</label>
-                <select
-                  value={config.purchasePanel.colorDisplayType}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, colorDisplayType: e.target.value as VariantOptionDisplayType },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
-                >
-                  <option value="swatches">Circular Color Swatches</option>
-                  <option value="chips">Text Chips / Pills</option>
-                  <option value="dropdown">Dropdown Menu</option>
-                </select>
-              </div>
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-4`}>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Color Display Mode</label>
+                  <select
+                    value={config.purchasePanel.colorDisplayType}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, colorDisplayType: e.target.value as VariantOptionDisplayType },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                  >
+                    <option value="swatches">Circular Color Swatches</option>
+                    <option value="chips">Text Chips / Pills</option>
+                    <option value="dropdown">Dropdown Menu</option>
+                  </select>
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Size Display Mode</label>
-                <select
-                  value={config.purchasePanel.sizeDisplayType}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, sizeDisplayType: e.target.value as VariantOptionDisplayType },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
-                >
-                  <option value="buttons">Square Size Grid (XS, S, M, L)</option>
-                  <option value="chips">Rounded Size Pills</option>
-                  <option value="dropdown">Dropdown Menu</option>
-                </select>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Size Display Mode</label>
+                  <select
+                    value={config.purchasePanel.sizeDisplayType}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, sizeDisplayType: e.target.value as VariantOptionDisplayType },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                  >
+                    <option value="buttons">Square Size Grid (XS, S, M, L)</option>
+                    <option value="chips">Rounded Size Pills</option>
+                    <option value="dropdown">Dropdown Menu</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -806,53 +866,55 @@ export default function ProductPageBuilder() {
           {/* TAB 4: INVENTORY & STOCK */}
           {activeTab === 'inventory' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
+              <div className="flex items-center gap-2 pb-1 text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
                 <Boxes className="w-4 h-4" />
                 <span>Inventory &amp; Stock Scarcity</span>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
-                  Low Stock Alert Threshold (Units)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={config.purchasePanel.lowStockThreshold}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, lowStockThreshold: Number(e.target.value) },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs font-mono"
-                />
-              </div>
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-4`}>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                    Low Stock Alert Threshold (Units)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={config.purchasePanel.lowStockThreshold}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, lowStockThreshold: Number(e.target.value) },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs font-mono"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
-                  Out of Stock Behavior
-                </label>
-                <select
-                  value={config.purchasePanel.outOfStockBehavior}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, outOfStockBehavior: e.target.value as any },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
-                >
-                  <option value="notifyMe">Notify Me Button (Customer Waitlist)</option>
-                  <option value="disabled">Disabled Out of Stock</option>
-                  <option value="preorder">Allow Pre-Order</option>
-                  <option value="backorder">Allow Backorder</option>
-                </select>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                    Out of Stock Behavior
+                  </label>
+                  <select
+                    value={config.purchasePanel.outOfStockBehavior}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, outOfStockBehavior: e.target.value as any },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                  >
+                    <option value="notifyMe">Notify Me Button (Customer Waitlist)</option>
+                    <option value="disabled">Disabled Out of Stock</option>
+                    <option value="preorder">Allow Pre-Order</option>
+                    <option value="backorder">Allow Backorder</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -860,47 +922,49 @@ export default function ProductPageBuilder() {
           {/* TAB 5: SHIPPING & DELIVERY */}
           {activeTab === 'shipping' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-pink-400 font-bold uppercase tracking-wider text-[11px]">
+              <div className="flex items-center gap-2 pb-1 text-pink-400 font-bold uppercase tracking-wider text-[11px]">
                 <Truck className="w-4 h-4" />
                 <span>Shipping &amp; Delivery Guarantees</span>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
-                  Shipping Policy Banner Text
-                </label>
-                <input
-                  type="text"
-                  value={config.purchasePanel.shippingText}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, shippingText: e.target.value },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs"
-                />
-              </div>
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-4`}>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                    Shipping Policy Banner Text
+                  </label>
+                  <input
+                    type="text"
+                    value={config.purchasePanel.shippingText}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, shippingText: e.target.value },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
-                  Return Policy Guarantee Text
-                </label>
-                <input
-                  type="text"
-                  value={config.purchasePanel.returnPolicyText}
-                  onChange={(e) => {
-                    const updated = {
-                      ...config,
-                      purchasePanel: { ...config.purchasePanel, returnPolicyText: e.target.value },
-                    };
-                    setConfig(updated);
-                    pushHistory(updated);
-                  }}
-                  className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs"
-                />
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                    Return Policy Guarantee Text
+                  </label>
+                  <input
+                    type="text"
+                    value={config.purchasePanel.returnPolicyText}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        purchasePanel: { ...config.purchasePanel, returnPolicyText: e.target.value },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -908,16 +972,16 @@ export default function ProductPageBuilder() {
           {/* TAB 6: TABS & ACCORDIONS */}
           {activeTab === 'details' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-indigo-400 font-bold uppercase tracking-wider text-[11px]">
+              <div className="flex items-center gap-2 pb-1 text-indigo-400 font-bold uppercase tracking-wider text-[11px]">
                 <Layers className="w-4 h-4" />
                 <span>Product Details, Tabs &amp; Accordions</span>
               </div>
 
-              <div className="space-y-2">
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-3`}>
                 {config.sections.map((sec) => (
                   <div
                     key={sec.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#0C0E17] border border-slate-800 text-xs text-white"
+                    className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 text-xs text-white"
                   >
                     <div>
                       <span className="font-semibold text-slate-200 block">{sec.title}</span>
@@ -951,338 +1015,354 @@ export default function ProductPageBuilder() {
           {/* TAB 7: REVIEWS */}
           {activeTab === 'reviews' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+              <div className="flex items-center gap-2 pb-1 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
                 <Star className="w-4 h-4" />
                 <span>Customer Reviews &amp; Social Proof</span>
               </div>
 
-              <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                <div>
-                  <h4 className="font-semibold text-white text-xs">Verified Buyer Badge</h4>
-                  <p className="text-[10px] text-slate-400">Display verified authenticity badge on confirmed purchases.</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={verifiedBadgeEnabled}
-                  onChange={(e) => setVerifiedBadgeEnabled(e.target.checked)}
-                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                />
-              </label>
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-3`}>
+                <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <div>
+                    <h4 className="font-semibold text-white text-xs">Verified Buyer Badge</h4>
+                    <p className="text-[10px] text-slate-400">Display verified authenticity badge on confirmed purchases.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={verifiedBadgeEnabled}
+                    onChange={(e) => setVerifiedBadgeEnabled(e.target.checked)}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
 
-              <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                <div>
-                  <h4 className="font-semibold text-white text-xs">Review Submission Moderation</h4>
-                  <p className="text-[10px] text-slate-400">Require tenant admin approval before reviews go live.</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={reviewModerationEnabled}
-                  onChange={(e) => setReviewModerationEnabled(e.target.checked)}
-                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                />
-              </label>
+                <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <div>
+                    <h4 className="font-semibold text-white text-xs">Review Submission Moderation</h4>
+                    <p className="text-[10px] text-slate-400">Require tenant admin approval before reviews go live.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={reviewModerationEnabled}
+                    onChange={(e) => setReviewModerationEnabled(e.target.checked)}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+              </div>
             </div>
           )}
 
           {/* TAB 8: RECOMMENDATIONS */}
           {activeTab === 'recommendations' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
+              <div className="flex items-center gap-2 pb-1 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
                 <Gift className="w-4 h-4" />
                 <span>Cross-Sell &amp; Recommendation Feeds</span>
               </div>
 
-              <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                <div>
-                  <h4 className="font-semibold text-white text-xs">Related Products Carousel</h4>
-                  <p className="text-[10px] text-slate-400">Matches category and style attributes.</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={relatedCarouselEnabled}
-                  onChange={(e) => setRelatedCarouselEnabled(e.target.checked)}
-                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                />
-              </label>
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-3`}>
+                <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <div>
+                    <h4 className="font-semibold text-white text-xs">Related Products Carousel</h4>
+                    <p className="text-[10px] text-slate-400">Matches category and style attributes.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={relatedCarouselEnabled}
+                    onChange={(e) => setRelatedCarouselEnabled(e.target.checked)}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
 
-              <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                <div>
-                  <h4 className="font-semibold text-white text-xs">Recently Viewed Storage</h4>
-                  <p className="text-[10px] text-slate-400">Client-side isolated browser storage.</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={recentlyViewedEnabled}
-                  onChange={(e) => setRecentlyViewedEnabled(e.target.checked)}
-                  className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                />
-              </label>
+                <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                  <div>
+                    <h4 className="font-semibold text-white text-xs">Recently Viewed Storage</h4>
+                    <p className="text-[10px] text-slate-400">Client-side isolated browser storage.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={recentlyViewedEnabled}
+                    onChange={(e) => setRecentlyViewedEnabled(e.target.checked)}
+                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
+                  />
+                </label>
+              </div>
             </div>
           )}
         </div>
 
-        {/* RIGHT LIVE REACTIVE DEVICE CANVAS (7 Cols, Sticky) */}
-        <div className="lg:col-span-7 bg-[#0A0C10] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-2xl flex flex-col items-center sticky top-6">
-          <div className="w-full text-xs font-mono text-slate-400 flex items-center justify-between mb-3">
-            <span className="font-bold tracking-wider">LIVE PDP STOREFRONT PREVIEW</span>
-            <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-              ● Active Visual Engine
-            </span>
-          </div>
-
-          {/* Actual Storefront Product Page Simulator Container */}
-          <div
-            className={`w-full transition-all duration-300 border border-slate-700/60 rounded-2xl overflow-hidden bg-[#FFFDFC] text-slate-900 p-4 sm:p-6 space-y-6 shadow-2xl ${
-              device === 'mobile' ? 'max-w-[375px]' : device === 'tablet' ? 'max-w-[620px]' : 'w-full'
-            }`}
-          >
-            {/* Breadcrumb Hierarchy */}
-            <div className="flex items-center gap-2 text-xs text-slate-400 font-sans">
-              <span className="hover:text-rose-600">Home</span>
-              <span>/</span>
-              <span className="hover:text-rose-600">Dresses</span>
-              <span>/</span>
-              <span className="text-slate-900 font-bold truncate">Blush Floral Tiered Midi Dress</span>
+        {/* RIGHT LIVE REACTIVE DEVICE CANVAS (Visible ONLY when isLivePreviewOpen is true) */}
+        {isLivePreviewOpen && (
+          <div className="lg:col-span-7 bg-[#0A0C10] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-2xl flex flex-col items-center sticky top-6 animate-in fade-in slide-in-from-right-4 duration-200">
+            <div className="w-full text-xs font-mono text-slate-400 flex items-center justify-between mb-3">
+              <span className="font-bold tracking-wider">LIVE PDP STOREFRONT PREVIEW</span>
+              <div className="flex items-center gap-3">
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+                  Active Visual Engine
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsLivePreviewOpen(false)}
+                  className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  title="Close Canvas"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
-            {/* Product Main Section: Gallery + Purchase Panel Split */}
+            {/* Actual Storefront Product Page Simulator Container */}
             <div
-              className={`grid gap-6 items-start ${
-                device === 'mobile' ? 'grid-cols-1' : 'grid-cols-12'
+              className={`w-full transition-all duration-300 border border-slate-700/60 rounded-2xl overflow-hidden bg-[#FFFDFC] text-slate-900 p-4 sm:p-6 space-y-6 shadow-2xl ${
+                device === 'mobile' ? 'max-w-[375px]' : device === 'tablet' ? 'max-w-[620px]' : 'w-full'
               }`}
             >
-              {/* 1. Gallery Simulator */}
-              <div
-                className={
-                  device === 'mobile'
-                    ? 'w-full'
-                    : config.gallery.galleryWidthPercent >= 60
-                    ? 'col-span-7'
-                    : 'col-span-6'
-                }
-              >
-                <div className="space-y-3">
-                  <div className="relative aspect-4/5 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm group">
-                    <img
-                      src="https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=1000"
-                      alt="Blush Floral Tiered Midi Dress"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs">
-                      {config.gallery.layout.toUpperCase()}
-                    </span>
-                  </div>
-
-                  {config.gallery.thumbnailsPosition !== 'hidden' && (
-                    <div className="flex gap-2 overflow-x-auto py-1">
-                      {[
-                        'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=200',
-                        'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=200',
-                        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=200',
-                      ].map((thumb, idx) => (
-                        <div
-                          key={idx}
-                          className={`w-14 h-18 rounded-xl overflow-hidden border-2 cursor-pointer transition-all shrink-0 ${
-                            idx === 0 ? 'border-rose-600 ring-2 ring-rose-500/30' : 'border-slate-200 opacity-70 hover:opacity-100'
-                          }`}
-                        >
-                          <img src={thumb} alt="Thumb" className="w-full h-full object-cover" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {/* Breadcrumb Hierarchy */}
+              <div className="flex items-center gap-2 text-xs text-slate-400 font-sans">
+                <span className="hover:text-rose-600">Home</span>
+                <span>/</span>
+                <span className="hover:text-rose-600">Dresses</span>
+                <span>/</span>
+                <span className="text-slate-900 font-bold truncate">Blush Floral Tiered Midi Dress</span>
               </div>
 
-              {/* 2. Purchase Panel Simulator */}
+              {/* Product Main Section: Gallery + Purchase Panel Split */}
               <div
-                className={
-                  device === 'mobile'
-                    ? 'w-full'
-                    : config.gallery.galleryWidthPercent >= 60
-                    ? 'col-span-5'
-                    : 'col-span-6'
-                }
+                className={`grid gap-6 items-start ${
+                  device === 'mobile' ? 'grid-cols-1' : 'grid-cols-12'
+                }`}
               >
-                <div className="space-y-3.5 p-4 sm:p-5 rounded-2xl bg-[#FAF6F2] border border-[#E8DED8]">
-                  {/* Badges */}
-                  {config.purchasePanel.showBadges && (
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200">
-                        Handcrafted Atelier
+                {/* 1. Gallery Simulator */}
+                <div
+                  className={
+                    device === 'mobile'
+                      ? 'w-full'
+                      : config.gallery.galleryWidthPercent >= 60
+                      ? 'col-span-7'
+                      : 'col-span-6'
+                  }
+                >
+                  <div className="space-y-3">
+                    <div className="relative aspect-4/5 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm group">
+                      <img
+                        src="https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=1000"
+                        alt="Blush Floral Tiered Midi Dress"
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs">
+                        {config.gallery.layout.toUpperCase()}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        32% OFF
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Brand */}
-                  {config.purchasePanel.showBrand && (
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">
-                      Lumina Haute Couture
-                    </span>
-                  )}
-
-                  {/* Title */}
-                  {config.purchasePanel.showTitle && (
-                    <h2 className="text-lg sm:text-xl font-serif font-black text-slate-900 leading-tight">
-                      Blush Floral Tiered Midi Dress
-                    </h2>
-                  )}
-
-                  {/* Rating */}
-                  {config.purchasePanel.showRating && (
-                    <div className="flex items-center gap-1.5 text-xs text-amber-500">
-                      <Star className="w-3.5 h-3.5 fill-amber-400" />
-                      <span className="font-bold text-slate-900">4.9</span>
-                      <span className="text-slate-400 font-normal text-[11px]">(42 Verified Reviews)</span>
-                    </div>
-                  )}
-
-                  {/* Price */}
-                  {config.purchasePanel.showPrice && (
-                    <div className="flex items-baseline gap-2.5 py-0.5 flex-wrap">
-                      <span className="text-xl font-bold font-mono text-slate-900">$1,499</span>
-                      {config.purchasePanel.showComparePrice && (
-                        <span className="text-xs line-through text-slate-400 font-mono">$2,199</span>
-                      )}
-                      {config.purchasePanel.showDiscount && (
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-black">
-                          32% OFF
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Color Swatches */}
-                  <div className="space-y-1 pt-0.5">
-                    <span className="text-[11px] font-bold uppercase text-slate-900">
-                      Color: <span className="font-normal text-slate-600">{mockSelectedColor}</span>
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {[
-                        { name: 'Rose', hex: '#E8B8B5' },
-                        { name: 'Black', hex: '#0A0A0B' },
-                        { name: 'Emerald', hex: '#064E3B' },
-                      ].map((c) => (
-                        <button
-                          key={c.name}
-                          type="button"
-                          onClick={() => setMockSelectedColor(c.name)}
-                          className={`w-6 h-6 rounded-full border transition-all ${
-                            mockSelectedColor === c.name ? 'ring-2 ring-rose-500 scale-110' : 'hover:scale-105 opacity-90'
-                          }`}
-                          style={{ backgroundColor: c.hex }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Size Selector */}
-                  <div className="space-y-1 pt-0.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase text-slate-900">
-                        Size: <span className="font-normal text-slate-600">{mockSelectedSize}</span>
-                      </span>
-                      <button type="button" className="text-[11px] font-bold text-rose-600 flex items-center gap-1">
-                        <Ruler className="w-3 h-3" />
-                        <span>Size Guide</span>
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-5 gap-1">
-                      {['XS', 'S', 'M', 'L', 'XL'].map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setMockSelectedSize(s)}
-                          className={`py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-                            mockSelectedSize === s
-                              ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                              : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Actions (Add to Bag / Buy Now) */}
-                  <div className="pt-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      {config.purchasePanel.showAddToCart && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsAddedToBag(true);
-                            setTimeout(() => setIsAddedToBag(false), 2000);
-                          }}
-                          className={`flex-1 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer ${
-                            isAddedToBag ? 'bg-emerald-600 text-white' : 'bg-slate-950 hover:bg-rose-600 text-white'
-                          }`}
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>{isAddedToBag ? 'Added ✓' : 'Add to Bag'}</span>
-                        </button>
-                      )}
-
-                      {config.purchasePanel.showBuyNow && (
-                        <button
-                          type="button"
-                          className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-                        >
-                          <Zap className="w-3.5 h-3.5 fill-white" />
-                          <span>Instant Buy</span>
-                        </button>
-                      )}
                     </div>
 
-                    {/* Wishlist & Share */}
-                    {config.purchasePanel.showWishlist && (
-                      <div className="flex justify-between items-center text-xs pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setIsWishlisted(!isWishlisted)}
-                          className={`flex items-center gap-1 font-bold ${
-                            isWishlisted ? 'text-rose-600' : 'text-slate-500 hover:text-slate-900'
-                          }`}
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-rose-600' : ''}`} />
-                          <span className="text-[11px]">{isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
-                        </button>
-                        <button type="button" className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 text-[11px]">
-                          <Share2 className="w-3 h-3" />
-                          <span>Share</span>
-                        </button>
+                    {config.gallery.thumbnailsPosition !== 'hidden' && (
+                      <div className="flex gap-2 overflow-x-auto py-1">
+                        {[
+                          'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=200',
+                          'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=200',
+                          'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=200',
+                        ].map((thumb, idx) => (
+                          <div
+                            key={idx}
+                            className={`w-14 h-18 rounded-xl overflow-hidden border-2 cursor-pointer transition-all shrink-0 ${
+                              idx === 0 ? 'border-rose-600 ring-2 ring-rose-500/30' : 'border-slate-200 opacity-70 hover:opacity-100'
+                            }`}
+                          >
+                            <img src={thumb} alt="Thumb" className="w-full h-full object-cover" />
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {/* Shipping Guarantee */}
-                  {config.purchasePanel.showShippingInfo && (
-                    <div className="pt-2.5 border-t border-slate-200 text-[11px] text-slate-600 flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                      <span>{config.purchasePanel.shippingText}</span>
+                {/* 2. Purchase Panel Simulator */}
+                <div
+                  className={
+                    device === 'mobile'
+                      ? 'w-full'
+                      : config.gallery.galleryWidthPercent >= 60
+                      ? 'col-span-5'
+                      : 'col-span-6'
+                  }
+                >
+                  <div className="space-y-3.5 p-4 sm:p-5 rounded-2xl bg-[#FAF6F2] border border-[#E8DED8]">
+                    {/* Badges */}
+                    {config.purchasePanel.showBadges && (
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200">
+                          Handcrafted Atelier
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          32% OFF
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Brand */}
+                    {config.purchasePanel.showBrand && (
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">
+                        Lumina Haute Couture
+                      </span>
+                    )}
+
+                    {/* Title */}
+                    {config.purchasePanel.showTitle && (
+                      <h2 className="text-lg sm:text-xl font-serif font-black text-slate-900 leading-tight">
+                        Blush Floral Tiered Midi Dress
+                      </h2>
+                    )}
+
+                    {/* Rating */}
+                    {config.purchasePanel.showRating && (
+                      <div className="flex items-center gap-1.5 text-xs text-amber-500">
+                        <Star className="w-3.5 h-3.5 fill-amber-400" />
+                        <span className="font-bold text-slate-900">4.9</span>
+                        <span className="text-slate-400 font-normal text-[11px]">(42 Verified Reviews)</span>
+                      </div>
+                    )}
+
+                    {/* Price */}
+                    {config.purchasePanel.showPrice && (
+                      <div className="flex items-baseline gap-2.5 py-0.5 flex-wrap">
+                        <span className="text-xl font-bold font-mono text-slate-900">$1,499</span>
+                        {config.purchasePanel.showComparePrice && (
+                          <span className="text-xs line-through text-slate-400 font-mono">$2,199</span>
+                        )}
+                        {config.purchasePanel.showDiscount && (
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-black">
+                            32% OFF
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Color Swatches */}
+                    <div className="space-y-1 pt-0.5">
+                      <span className="text-[11px] font-bold uppercase text-slate-900">
+                        Color: <span className="font-normal text-slate-600">{mockSelectedColor}</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {[
+                          { name: 'Rose', hex: '#E8B8B5' },
+                          { name: 'Black', hex: '#0A0A0B' },
+                          { name: 'Emerald', hex: '#064E3B' },
+                        ].map((c) => (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => setMockSelectedColor(c.name)}
+                            className={`w-6 h-6 rounded-full border transition-all ${
+                              mockSelectedColor === c.name ? 'ring-2 ring-rose-500 scale-110' : 'hover:scale-105 opacity-90'
+                            }`}
+                            style={{ backgroundColor: c.hex }}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  )}
+
+                    {/* Size Selector */}
+                    <div className="space-y-1 pt-0.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase text-slate-900">
+                          Size: <span className="font-normal text-slate-600">{mockSelectedSize}</span>
+                        </span>
+                        <button type="button" className="text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                          <Ruler className="w-3 h-3" />
+                          <span>Size Guide</span>
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-5 gap-1">
+                        {['XS', 'S', 'M', 'L', 'XL'].map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setMockSelectedSize(s)}
+                            className={`py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                              mockSelectedSize === s
+                                ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                                : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Actions (Add to Bag / Buy Now) */}
+                    <div className="pt-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {config.purchasePanel.showAddToCart && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAddedToBag(true);
+                              setTimeout(() => setIsAddedToBag(false), 2000);
+                            }}
+                            className={`flex-1 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer ${
+                              isAddedToBag ? 'bg-emerald-600 text-white' : 'bg-slate-950 hover:bg-rose-600 text-white'
+                            }`}
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            <span>{isAddedToBag ? 'Added ✓' : 'Add to Bag'}</span>
+                          </button>
+                        )}
+
+                        {config.purchasePanel.showBuyNow && (
+                          <button
+                            type="button"
+                            className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                          >
+                            <Zap className="w-3.5 h-3.5 fill-white" />
+                            <span>Instant Buy</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Wishlist & Share */}
+                      {config.purchasePanel.showWishlist && (
+                        <div className="flex justify-between items-center text-xs pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setIsWishlisted(!isWishlisted)}
+                            className={`flex items-center gap-1 font-bold ${
+                              isWishlisted ? 'text-rose-600' : 'text-slate-500 hover:text-slate-900'
+                            }`}
+                          >
+                            <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-rose-600' : ''}`} />
+                            <span className="text-[11px]">{isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
+                          </button>
+                          <button type="button" className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 text-[11px]">
+                            <Share2 className="w-3 h-3" />
+                            <span>Share</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Shipping Guarantee */}
+                    {config.purchasePanel.showShippingInfo && (
+                      <div className="pt-2.5 border-t border-slate-200 text-[11px] text-slate-600 flex items-center gap-1.5">
+                        <Truck className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span>{config.purchasePanel.shippingText}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Accordions / Tabs Simulator */}
-            <div className="border-t border-slate-200 pt-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Product Details &amp; Specifications</h4>
-              {config.sections.filter(s => s.enabled).slice(0, 3).map((sec, idx) => (
-                <div key={sec.id || idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
-                  <span className="font-bold text-slate-800">{sec.title}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-              ))}
+              {/* Accordions / Tabs Simulator */}
+              <div className="border-t border-slate-200 pt-4 space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Product Details &amp; Specifications</h4>
+                {config.sections.filter(s => s.enabled).slice(0, 3).map((sec, idx) => (
+                  <div key={sec.id || idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
+                    <span className="font-bold text-slate-800">{sec.title}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* MODAL 1: PRESETS */}
