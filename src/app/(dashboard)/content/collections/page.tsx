@@ -197,6 +197,7 @@ export default function CollectionPageBuilderStudio() {
       const pubDoc: CollectionPageConfig = {
         ...config,
         tenantId: slug,
+        templateId: config.templateId || 'default_fashion',
         version: nextVersion,
         status: 'published',
         publishedAt: new Date().toISOString(),
@@ -220,6 +221,7 @@ export default function CollectionPageBuilderStudio() {
     if (!preset) return;
     const slug = activeTenant?.slug || 'lumina';
     const next = preset.getConfig(slug);
+    next.templateId = preset.id;
     next.status = 'draft';
     setConfig(next);
     pushHistory(next);
@@ -1251,35 +1253,54 @@ export default function CollectionPageBuilderStudio() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-[65vh] overflow-y-auto pr-1">
-              {COLLECTION_PAGE_PRESETS.map((p) => (
-                <div
-                  key={p.id}
-                  className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between"
-                >
-                  <div className="space-y-1.5">
-                    <h4 className="text-sm font-bold text-white">{p.name}</h4>
-                    <p className="text-xs text-slate-400 leading-relaxed">{p.description}</p>
-                  </div>
+              {COLLECTION_PAGE_PRESETS.map((p) => {
+                const isActive = (config.templateId === p.id) || (!config.templateId && p.id === 'default_fashion');
+                return (
+                  <div
+                    key={p.id}
+                    className={`p-4 rounded-xl transition-all space-y-3 flex flex-col justify-between ${
+                      isActive
+                        ? 'bg-gradient-to-b from-slate-900 to-[#141B2D] border-2 border-rose-500 shadow-xl shadow-rose-950/40 ring-1 ring-rose-500/30'
+                        : 'bg-slate-900 border border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-bold text-white">{p.name}</h4>
+                        {isActive && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1.5 shrink-0 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                            Active Preset
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 leading-relaxed">{p.description}</p>
+                    </div>
 
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={() => handleApplyPreset(p.id)}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold transition-all cursor-pointer text-center"
-                    >
-                      Preview in Studio
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleApplyAndPublishPreset(p.id)}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>Apply &amp; Publish</span>
-                    </button>
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset(p.id)}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                          isActive
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                        }`}
+                      >
+                        Preview in Studio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyAndPublishPreset(p.id)}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Apply &amp; Publish</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
