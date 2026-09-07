@@ -28,6 +28,7 @@ import {
   MoveDown,
   ChevronDown,
   Eye,
+  Check,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
@@ -70,7 +71,7 @@ export default function ProductPageBuilder() {
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLivePreviewOpen, setIsLivePreviewOpen] = useState(false); // Default false as requested
+  const [isLivePreviewOpen, setIsLivePreviewOpen] = useState(false); // Default disabled
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
@@ -232,154 +233,119 @@ export default function ProductPageBuilder() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[75vh] flex flex-col items-center justify-center text-slate-100 p-8 space-y-6">
-        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-indigo-500 to-purple-500 animate-pulse z-50" />
-        <div className="w-14 h-14 rounded-full border-2 border-rose-500/20 border-t-rose-500 animate-spin flex items-center justify-center">
-          <Package className="w-6 h-6 text-rose-500 animate-pulse" />
-        </div>
-        <div className="text-center space-y-1">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white">Loading Product Page Studio</h3>
-          <p className="text-xs text-slate-400 font-mono">Resolving {activeTenant?.name || 'store'} template schema...</p>
-        </div>
+      <div className="h-screen bg-[#07090E] flex flex-col items-center justify-center text-slate-400 gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+          Loading {activeTenant?.name ? `${activeTenant.name} ` : ''}Product Detail Studio...
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* 1. TOP HEADER BAR */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div className="space-y-6 select-none">
+      {/* 1. TOP HEADER STUDIO BAR (Matches Collection Page Builder Exactly) */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-800/80 pb-6">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs uppercase font-bold tracking-widest text-rose-400">
-              Visual Headless CMS
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-950/80 text-rose-400 border border-rose-800/60 shadow-sm">
+              Visual PDP Studio
             </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
-              Product Detail Page Studio (PDP)
-            </span>
-            <span className="text-xs text-slate-400 font-mono hidden md:inline">
-              Store: <strong className="text-white">{activeTenant?.name || 'Store'} ({tenantSlug})</strong>
+            <span className="text-xs font-mono text-slate-400">
+              Store: <strong className="text-white">{activeTenant?.name || 'Lumina Atelier'}</strong>{' '}
+              <span className="text-slate-600">({tenantSlug})</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mt-1">Product Detail Page Builder</h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
+            <Package className="w-7 h-7 text-rose-500" />
+            <span>Product Detail Page Builder</span>
+          </h1>
+
+          <p className="text-xs text-slate-400 max-w-2xl mt-1">
             Configure product gallery, buy box, variant swatches, stock alerts, accordions, and customer reviews in real-time.
           </p>
         </div>
 
-        {/* Action Buttons Toolbar */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Device Switcher */}
-          <div className="flex items-center bg-[#161822] p-1 rounded-xl border border-slate-800">
-            <button
-              type="button"
-              onClick={() => setDevice('desktop')}
-              className={`p-1.5 rounded-lg transition-all ${device === 'desktop' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
-              title="Desktop View"
-            >
-              <Monitor className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setDevice('tablet')}
-              className={`p-1.5 rounded-lg transition-all ${device === 'tablet' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
-              title="Tablet View"
-            >
-              <Tablet className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setDevice('mobile')}
-              className={`p-1.5 rounded-lg transition-all ${device === 'mobile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
-              title="Mobile View"
-            >
-              <Smartphone className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Layout Presets */}
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setIsPresetModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30 transition-all cursor-pointer"
-            title="Layout Presets"
+            className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <Sparkles className="w-4 h-4 text-amber-400" />
             <span>Layout Presets</span>
           </button>
 
-          {/* Live Canvas Toggle Button */}
           <button
             type="button"
             onClick={() => setIsLivePreviewOpen(!isLivePreviewOpen)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+            className={`px-3.5 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
               isLivePreviewOpen
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-950/40'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700'
             }`}
-            title={isLivePreviewOpen ? 'Click to hide Live Canvas' : 'Click to enable Live Canvas'}
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>{isLivePreviewOpen ? 'Live Canvas Active' : 'Show Canvas'}</span>
+            <Eye className={`w-4 h-4 ${isLivePreviewOpen ? 'text-white' : 'text-emerald-400'}`} />
+            <span>{isLivePreviewOpen ? 'Live Canvas Active' : 'Live Storefront Preview'}</span>
           </button>
 
-          {/* Undo */}
-          <button
-            type="button"
-            onClick={handleUndo}
-            disabled={historyIndex <= 0}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all disabled:opacity-40 cursor-pointer"
-            title="Undo"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={historyIndex <= 0}
+              className={`p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer ${
+                historyIndex <= 0 ? 'opacity-40 cursor-not-allowed' : ''
+              }`}
+              title="Undo"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleResetToDefault}
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              title="Reset"
+            >
+              <RotateCcw className="w-4 h-4 scale-x-[-1]" />
+            </button>
+          </div>
 
-          {/* Reset */}
-          <button
-            type="button"
-            onClick={handleResetToDefault}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
-            title="Reset to default template"
-          >
-            <RotateCcw className="w-3.5 h-3.5 rotate-180" />
-          </button>
-
-          {/* Version History */}
           <button
             type="button"
             onClick={loadVersionHistory}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
+            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-bold transition-all cursor-pointer"
             title="Version History"
           >
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="w-4 h-4 text-sky-400" />
           </button>
 
-          {/* Save Draft */}
           <button
             type="button"
             onClick={handleSaveDraft}
-            disabled={isSaving || isPublishing}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all disabled:opacity-50 cursor-pointer"
+            disabled={isSaving}
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
           >
-            <Save className="w-3.5 h-3.5" />
+            <Save className="w-4 h-4 text-amber-400" />
             <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
           </button>
 
-          {/* Publish Live */}
           <button
             type="button"
             onClick={handlePublishLive}
-            disabled={isSaving || isPublishing}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50 cursor-pointer"
+            disabled={isPublishing}
+            className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-rose-950/50 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
-            {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             <span>{isPublishing ? 'Publishing...' : 'Publish Live'}</span>
           </button>
         </div>
       </div>
 
-      {/* 2. RESPONSIVE NAVIGATION TABS BAR */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2.5">
+      {/* 2. NAVIGATION PILL TABS (Exact Visual Representation of Collection Page Builder) */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
         {PDP_TABS.map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -388,58 +354,39 @@ export default function ProductPageBuilder() {
               key={t.id}
               type="button"
               onClick={() => setActiveTab(t.id as ActivePdpTab)}
-              className={`p-3 rounded-2xl text-xs font-bold flex items-center justify-start gap-2.5 transition-all cursor-pointer border ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
                 isActive
-                  ? 'bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-lg shadow-rose-950/40 border-rose-400/40'
-                  : 'bg-[#121522] hover:bg-[#181C2B] text-slate-400 hover:text-slate-200 border-slate-800/90'
+                  ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
+                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
               }`}
             >
-              <div className={`p-1.5 rounded-lg shrink-0 ${isActive ? 'bg-white/15 text-white' : 'bg-slate-800/80 text-slate-400'}`}>
-                <Icon className="w-4 h-4" />
-              </div>
-              <span className="leading-tight text-left truncate">{t.label}</span>
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="whitespace-nowrap">{t.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* 3. MAIN WORK AREA (Side-by-Side when Live Canvas is active, Full-Width when closed) */}
+      {/* 3. MAIN WORK AREA (Full Width by default, 2-Column Split when Live Canvas is active) */}
       <div className={`grid grid-cols-1 ${isLivePreviewOpen ? 'lg:grid-cols-12' : 'grid-cols-1'} gap-6 items-start`}>
         {/* SETTINGS CARD CONTAINER */}
-        <div className={`${isLivePreviewOpen ? 'lg:col-span-5' : 'w-full'} space-y-4 bg-[#121522] border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl transition-all duration-300`}>
-          {/* Active Tab Header Banner */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
-            <div className="flex items-center gap-2.5">
-              <span className="px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-400 border border-rose-500/30 text-xs font-bold capitalize">
-                {activeTab.replace(/([A-Z])/g, ' $1')} Configuration
-              </span>
-              <span className="text-[11px] text-slate-400 hidden sm:inline">
-                Fine-tune store layout and interactive behaviors
-              </span>
-            </div>
-            {!isLivePreviewOpen && (
-              <button
-                type="button"
-                onClick={() => setIsLivePreviewOpen(true)}
-                className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
-              >
-                <Eye className="w-3 h-3" />
-                <span>Open Live Canvas</span>
-              </button>
-            )}
-          </div>
-
+        <div className={`${isLivePreviewOpen ? 'lg:col-span-5' : 'w-full'} space-y-4 bg-[#0F1117] border border-slate-800/90 p-5 sm:p-6 rounded-2xl shadow-xl transition-all duration-300`}>
           {/* TAB 1: GALLERY & MEDIA */}
           {activeTab === 'gallery' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-1 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
-                <ImageIcon className="w-4 h-4" />
-                <span>Product Media Gallery Settings</span>
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">Product Media Gallery Settings</h3>
+                  <p className="text-xs text-slate-400">Configure gallery layout, aspect ratios, zoom modes, and thumbnail positioning.</p>
+                </div>
               </div>
 
               <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'} gap-4`}>
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Gallery Layout</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Gallery Layout</label>
                   <select
                     value={config.gallery.layout}
                     onChange={(e) => {
@@ -450,7 +397,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
                   >
                     <option value="left-thumbs">Left Thumbnails (Lookbook Standard)</option>
                     <option value="bottom-thumbs">Bottom Thumbnails</option>
@@ -462,7 +409,7 @@ export default function ProductPageBuilder() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Image Aspect Ratio</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Image Aspect Ratio</label>
                   <select
                     value={config.gallery.aspectRatio}
                     onChange={(e) => {
@@ -473,7 +420,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
                   >
                     <option value="4:5">4:5 Fashion Portrait (Recommended)</option>
                     <option value="1:1">1:1 Square (Studio / Modern)</option>
@@ -483,7 +430,7 @@ export default function ProductPageBuilder() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Zoom Mode</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Zoom Mode</label>
                   <select
                     value={config.gallery.zoomMode}
                     onChange={(e) => {
@@ -494,7 +441,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
                   >
                     <option value="hover">Hover Magnifier</option>
                     <option value="click">Click to Zoom</option>
@@ -504,7 +451,7 @@ export default function ProductPageBuilder() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Thumbnails Position</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Thumbnails Position</label>
                   <select
                     value={config.gallery.thumbnailsPosition}
                     onChange={(e) => {
@@ -515,7 +462,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
                   >
                     <option value="left">Left Side Bar</option>
                     <option value="bottom">Bottom Horizontal Strip</option>
@@ -524,7 +471,7 @@ export default function ProductPageBuilder() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Gallery Width Split</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Gallery Width Split</label>
                   <select
                     value={config.gallery.galleryWidthPercent}
                     onChange={(e) => {
@@ -535,7 +482,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
                   >
                     <option value={50}>50% Gallery / 50% Purchase Box</option>
                     <option value={55}>55% Gallery / 45% Purchase Box (Default)</option>
@@ -545,24 +492,24 @@ export default function ProductPageBuilder() {
                 </div>
 
                 <div className="space-y-1.5 flex flex-col justify-end">
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer h-[42px]">
-                    <div>
-                      <div className="font-semibold text-white">Video Reels &amp; 360</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={config.gallery.enableVideo}
-                      onChange={() => {
-                        const updated = {
-                          ...config,
-                          gallery: { ...config.gallery, enableVideo: !config.gallery.enableVideo },
-                        };
-                        setConfig(updated);
-                        pushHistory(updated);
-                      }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = {
+                        ...config,
+                        gallery: { ...config.gallery, enableVideo: !config.gallery.enableVideo },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className={`w-full py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      config.gallery.enableVideo
+                        ? 'border-emerald-500 bg-emerald-950/30 text-emerald-400'
+                        : 'border-slate-800 bg-[#090D15] text-slate-400'
+                    }`}
+                  >
+                    {config.gallery.enableVideo ? 'Video Reels Enabled' : 'Video Reels Disabled'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -571,25 +518,28 @@ export default function ProductPageBuilder() {
           {/* TAB 2: PURCHASE BOX & BUY BAR */}
           {activeTab === 'purchase' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-1 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
-                <ShoppingBag className="w-4 h-4" />
-                <span>Purchase Panel &amp; Buy Controls</span>
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">Purchase Panel &amp; Buy Controls</h3>
+                  <p className="text-xs text-slate-400">Reorder elements, configure discount formats, and customize action buttons.</p>
+                </div>
               </div>
 
               {/* Elements Reordering Pipeline */}
               <div className="space-y-2">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                   Element Display Pipeline (Order Top to Bottom)
                 </label>
-                <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'} gap-2 max-h-56 overflow-y-auto pr-1 scrollbar-none`}>
+                <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'} gap-2.5 max-h-56 overflow-y-auto pr-1 scrollbar-none`}>
                   {config.purchasePanel.elementsOrder.map((key, idx) => (
                     <div
                       key={key}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 text-xs text-white"
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-white"
                     >
-                      <span className="font-semibold capitalize text-slate-300 text-[11px]">
-                        {idx + 1}. {key.replace(/([A-Z])/g, ' $1')}
-                      </span>
+                      <span className="font-bold capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -614,198 +564,90 @@ export default function ProductPageBuilder() {
               </div>
 
               {/* Action Buttons Toggles */}
-              <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
-                  Purchase Action Elements
+              <div className="pt-4 border-t border-slate-800 space-y-2">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Action Buttons &amp; Dynamic Elements
                 </label>
-
-                <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'} gap-2.5`}>
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">"Add to Bag" Primary CTA</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showAddToCart}
-                      onChange={(e) => {
+                <div className={`grid ${isLivePreviewOpen ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'} gap-3`}>
+                  <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-center">
+                    <span className="text-xs font-bold text-slate-300 block truncate">Add to Cart</span>
+                    <button
+                      type="button"
+                      onClick={() => {
                         const updated = {
                           ...config,
-                          purchasePanel: { ...config.purchasePanel, showAddToCart: e.target.checked },
+                          purchasePanel: { ...config.purchasePanel, showAddToCart: !config.purchasePanel.showAddToCart },
                         };
                         setConfig(updated);
                         pushHistory(updated);
                       }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
+                      className={`w-full py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
+                        config.purchasePanel.showAddToCart ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {config.purchasePanel.showAddToCart ? 'Active (ON)' : 'Hidden'}
+                    </button>
+                  </div>
 
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">"Instant Buy Now" Accelerated CTA</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showBuyNow}
-                      onChange={(e) => {
+                  <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-center">
+                    <span className="text-xs font-bold text-slate-300 block truncate">Instant Buy</span>
+                    <button
+                      type="button"
+                      onClick={() => {
                         const updated = {
                           ...config,
-                          purchasePanel: { ...config.purchasePanel, showBuyNow: e.target.checked },
+                          purchasePanel: { ...config.purchasePanel, showBuyNow: !config.purchasePanel.showBuyNow },
                         };
                         setConfig(updated);
                         pushHistory(updated);
                       }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
+                      className={`w-full py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
+                        config.purchasePanel.showBuyNow ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {config.purchasePanel.showBuyNow ? 'Active (ON)' : 'Hidden'}
+                    </button>
+                  </div>
 
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Wishlist &amp; Social Share</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showWishlist}
-                      onChange={(e) => {
+                  <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-center">
+                    <span className="text-xs font-bold text-slate-300 block truncate">Wishlist</span>
+                    <button
+                      type="button"
+                      onClick={() => {
                         const updated = {
                           ...config,
-                          purchasePanel: { ...config.purchasePanel, showWishlist: e.target.checked },
+                          purchasePanel: { ...config.purchasePanel, showWishlist: !config.purchasePanel.showWishlist },
                         };
                         setConfig(updated);
                         pushHistory(updated);
                       }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
+                      className={`w-full py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
+                        config.purchasePanel.showWishlist ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {config.purchasePanel.showWishlist ? 'Active (ON)' : 'Hidden'}
+                    </button>
+                  </div>
 
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Mobile Sticky Buy Bar</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.mobileStickyBar}
-                      onChange={(e) => {
+                  <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-center">
+                    <span className="text-xs font-bold text-slate-300 block truncate">Sticky Bar</span>
+                    <button
+                      type="button"
+                      onClick={() => {
                         const updated = {
                           ...config,
-                          purchasePanel: { ...config.purchasePanel, mobileStickyBar: e.target.checked },
+                          purchasePanel: { ...config.purchasePanel, mobileStickyBar: !config.purchasePanel.mobileStickyBar },
                         };
                         setConfig(updated);
                         pushHistory(updated);
                       }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Handcrafted / Sale Badges</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showBadges}
-                      onChange={(e) => {
-                        const updated = {
-                          ...config,
-                          purchasePanel: { ...config.purchasePanel, showBadges: e.target.checked },
-                        };
-                        setConfig(updated);
-                        pushHistory(updated);
-                      }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Brand Name Display</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showBrand}
-                      onChange={(e) => {
-                        const updated = {
-                          ...config,
-                          purchasePanel: { ...config.purchasePanel, showBrand: e.target.checked },
-                        };
-                        setConfig(updated);
-                        pushHistory(updated);
-                      }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Star Rating &amp; Review Count</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showRating}
-                      onChange={(e) => {
-                        const updated = {
-                          ...config,
-                          purchasePanel: { ...config.purchasePanel, showRating: e.target.checked },
-                        };
-                        setConfig(updated);
-                        pushHistory(updated);
-                      }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Active Price Display</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showPrice}
-                      onChange={(e) => {
-                        const updated = {
-                          ...config,
-                          purchasePanel: { ...config.purchasePanel, showPrice: e.target.checked },
-                        };
-                        setConfig(updated);
-                        pushHistory(updated);
-                      }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Comparison MSRP (Strikethrough)</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showComparePrice}
-                      onChange={(e) => {
-                        const updated = {
-                          ...config,
-                          purchasePanel: { ...config.purchasePanel, showComparePrice: e.target.checked },
-                        };
-                        setConfig(updated);
-                        pushHistory(updated);
-                      }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Discount Pill (% OFF)</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showDiscount}
-                      onChange={(e) => {
-                        const updated = {
-                          ...config,
-                          purchasePanel: { ...config.purchasePanel, showDiscount: e.target.checked },
-                        };
-                        setConfig(updated);
-                        pushHistory(updated);
-                      }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                    <span className="text-slate-300">Shipping Guarantee Row</span>
-                    <input
-                      type="checkbox"
-                      checked={config.purchasePanel.showShippingInfo}
-                      onChange={(e) => {
-                        const updated = {
-                          ...config,
-                          purchasePanel: { ...config.purchasePanel, showShippingInfo: e.target.checked },
-                        };
-                        setConfig(updated);
-                        pushHistory(updated);
-                      }}
-                      className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                    />
-                  </label>
+                      className={`w-full py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
+                        config.purchasePanel.mobileStickyBar ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {config.purchasePanel.mobileStickyBar ? 'Active (ON)' : 'Hidden'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -814,14 +656,19 @@ export default function ProductPageBuilder() {
           {/* TAB 3: VARIANTS & SWATCHES */}
           {activeTab === 'variants' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-1 text-sky-400 font-bold uppercase tracking-wider text-[11px]">
-                <Palette className="w-4 h-4" />
-                <span>Variants &amp; Swatches Display</span>
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                  <Palette className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">Variants &amp; Swatches Display</h3>
+                  <p className="text-xs text-slate-400">Configure visual display types for color swatches and size button selectors.</p>
+                </div>
               </div>
 
               <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-4`}>
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Color Display Mode</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Color Display Mode</label>
                   <select
                     value={config.purchasePanel.colorDisplayType}
                     onChange={(e) => {
@@ -832,7 +679,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
                   >
                     <option value="swatches">Circular Color Swatches</option>
                     <option value="chips">Text Chips / Pills</option>
@@ -841,7 +688,7 @@ export default function ProductPageBuilder() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">Size Display Mode</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Size Display Mode</label>
                   <select
                     value={config.purchasePanel.sizeDisplayType}
                     onChange={(e) => {
@@ -852,7 +699,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
                   >
                     <option value="buttons">Square Size Grid (XS, S, M, L)</option>
                     <option value="chips">Rounded Size Pills</option>
@@ -866,15 +713,20 @@ export default function ProductPageBuilder() {
           {/* TAB 4: INVENTORY & STOCK */}
           {activeTab === 'inventory' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-1 text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
-                <Boxes className="w-4 h-4" />
-                <span>Inventory &amp; Stock Scarcity</span>
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <Boxes className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">Inventory &amp; Stock Scarcity</h3>
+                  <p className="text-xs text-slate-400">Low stock urgency alerts and out-of-stock behaviors.</p>
+                </div>
               </div>
 
               <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-4`}>
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
-                    Low Stock Alert Threshold (Units)
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Low Stock Alert Threshold
                   </label>
                   <input
                     type="number"
@@ -889,12 +741,12 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                     Out of Stock Behavior
                   </label>
                   <select
@@ -907,7 +759,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white cursor-pointer"
                   >
                     <option value="notifyMe">Notify Me Button (Customer Waitlist)</option>
                     <option value="disabled">Disabled Out of Stock</option>
@@ -922,14 +774,19 @@ export default function ProductPageBuilder() {
           {/* TAB 5: SHIPPING & DELIVERY */}
           {activeTab === 'shipping' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-1 text-pink-400 font-bold uppercase tracking-wider text-[11px]">
-                <Truck className="w-4 h-4" />
-                <span>Shipping &amp; Delivery Guarantees</span>
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">Shipping &amp; Delivery Guarantees</h3>
+                  <p className="text-xs text-slate-400">Postal code delivery estimator, return guarantees, and policies.</p>
+                </div>
               </div>
 
               <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-4`}>
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                     Shipping Policy Banner Text
                   </label>
                   <input
@@ -943,12 +800,12 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300 uppercase tracking-wider block text-[10px]">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                     Return Policy Guarantee Text
                   </label>
                   <input
@@ -962,7 +819,7 @@ export default function ProductPageBuilder() {
                       setConfig(updated);
                       pushHistory(updated);
                     }}
-                    className="w-full p-2.5 bg-[#161822] border border-slate-700 rounded-xl text-white text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
                   />
                 </div>
               </div>
@@ -972,20 +829,25 @@ export default function ProductPageBuilder() {
           {/* TAB 6: TABS & ACCORDIONS */}
           {activeTab === 'details' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-1 text-indigo-400 font-bold uppercase tracking-wider text-[11px]">
-                <Layers className="w-4 h-4" />
-                <span>Product Details, Tabs &amp; Accordions</span>
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">Product Details, Tabs &amp; Accordions</h3>
+                  <p className="text-xs text-slate-400">Configure below-the-fold content blocks, fabric care, and specifications.</p>
+                </div>
               </div>
 
-              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-3`}>
+              <div className="space-y-3">
                 {config.sections.map((sec) => (
                   <div
                     key={sec.id}
-                    className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 text-xs text-white"
+                    className="flex items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-white"
                   >
                     <div>
-                      <span className="font-semibold text-slate-200 block">{sec.title}</span>
-                      <span className="text-[10px] text-slate-500 font-mono">Type: {sec.type}</span>
+                      <span className="font-bold text-sm">{sec.title}</span>
+                      <span className="text-xs text-slate-400 font-mono ml-3">({sec.type})</span>
                     </div>
 
                     <button
@@ -1000,7 +862,7 @@ export default function ProductPageBuilder() {
                         setConfig(updated);
                         pushHistory(updated);
                       }}
-                      className={`px-3 py-1 rounded-lg font-bold text-xs cursor-pointer transition-all ${
+                      className={`px-3.5 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-all ${
                         sec.enabled ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
                       }`}
                     >
@@ -1015,37 +877,36 @@ export default function ProductPageBuilder() {
           {/* TAB 7: REVIEWS */}
           {activeTab === 'reviews' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-1 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
-                <Star className="w-4 h-4" />
-                <span>Customer Reviews &amp; Social Proof</span>
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Star className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">Customer Reviews &amp; Social Proof</h3>
+                  <p className="text-xs text-slate-400">Verified buyer ratings and review submission moderation workflow.</p>
+                </div>
               </div>
 
-              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-3`}>
-                <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-6`}>
+                <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold text-white text-xs">Verified Buyer Badge</h4>
-                    <p className="text-[10px] text-slate-400">Display verified authenticity badge on confirmed purchases.</p>
+                    <h4 className="font-bold text-white text-sm">Verified Buyer Badge</h4>
+                    <p className="text-xs text-slate-400">Display verified authenticity badge on confirmed purchases.</p>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={verifiedBadgeEnabled}
-                    onChange={(e) => setVerifiedBadgeEnabled(e.target.checked)}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <span className="px-3 py-1 rounded-lg bg-emerald-950 text-emerald-400 font-bold text-xs border border-emerald-800">
+                    Active
+                  </span>
+                </div>
 
-                <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold text-white text-xs">Review Submission Moderation</h4>
-                    <p className="text-[10px] text-slate-400">Require tenant admin approval before reviews go live.</p>
+                    <h4 className="font-bold text-white text-sm">Review Submission Moderation</h4>
+                    <p className="text-xs text-slate-400">Require tenant admin approval before reviews go live.</p>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={reviewModerationEnabled}
-                    onChange={(e) => setReviewModerationEnabled(e.target.checked)}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <span className="px-3 py-1 rounded-lg bg-emerald-950 text-emerald-400 font-bold text-xs border border-emerald-800">
+                    Moderated
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -1053,59 +914,86 @@ export default function ProductPageBuilder() {
           {/* TAB 8: RECOMMENDATIONS */}
           {activeTab === 'recommendations' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 pb-1 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
-                <Gift className="w-4 h-4" />
-                <span>Cross-Sell &amp; Recommendation Feeds</span>
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <Gift className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">Cross-Sell &amp; Recommendation Feeds</h3>
+                  <p className="text-xs text-slate-400">Related creations and recently viewed catalog queries.</p>
+                </div>
               </div>
 
-              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-3`}>
-                <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+              <div className={`grid ${isLivePreviewOpen ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-6`}>
+                <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold text-white text-xs">Related Products Carousel</h4>
-                    <p className="text-[10px] text-slate-400">Matches category and style attributes.</p>
+                    <h4 className="font-bold text-white text-sm">Related Products Carousel</h4>
+                    <p className="text-xs text-slate-400">Matches category and style attributes.</p>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={relatedCarouselEnabled}
-                    onChange={(e) => setRelatedCarouselEnabled(e.target.checked)}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <span className="px-3 py-1 rounded-lg bg-emerald-950 text-emerald-400 font-bold text-xs border border-emerald-800">
+                    Active
+                  </span>
+                </div>
 
-                <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
+                <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold text-white text-xs">Recently Viewed Storage</h4>
-                    <p className="text-[10px] text-slate-400">Client-side isolated browser storage.</p>
+                    <h4 className="font-bold text-white text-sm">Recently Viewed Storage</h4>
+                    <p className="text-xs text-slate-400">Client-side isolated browser storage.</p>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={recentlyViewedEnabled}
-                    onChange={(e) => setRecentlyViewedEnabled(e.target.checked)}
-                    className="accent-rose-500 w-4 h-4 rounded cursor-pointer"
-                  />
-                </label>
+                  <span className="px-3 py-1 rounded-lg bg-emerald-950 text-emerald-400 font-bold text-xs border border-emerald-800">
+                    Active
+                  </span>
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* RIGHT LIVE REACTIVE DEVICE CANVAS (Visible ONLY when isLivePreviewOpen is true) */}
+        {/* RIGHT LIVE REACTIVE DEVICE CANVAS (Active only when isLivePreviewOpen is true) */}
         {isLivePreviewOpen && (
-          <div className="lg:col-span-7 bg-[#0A0C10] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-2xl flex flex-col items-center sticky top-6 animate-in fade-in slide-in-from-right-4 duration-200">
-            <div className="w-full text-xs font-mono text-slate-400 flex items-center justify-between mb-3">
-              <span className="font-bold tracking-wider">LIVE PDP STOREFRONT PREVIEW</span>
+          <div className="lg:col-span-7 bg-[#0A0C10] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-2xl flex flex-col items-center sticky top-6 animate-in fade-in duration-200">
+            <div className="w-full text-xs font-mono text-slate-400 flex items-center justify-between mb-4 pb-3 border-b border-slate-800 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                <span className="font-bold text-emerald-400 uppercase tracking-wider">LIVE PDP STOREFRONT PREVIEW</span>
+              </div>
+
               <div className="flex items-center gap-3">
-                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-                  Active Visual Engine
-                </span>
+                {/* Device Switcher */}
+                <div className="flex items-center bg-[#161822] p-1 rounded-xl border border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setDevice('desktop')}
+                    className={`p-1.5 rounded-lg transition-all ${device === 'desktop' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                    title="Desktop View"
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDevice('tablet')}
+                    className={`p-1.5 rounded-lg transition-all ${device === 'tablet' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                    title="Tablet View"
+                  >
+                    <Tablet className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDevice('mobile')}
+                    className={`p-1.5 rounded-lg transition-all ${device === 'mobile' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                    title="Mobile View"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setIsLivePreviewOpen(false)}
-                  className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
                   title="Close Canvas"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -1250,7 +1138,7 @@ export default function ProductPageBuilder() {
                             key={c.name}
                             type="button"
                             onClick={() => setMockSelectedColor(c.name)}
-                            className={`w-6 h-6 rounded-full border transition-all ${
+                            className={`w-6 h-6 rounded-full border transition-all cursor-pointer ${
                               mockSelectedColor === c.name ? 'ring-2 ring-rose-500 scale-110' : 'hover:scale-105 opacity-90'
                             }`}
                             style={{ backgroundColor: c.hex }}
@@ -1265,7 +1153,7 @@ export default function ProductPageBuilder() {
                         <span className="text-[11px] font-bold uppercase text-slate-900">
                           Size: <span className="font-normal text-slate-600">{mockSelectedSize}</span>
                         </span>
-                        <button type="button" className="text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                        <button type="button" className="text-[11px] font-bold text-rose-600 flex items-center gap-1 cursor-pointer">
                           <Ruler className="w-3 h-3" />
                           <span>Size Guide</span>
                         </button>
@@ -1276,7 +1164,7 @@ export default function ProductPageBuilder() {
                             key={s}
                             type="button"
                             onClick={() => setMockSelectedSize(s)}
-                            className={`py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                            className={`py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                               mockSelectedSize === s
                                 ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
                                 : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
@@ -1324,14 +1212,14 @@ export default function ProductPageBuilder() {
                           <button
                             type="button"
                             onClick={() => setIsWishlisted(!isWishlisted)}
-                            className={`flex items-center gap-1 font-bold ${
+                            className={`flex items-center gap-1 font-bold cursor-pointer ${
                               isWishlisted ? 'text-rose-600' : 'text-slate-500 hover:text-slate-900'
                             }`}
                           >
                             <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-rose-600' : ''}`} />
                             <span className="text-[11px]">{isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
                           </button>
-                          <button type="button" className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 text-[11px]">
+                          <button type="button" className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 text-[11px] cursor-pointer">
                             <Share2 className="w-3 h-3" />
                             <span>Share</span>
                           </button>
@@ -1371,7 +1259,7 @@ export default function ProductPageBuilder() {
           <div className="w-full max-w-2xl bg-[#121620] p-6 rounded-2xl border border-slate-800 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-white">Choose a Product Page Preset</h3>
-              <button onClick={() => setIsPresetModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsPresetModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1398,7 +1286,7 @@ export default function ProductPageBuilder() {
           <div className="w-full max-w-lg bg-[#121620] p-6 rounded-2xl border border-slate-800 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-white">PDP Version History</h3>
-              <button onClick={() => setIsVersionModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsVersionModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
