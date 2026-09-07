@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { ContentService } from '@/services/content';
 import { PlatformService } from '@/services/platform';
-import { getTenantStorefrontUrl } from '@/services/api';
+import { getTenantStorefrontUrl, getStorefrontBaseUrl } from '@/services/api';
 import { useToast } from '@/lib/toast-context';
 import { Modal } from '@/components/ui/Modal';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
@@ -169,13 +169,25 @@ export default function PagesManagerPage() {
           </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-md shadow-rose-950/40 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ Create Page</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`${getStorefrontBaseUrl()}/admin/pages`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-bold text-xs rounded-lg shadow-md shadow-rose-950/40 transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Visual Page Builder</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-md shadow-rose-950/40 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Create Page</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-[#161822] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
@@ -210,6 +222,16 @@ export default function PagesManagerPage() {
                 >
                   <Eye className="w-3.5 h-3.5 text-rose-400" />
                   <span>View</span>
+                </a>
+                <a
+                  href={`${getStorefrontBaseUrl()}/admin/pages/${p.slug || p.id}/builder`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white rounded-lg font-bold flex items-center gap-1 shadow-xs"
+                  title="Open in Elementor-style Visual Page Builder"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Visual Builder</span>
                 </a>
                 <button
                   onClick={() => openEditModal(p)}
@@ -402,7 +424,20 @@ export default function PagesManagerPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+              {editingPage ? (
+                <a
+                  href={`${getStorefrontBaseUrl()}/admin/pages/${editingPage.slug || editingPage.id}/builder`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-bold rounded-lg shadow-md transition-all flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Open in Visual Page Builder</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              ) : <div />}
+              <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
@@ -417,6 +452,7 @@ export default function PagesManagerPage() {
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Save &amp; Publish Content</span>
               </button>
+              </div>
             </div>
           </form>
         </Modal>
