@@ -262,6 +262,18 @@ export default function HeaderBuilderStudio() {
       pushHistory(savedConfig);
       setHasUnpublishedChanges(false);
       showToast(`Header configuration for ${slug.toUpperCase()} published live to MongoDB Atlas!`, 'success');
+
+      // Broadcast to storefront live preview
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('jq_header_updated', Date.now().toString());
+        const previewIframe = document.querySelector('iframe') as HTMLIFrameElement;
+        if (previewIframe && previewIframe.contentWindow) {
+          previewIframe.contentWindow.postMessage(
+            { type: 'HEADER_CONFIG_UPDATED', headerConfig: savedConfig },
+            '*'
+          );
+        }
+      }
     } catch (err: any) {
       showToast(err.message || 'Failed to publish header', 'error');
     } finally {
@@ -3682,59 +3694,140 @@ export default function HeaderBuilderStudio() {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1">
-              {Object.entries(LUXURY_PRESET_TEMPLATES).map(([key, template]) => (
-                <div
-                  key={key}
-                  className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 transition-all space-y-3 flex flex-col justify-between"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl">{template.icon}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        {template.name}
-                      </span>
-                    </div>
-                    <h4 className="text-sm font-bold text-white">{template.name}</h4>
-                    <p className="text-xs text-slate-400 leading-relaxed">{template.description}</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const partial = template.getConfig(activeTenant.slug, activeTenant.name);
-                      const next = {
-                        ...config,
-                        ...partial,
-                        announcementBar: {
-                          ...config.announcementBar,
-                          ...(partial.announcementBar || {}),
-                          styles: {
-                            ...config.announcementBar.styles,
-                            ...(partial.announcementBar?.styles || {}),
-                          },
-                          blocks: partial.announcementBar?.blocks || config.announcementBar.blocks,
-                        },
-                        mainHeader: {
-                          ...config.mainHeader,
-                          ...(partial.mainHeader || {}),
-                          styles: {
-                            ...config.mainHeader.styles,
-                            ...(partial.mainHeader?.styles || {}),
-                          },
-                          blocks: partial.mainHeader?.blocks || config.mainHeader.blocks,
-                        },
-                      };
-                      setConfig(next);
-                      pushHistory(next);
-                      setIsTemplatesModalOpen(false);
-                      showToast(`Applied ${template.name} preset archetype!`, 'success');
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+              {Object.entries(LUXURY_PRESET_TEMPLATES).map(([key, template]) => {
+                const activePresetId = (config as any)?.presetId || config.preset;
+                const isActive = activePresetId === key;
+                return (
+                  <div
+                    key={key}
+                    className={`p-4 rounded-xl transition-all space-y-3 flex flex-col justify-between ${
+                      isActive
+                        ? 'bg-gradient-to-b from-slate-900 to-[#141B2D] border-2 border-amber-500 shadow-xl shadow-amber-950/40 ring-1 ring-amber-500/30'
+                        : 'bg-slate-900 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80'
+                    }`}
                   >
-                    Apply {template.name}
-                  </button>
-                </div>
-              ))}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-2xl">{template.icon}</span>
+                        {isActive ? (
+                          <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                            Active Preset
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-slate-800 text-slate-400 border border-slate-700">
+                            {template.name}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-sm font-bold text-white">{template.name}</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">{template.description}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const partial = template.getConfig(activeTenant.slug, activeTenant.name);
+                          const next = {
+                            ...config,
+                            ...partial,
+                            announcementBar: {
+                              ...config.announcementBar,
+                              ...(partial.announcementBar || {}),
+                              styles: {
+                                ...config.announcementBar.styles,
+                                ...(partial.announcementBar?.styles || {}),
+                              },
+                              blocks: partial.announcementBar?.blocks || config.announcementBar.blocks,
+                            },
+                            mainHeader: {
+                              ...config.mainHeader,
+                              ...(partial.mainHeader || {}),
+                              styles: {
+                                ...config.mainHeader.styles,
+                                ...(partial.mainHeader?.styles || {}),
+                              },
+                              blocks: partial.mainHeader?.blocks || config.mainHeader.blocks,
+                            },
+                          } as HeaderConfig;
+                          setConfig(next);
+                          pushHistory(next);
+                          setIsTemplatesModalOpen(false);
+                          showToast(`Loaded ${template.name} into Studio Preview`, 'info');
+                          if (typeof window !== 'undefined') {
+                            window.localStorage.setItem('jq_header_updated', Date.now().toString());
+                          }
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white transition-all text-center"
+                      >
+                        Preview in Studio
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPublishing}
+                        onClick={async () => {
+                          const partial = template.getConfig(activeTenant.slug, activeTenant.name);
+                          const slug = activeTenant.slug || config.tenantSlug || 'lumina';
+                          const next: HeaderConfig = {
+                            ...config,
+                            ...partial,
+                            presetId: key,
+                            tenantSlug: slug,
+                            status: 'published',
+                            updatedAt: new Date().toISOString(),
+                            announcementBar: {
+                              ...config.announcementBar,
+                              ...(partial.announcementBar || {}),
+                              styles: {
+                                ...config.announcementBar.styles,
+                                ...(partial.announcementBar?.styles || {}),
+                              },
+                              blocks: partial.announcementBar?.blocks || config.announcementBar.blocks,
+                            },
+                            mainHeader: {
+                              ...config.mainHeader,
+                              ...(partial.mainHeader || {}),
+                              styles: {
+                                ...config.mainHeader.styles,
+                                ...(partial.mainHeader?.styles || {}),
+                              },
+                              blocks: partial.mainHeader?.blocks || config.mainHeader.blocks,
+                            },
+                          } as HeaderConfig;
+                          setIsPublishing(true);
+                          try {
+                            await ApiClient.put(`/api/v1/content/header?tenant=${slug}`, next);
+                            setConfig(next);
+                            pushHistory(next);
+                            setIsTemplatesModalOpen(false);
+                            setHasUnpublishedChanges(false);
+                            showToast(`Applied & Published ${template.name} header live!`, 'success');
+                            if (typeof window !== 'undefined') {
+                              window.localStorage.setItem('jq_header_updated', Date.now().toString());
+                              const previewIframe = document.querySelector('iframe') as HTMLIFrameElement;
+                              if (previewIframe && previewIframe.contentWindow) {
+                                previewIframe.contentWindow.postMessage(
+                                  { type: 'HEADER_CONFIG_UPDATED', headerConfig: next },
+                                  '*'
+                                );
+                              }
+                            }
+                          } catch (err: any) {
+                            showToast(err?.message || 'Failed to publish preset', 'error');
+                          } finally {
+                            setIsPublishing(false);
+                          }
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-rose-600 hover:opacity-90 transition-all shadow-md shadow-amber-950/50 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Apply &amp; Publish</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

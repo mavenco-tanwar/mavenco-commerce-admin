@@ -101,6 +101,7 @@ export interface HeaderConfig {
   id: string;
   tenantSlug: string;
   preset: 'luxury' | 'classic' | 'centered' | 'editorial' | 'minimal';
+  presetId?: string;
   theme: 'luxury-light' | 'luxury-dark' | 'minimal' | 'editorial' | 'modern' | 'classic';
   campaign?: {
     enabled: boolean;
@@ -222,6 +223,7 @@ export const LUXURY_PRESET_TEMPLATES: Record<string, { name: string; description
     icon: '🏛️',
     getConfig: (tenantSlug: string, name: string = 'Lumina Atelier') => ({
       preset: 'luxury',
+      presetId: 'luxury_flagship',
       theme: 'luxury-light',
       announcementBar: {
         enabled: true,
@@ -313,6 +315,7 @@ export const LUXURY_PRESET_TEMPLATES: Record<string, { name: string; description
     icon: '🛍️',
     getConfig: (tenantSlug: string, name: string = 'Lumina Atelier') => ({
       preset: 'classic',
+      presetId: 'modern_ecommerce',
       theme: 'modern',
       announcementBar: {
         enabled: true,
@@ -399,6 +402,7 @@ export const LUXURY_PRESET_TEMPLATES: Record<string, { name: string; description
     icon: '📰',
     getConfig: (tenantSlug: string, name: string = 'Lumina Atelier') => ({
       preset: 'editorial',
+      presetId: 'editorial_magazine',
       theme: 'editorial',
       announcementBar: {
         enabled: true,
@@ -472,6 +476,7 @@ export const LUXURY_PRESET_TEMPLATES: Record<string, { name: string; description
     icon: '🌐',
     getConfig: (tenantSlug: string, name: string = 'Lumina Atelier') => ({
       preset: 'classic',
+      presetId: 'global_commerce',
       theme: 'modern',
       announcementBar: {
         enabled: true,
@@ -560,6 +565,181 @@ export const LUXURY_PRESET_TEMPLATES: Record<string, { name: string; description
             enabled: true,
             order: 1,
             settings: { mode: 'inline', placeholder: 'Search 10,000+ luxury products...' },
+            responsive: { desktop: { visible: true }, tablet: { visible: true }, mobile: { visible: true } },
+          },
+        ],
+      },
+    }),
+  },
+  minimal_boutique: {
+    name: 'Minimal Boutique',
+    description: 'Ultra-clean white header with centered wordmark, razor-thin border, and icon-only utility bar. Perfect for minimalist fashion and slow-fashion brands.',
+    icon: '🕊️',
+    getConfig: (tenantSlug: string, name: string = 'Lumina Atelier') => ({
+      preset: 'minimal',
+      presetId: 'minimal_boutique',
+      theme: 'minimal',
+      announcementBar: {
+        enabled: true,
+        height: 34,
+        mode: 'static',
+        rotationEnabled: false,
+        rotationInterval: 5,
+        pauseOnHover: true,
+        styles: {
+          backgroundColor: '#FAFAFA',
+          textColor: '#374151',
+          accentColor: '#111827',
+          borderColor: '#E5E7EB',
+          fontSize: '10px',
+          fontFamily: 'Inter, sans-serif',
+          letterSpacing: '0.15em',
+        },
+        blocks: [
+          {
+            id: 'ann_min_1',
+            type: 'announcement',
+            zone: 'announcement.center',
+            enabled: true,
+            order: 1,
+            settings: { text: 'COMPLIMENTARY SHIPPING ON ALL ORDERS OVER £150' },
+            responsive: { desktop: { visible: true }, tablet: { visible: true }, mobile: { visible: true } },
+          },
+        ],
+      },
+      mainHeader: {
+        enabled: true,
+        height: 70,
+        containerWidth: 'contained',
+        maxWidth: 1200,
+        styles: {
+          backgroundColor: '#FFFFFF',
+          textColor: '#111827',
+          hoverColor: '#374151',
+          accentColor: '#111827',
+          borderColor: '#F3F4F6',
+          borderBottomWidth: '1px',
+          shadow: 'none',
+          fontFamily: 'Inter, sans-serif',
+        },
+        blocks: [
+          {
+            id: 'min_nav_left',
+            type: 'navigation',
+            zone: 'main.left',
+            enabled: true,
+            order: 1,
+            settings: { splitSide: 'first-half', label: 'Navigation Left' },
+            responsive: { desktop: { visible: true }, tablet: { visible: false }, mobile: { visible: false } },
+          },
+          {
+            id: 'min_logo_center',
+            type: 'logo',
+            zone: 'main.center',
+            enabled: true,
+            order: 1,
+            settings: { logoText: name.toUpperCase() },
+            responsive: { desktop: { visible: true }, tablet: { visible: true }, mobile: { visible: true } },
+          },
+          {
+            id: 'min_search_right',
+            type: 'search',
+            zone: 'main.right',
+            enabled: true,
+            order: 1,
+            settings: { mode: 'icon-only' },
+            responsive: { desktop: { visible: true }, tablet: { visible: true }, mobile: { visible: true } },
+          },
+        ],
+      },
+    }),
+  },
+  dark_luxury_obsidian: {
+    name: 'Dark Luxury Obsidian',
+    description: 'Sophisticated all-dark header with deep obsidian backdrop, gold accent navigation, and split-menu logo layout. Ideal for premium streetwear and exclusive luxury drops.',
+    icon: '🖤',
+    getConfig: (tenantSlug: string, name: string = 'Lumina Atelier') => ({
+      preset: 'luxury',
+      presetId: 'dark_luxury_obsidian',
+      theme: 'luxury-dark',
+      announcementBar: {
+        enabled: true,
+        height: 36,
+        mode: 'marquee',
+        rotationEnabled: false,
+        rotationInterval: 5,
+        pauseOnHover: true,
+        styles: {
+          backgroundColor: '#000000',
+          textColor: '#D4AF37',
+          accentColor: '#D4AF37',
+          borderColor: 'rgba(212,175,55,0.2)',
+          fontSize: '10px',
+          fontFamily: 'Cinzel, serif',
+          letterSpacing: '0.14em',
+        },
+        blocks: [
+          {
+            id: 'ann_obsidian_1',
+            type: 'announcement',
+            zone: 'announcement.center',
+            enabled: true,
+            order: 1,
+            settings: { text: 'EXCLUSIVE MEMBERS-ONLY DROP • LIMITED TO 100 PIECES WORLDWIDE • REGISTER YOUR INTEREST' },
+            responsive: { desktop: { visible: true }, tablet: { visible: true }, mobile: { visible: true } },
+          },
+        ],
+      },
+      mainHeader: {
+        enabled: true,
+        height: 90,
+        containerWidth: 'contained',
+        maxWidth: 1400,
+        styles: {
+          backgroundColor: '#0A0A0A',
+          textColor: '#FAFAFA',
+          hoverColor: '#D4AF37',
+          accentColor: '#D4AF37',
+          borderColor: 'rgba(212,175,55,0.15)',
+          borderBottomWidth: '1px',
+          shadow: 'none',
+          fontFamily: 'Cinzel, serif',
+        },
+        blocks: [
+          {
+            id: 'obsidian_nav_left',
+            type: 'navigation',
+            zone: 'main.left',
+            enabled: true,
+            order: 1,
+            settings: { splitSide: 'first-half', label: 'Navigation (Left)' },
+            responsive: { desktop: { visible: true }, tablet: { visible: false }, mobile: { visible: false } },
+          },
+          {
+            id: 'obsidian_logo_center',
+            type: 'logo',
+            zone: 'main.center',
+            enabled: true,
+            order: 1,
+            settings: { logoText: name.toUpperCase(), badgeText: '✦ MAISON' },
+            responsive: { desktop: { visible: true }, tablet: { visible: true }, mobile: { visible: true } },
+          },
+          {
+            id: 'obsidian_nav_right',
+            type: 'navigation',
+            zone: 'main.right',
+            enabled: true,
+            order: 1,
+            settings: { splitSide: 'second-half', label: 'Navigation (Right)' },
+            responsive: { desktop: { visible: true }, tablet: { visible: false }, mobile: { visible: false } },
+          },
+          {
+            id: 'obsidian_search_right',
+            type: 'search',
+            zone: 'main.right',
+            enabled: true,
+            order: 2,
+            settings: { mode: 'icon-only' },
             responsive: { desktop: { visible: true }, tablet: { visible: true }, mobile: { visible: true } },
           },
         ],
