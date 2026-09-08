@@ -177,6 +177,7 @@ export default function ThemeBuilderStudio() {
         publishedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      (pubDoc as any).presetId = (theme as any).presetId || 'fashion';
 
       await ApiClient.put(`/api/v1/theme?tenant=${slug}`, pubDoc);
       setTheme(pubDoc);
@@ -226,11 +227,57 @@ export default function ThemeBuilderStudio() {
     const slug = activeTenant?.slug || 'lumina';
     const name = activeTenant?.name || 'Lumina Atelier';
     const newTheme = preset.getTheme(slug, name);
+    (newTheme as any).presetId = preset.id;
     newTheme.status = 'draft';
     setTheme(newTheme);
     pushHistory(newTheme);
     setIsPresetsModalOpen(false);
-    showToast(`Applied ${preset.name} Preset`, 'info');
+
+    // Broadcast to live preview canvas iframe
+    if (typeof window !== 'undefined') {
+      window.postMessage({ type: 'MAVENCO_THEME_PREVIEW', theme: newTheme }, '*');
+    }
+
+    showToast(`Applied ${preset.name} Preset. Click "Publish Live" to deploy to Storefront.`, 'info');
+  };
+
+  const handleApplyAndPublishPreset = async (presetId: string) => {
+    const preset = THEME_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    const slug = activeTenant?.slug || 'lumina';
+    const name = activeTenant?.name || 'Lumina Atelier';
+    const newTheme = preset.getTheme(slug, name);
+    (newTheme as any).presetId = preset.id;
+    const nextVersion = (theme.version || 1) + 1;
+    const pubDoc: ThemeDocument = {
+      ...newTheme,
+      tenantId: slug,
+      version: nextVersion,
+      status: 'published',
+      publishedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    (pubDoc as any).presetId = preset.id;
+
+    setTheme(pubDoc);
+    pushHistory(pubDoc);
+    setIsPresetsModalOpen(false);
+    setIsPublishing(true);
+
+    try {
+      await ApiClient.put(`/api/v1/theme?tenant=${slug}`, pubDoc);
+
+      if (typeof window !== 'undefined') {
+        window.postMessage({ type: 'THEME_UPDATED', theme: pubDoc }, '*');
+        localStorage.setItem('jq_theme_updated', Date.now().toString());
+      }
+
+      showToast(`🎉 ${preset.name} applied & published live to Storefront!`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to publish theme live', 'error');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   // Dynamic CSS Variables
@@ -1124,17 +1171,63 @@ export default function ThemeBuilderStudio() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
-              {THEME_PRESETS.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => handleApplyPreset(p.id)}
-                  className="p-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-rose-500 transition-all cursor-pointer group"
-                >
-                  <h4 className="text-sm font-bold text-white group-hover:text-rose-400 mb-1">{p.name}</h4>
-                  <p className="text-xs text-slate-400">{p.description}</p>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-[65vh] overflow-y-auto pr-1">
+              {THEME_PRESETS.map((p) => {
+                const activePresetId = (theme as any)?.presetId || (
+                  theme.name?.toLowerCase().includes('luxury') ? 'luxury' :
+                  theme.name?.toLowerCase().includes('minimal') ? 'minimal' :
+                  theme.name?.toLowerCase().includes('vibrant') ? 'modern_vibrant' :
+                  theme.name?.toLowerCase().includes('editorial') ? 'editorial' :
+                  theme.name?.toLowerCase().includes('classic') ? 'classic_ecommerce' :
+                  'fashion'
+                );
+                const isActive = activePresetId === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={`p-4 rounded-xl transition-all space-y-3 flex flex-col justify-between ${
+                      isActive
+                        ? 'bg-gradient-to-b from-slate-900 to-[#141B2D] border-2 border-rose-500 shadow-xl shadow-rose-950/40 ring-1 ring-rose-500/30'
+                        : 'bg-slate-900 border border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-bold text-white">{p.name}</h4>
+                        {isActive && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1.5 shrink-0 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                            Active Preset
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 leading-relaxed">{p.description}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset(p.id)}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                          isActive
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                        }`}
+                      >
+                        Preview in Studio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyAndPublishPreset(p.id)}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Apply &amp; Publish</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

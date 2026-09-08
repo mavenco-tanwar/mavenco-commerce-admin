@@ -355,7 +355,11 @@ export const THEME_PRESETS: { id: string; name: string; description: string; get
     id: 'fashion',
     name: 'Fashion & Boutique (JQ Trends / Lumina)',
     description: 'Sophisticated modern couture styling with warm off-white surface, deep charcoal contrast, and elegant Playfair serif titles.',
-    getTheme: (tId, name) => getDefaultTheme(tId, name),
+    getTheme: (tId, name) => {
+      const theme = getDefaultTheme(tId, name);
+      (theme as any).presetId = 'fashion';
+      return theme;
+    },
   },
   {
     id: 'luxury',
@@ -364,6 +368,7 @@ export const THEME_PRESETS: { id: string; name: string; description: string; get
     getTheme: (tId, name) => {
       const theme = getDefaultTheme(tId, name);
       theme.name = `${name} Luxury Atelier`;
+      (theme as any).presetId = 'luxury';
       theme.colors.primary = '#0A0A0B';
       theme.colors.accent = '#D4AF37';
       theme.colors.accentHover = '#B89628';
@@ -397,6 +402,7 @@ export const THEME_PRESETS: { id: string; name: string; description: string; get
     getTheme: (tId, name) => {
       const theme = getDefaultTheme(tId, name);
       theme.name = `${name} Minimalist`;
+      (theme as any).presetId = 'minimal';
       theme.colors.primary = '#000000';
       theme.colors.accent = '#000000';
       theme.colors.accentHover = '#333333';
@@ -422,6 +428,7 @@ export const THEME_PRESETS: { id: string; name: string; description: string; get
     getTheme: (tId, name) => {
       const theme = getDefaultTheme(tId, name);
       theme.name = `${name} Modern Vibrant`;
+      (theme as any).presetId = 'modern_vibrant';
       theme.colors.primary = '#0F172A';
       theme.colors.accent = '#E11D48';
       theme.colors.accentHover = '#BE123C';
@@ -442,6 +449,7 @@ export const THEME_PRESETS: { id: string; name: string; description: string; get
     getTheme: (tId, name) => {
       const theme = getDefaultTheme(tId, name);
       theme.name = `${name} Editorial`;
+      (theme as any).presetId = 'editorial';
       theme.colors.primary = '#292524';
       theme.colors.accent = '#C2410C';
       theme.colors.accentHover = '#9A3412';
@@ -460,6 +468,7 @@ export const THEME_PRESETS: { id: string; name: string; description: string; get
     getTheme: (tId, name) => {
       const theme = getDefaultTheme(tId, name);
       theme.name = `${name} Classic`;
+      (theme as any).presetId = 'classic_ecommerce';
       theme.colors.primary = '#1E3A8A';
       theme.colors.accent = '#10B981';
       theme.colors.accentHover = '#059669';

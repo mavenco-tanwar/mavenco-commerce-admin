@@ -192,6 +192,7 @@ export class ApiClient {
     if (typeof window !== "undefined") {
       const isInternalRoute =
         finalEndpoint.startsWith("/api/v1/content") ||
+        finalEndpoint.startsWith("/api/v1/theme") ||
         finalEndpoint.startsWith("/api/v1/products") ||
         finalEndpoint.startsWith("/api/v1/categories") ||
         finalEndpoint.startsWith("/api/v1/collections") ||
