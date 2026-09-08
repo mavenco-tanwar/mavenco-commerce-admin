@@ -22,6 +22,18 @@ export interface ThemeColors {
   disabled: string;
   white: string;
   black: string;
+  heroBackground?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  headerBackground?: string;
+  headerText?: string;
+  announcementBackground?: string;
+  announcementText?: string;
+  footerBackground?: string;
+  footerHeading?: string;
+  footerText?: string;
+  cardPrice?: string;
+  cardSalePrice?: string;
   gradients?: {
     enabled?: boolean;
     type: 'linear' | 'radial';
