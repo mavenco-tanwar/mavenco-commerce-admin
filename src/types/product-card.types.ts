@@ -4,6 +4,7 @@ export interface ProductCardConfig {
   version?: number;
   status?: 'draft' | 'published';
   name?: string;
+  presetId?: string;
 
   layout: {
     orientation: 'vertical' | 'horizontal' | 'compact' | 'editorial';

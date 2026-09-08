@@ -224,9 +224,18 @@ export default function ProductCardBuilderStudio() {
     try {
       const slug = activeTenant?.slug || config.tenantId || 'lumina';
       const nextVersion = (config.version || 1) + 1;
+      const activePresetId = (config as any)?.presetId || (
+        config.name?.toLowerCase().includes('luxury') || (config.image?.aspectRatio === '4/5' && config.addToCart?.variant === 'outline') ? 'luxury' :
+        config.name?.toLowerCase().includes('minimal') || (config.image?.aspectRatio === '1/1' && config.card?.shadow === 'none') ? 'minimalist' :
+        config.name?.toLowerCase().includes('vibrant') || config.badges?.style === 'pill' ? 'modern_vibrant' :
+        config.name?.toLowerCase().includes('compact') || config.responsive?.desktopColumns === 5 ? 'compact' :
+        config.name?.toLowerCase().includes('editorial') || config.layout?.contentAlignment === 'center' ? 'editorial' :
+        'fashion'
+      );
       const pubDoc: ProductCardConfig = {
         ...config,
         tenantId: slug,
+        presetId: activePresetId,
         version: nextVersion,
         status: 'published',
         publishedAt: new Date().toISOString(),
@@ -237,6 +246,17 @@ export default function ProductCardBuilderStudio() {
       setConfig(pubDoc);
       pushHistory(pubDoc);
       showToast(`Product Card Configuration Version ${nextVersion} published live!`, 'success');
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('jq_product_card_updated', Date.now().toString());
+        const previewIframe = document.querySelector('iframe') as HTMLIFrameElement;
+        if (previewIframe && previewIframe.contentWindow) {
+          previewIframe.contentWindow.postMessage(
+            { type: 'PRODUCT_CARD_UPDATED', productCardConfig: pubDoc },
+            '*'
+          );
+        }
+      }
     } catch (err: any) {
       showToast(err?.message || 'Failed to publish live', 'error');
     } finally {
@@ -244,17 +264,71 @@ export default function ProductCardBuilderStudio() {
     }
   };
 
-  // Apply Preset
+  // Apply Preset (Preview in Studio)
   const handleApplyPreset = (presetId: string) => {
     const preset = PRODUCT_CARD_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
     const slug = activeTenant?.slug || 'lumina';
     const next = preset.getConfig(slug);
     next.status = 'draft';
+    next.presetId = preset.id;
     setConfig(next);
     pushHistory(next);
     setIsPresetsModalOpen(false);
-    showToast(`Applied ${preset.name} Preset`, 'info');
+    showToast(`Loaded ${preset.name} into Studio Preview`, 'info');
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('jq_product_card_updated', Date.now().toString());
+      const previewIframe = document.querySelector('iframe') as HTMLIFrameElement;
+      if (previewIframe && previewIframe.contentWindow) {
+        previewIframe.contentWindow.postMessage(
+          { type: 'PRODUCT_CARD_UPDATED', productCardConfig: next },
+          '*'
+        );
+      }
+    }
+  };
+
+  // Apply & Publish Preset Directly
+  const handleApplyAndPublishPreset = async (presetId: string) => {
+    const preset = PRODUCT_CARD_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    const slug = activeTenant?.slug || config.tenantId || 'lumina';
+    const next = preset.getConfig(slug);
+    const nextVersion = (config.version || 1) + 1;
+    const pubDoc: ProductCardConfig = {
+      ...next,
+      tenantId: slug,
+      presetId: preset.id,
+      version: nextVersion,
+      status: 'published',
+      publishedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setIsPublishing(true);
+    try {
+      await ApiClient.put(`/api/v1/content/product-card?tenant=${slug}`, pubDoc);
+      setConfig(pubDoc);
+      pushHistory(pubDoc);
+      setIsPresetsModalOpen(false);
+      showToast(`Applied & Published ${preset.name} live!`, 'success');
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('jq_product_card_updated', Date.now().toString());
+        const previewIframe = document.querySelector('iframe') as HTMLIFrameElement;
+        if (previewIframe && previewIframe.contentWindow) {
+          previewIframe.contentWindow.postMessage(
+            { type: 'PRODUCT_CARD_UPDATED', productCardConfig: pubDoc },
+            '*'
+          );
+        }
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to publish preset', 'error');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   // Version History Handlers
@@ -1363,17 +1437,60 @@ export default function ProductCardBuilderStudio() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
-              {PRODUCT_CARD_PRESETS.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => handleApplyPreset(p.id)}
-                  className="p-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-rose-500 transition-all cursor-pointer group"
-                >
-                  <h4 className="text-sm font-bold text-white group-hover:text-rose-400 mb-1">{p.name}</h4>
-                  <p className="text-xs text-slate-400">{p.description}</p>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-[65vh] overflow-y-auto pr-1">
+              {PRODUCT_CARD_PRESETS.map((p) => {
+                const activePresetId = (config as any)?.presetId || (
+                  config.name?.toLowerCase().includes('luxury') || (config.image?.aspectRatio === '4/5' && config.addToCart?.variant === 'outline') ? 'luxury' :
+                  config.name?.toLowerCase().includes('minimal') || (config.image?.aspectRatio === '1/1' && config.card?.shadow === 'none') ? 'minimalist' :
+                  config.name?.toLowerCase().includes('vibrant') || config.badges?.style === 'pill' ? 'modern_vibrant' :
+                  config.name?.toLowerCase().includes('compact') || config.responsive?.desktopColumns === 5 ? 'compact' :
+                  config.name?.toLowerCase().includes('editorial') || config.layout?.contentAlignment === 'center' ? 'editorial' :
+                  'fashion'
+                );
+                const isActive = activePresetId === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={`p-4 rounded-xl transition-all space-y-3 flex flex-col justify-between ${
+                      isActive
+                        ? 'bg-gradient-to-b from-slate-900 to-[#141B2D] border-2 border-rose-500 shadow-xl shadow-rose-950/40 ring-1 ring-rose-500/30'
+                        : 'bg-slate-900 border border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-bold text-white">{p.name}</h4>
+                        {isActive && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1.5 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                            Active Preset
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 leading-relaxed">{p.description}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset(p.id)}
+                        className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white transition-all text-center"
+                      >
+                        Preview in Studio
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPublishing}
+                        onClick={() => handleApplyAndPublishPreset(p.id)}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-rose-500 to-amber-500 hover:opacity-90 transition-all shadow-md shadow-rose-950/50 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Apply &amp; Publish</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

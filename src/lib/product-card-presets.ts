@@ -124,7 +124,7 @@ export const PRODUCT_CARD_PRESETS: {
     id: 'fashion',
     name: 'Fashion Boutique (JQ Trends / Lumina)',
     description: '3:4 ratio editorial imagery, second-image hover swap, quick size drawer, and floating wishlist trigger.',
-    getConfig: (tId) => getDefaultProductCardConfig(tId),
+    getConfig: (tId) => { const c = getDefaultProductCardConfig(tId); c.presetId = 'fashion'; return c; },
   },
   {
     id: 'luxury',
@@ -133,6 +133,7 @@ export const PRODUCT_CARD_PRESETS: {
     getConfig: (tId) => {
       const c = getDefaultProductCardConfig(tId);
       c.name = 'Luxury Haute Couture Card';
+      c.presetId = 'luxury';
       c.image.aspectRatio = '4/5';
       c.image.borderRadius = '2px';
       c.card.borderRadius = '4px';
@@ -153,6 +154,7 @@ export const PRODUCT_CARD_PRESETS: {
     getConfig: (tId) => {
       const c = getDefaultProductCardConfig(tId);
       c.name = 'Minimalist Studio Card';
+      c.presetId = 'minimalist';
       c.image.aspectRatio = '1/1';
       c.image.borderRadius = '0px';
       c.card.borderRadius = '0px';
@@ -171,6 +173,7 @@ export const PRODUCT_CARD_PRESETS: {
     getConfig: (tId) => {
       const c = getDefaultProductCardConfig(tId);
       c.name = 'Modern Vibrant Card';
+      c.presetId = 'modern_vibrant';
       c.image.aspectRatio = '4/5';
       c.image.borderRadius = '14px';
       c.card.borderRadius = '18px';
@@ -187,6 +190,7 @@ export const PRODUCT_CARD_PRESETS: {
     getConfig: (tId) => {
       const c = getDefaultProductCardConfig(tId);
       c.name = 'Compact Catalog Card';
+      c.presetId = 'compact';
       c.image.aspectRatio = '1/1';
       c.layout.padding = '10px';
       c.title.fontSize = '12px';
@@ -205,6 +209,7 @@ export const PRODUCT_CARD_PRESETS: {
     getConfig: (tId) => {
       const c = getDefaultProductCardConfig(tId);
       c.name = 'Editorial Story Card';
+      c.presetId = 'editorial';
       c.layout.contentAlignment = 'center';
       c.image.aspectRatio = '3/4';
       c.brand.enabled = true;
