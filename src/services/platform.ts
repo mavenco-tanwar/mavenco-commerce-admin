@@ -405,7 +405,7 @@ export class PlatformService {
 
   public static async fetchTenantsFromDb(): Promise<TenantStore[]> {
     try {
-      const res = await ApiClient.get<TenantStore[]>('/api/v1/platform/tenants');
+      const res = await ApiClient.get<TenantStore[]>('/api/v1/platform/tenants', { bypassCache: true });
       const list = res?.data || [];
       if (Array.isArray(list)) {
         this.saveTenants(list);
@@ -747,7 +747,7 @@ export class PlatformService {
 
   public static async listTenants(): Promise<TenantStore[]> {
     try {
-      const res = await ApiClient.get<any>('/api/v1/platform/tenants');
+      const res = await ApiClient.get<any>('/api/v1/platform/tenants', { bypassCache: true });
       if (res && Array.isArray(res.data)) {
         const dbTenants: TenantStore[] = res.data.map((t: any) => ({
           id: t.id || `store_${t.slug}`,
@@ -1104,17 +1104,18 @@ export class PlatformService {
   public static async deleteTenant(id: string): Promise<boolean> {
     const list = this.loadTenants();
     const tenant = list.find((t) => t.id === id || t.slug === id);
-    if (!tenant) return false;
+    const targetSlugOrId = tenant?.slug || tenant?.id || id;
+    const cleanSlug = targetSlugOrId.replace(/^store_/, '');
 
-    const filtered = list.filter((t) => t.id !== id && t.slug !== id);
+    const filtered = list.filter((t) => t.id !== id && t.slug !== id && t.slug !== cleanSlug);
     this.saveTenants(filtered);
 
     this.logActivity({
       id: `act_${Date.now()}`,
-      event: `Tenant ${tenant.name} (${tenant.databaseName}) was deleted/archived by Superadmin`,
+      event: `Tenant ${tenant?.name || cleanSlug} (${tenant?.databaseName || `tenant_${cleanSlug}`}) was deleted by Superadmin`,
       actor: 'superadmin@mavenco.com',
       tenantId: id,
-      tenantName: tenant.name,
+      tenantName: tenant?.name || cleanSlug,
       ipAddress: '127.0.0.1',
       severity: 'critical',
       timestamp: 'Just now',
@@ -1122,11 +1123,17 @@ export class PlatformService {
 
     // Real-time sync with Database API to delete tenant from platform_tenants_registry & drop tenant DB
     try {
-      await ApiClient.delete(`/api/v1/platform/tenants?tenantId=${encodeURIComponent(tenant.slug || tenant.id)}`);
+      await ApiClient.delete(`/api/v1/platform/tenants?tenantId=${encodeURIComponent(cleanSlug)}&id=${encodeURIComponent(cleanSlug)}&slug=${encodeURIComponent(cleanSlug)}`);
     } catch (err) {
-      console.error("Failed to delete tenant from MongoDB:", err);
+      console.error("Failed to delete tenant from MongoDB via ApiClient, trying direct fetch:", err);
+      try {
+        await fetch(`/api/v1/platform/tenants?tenantId=${encodeURIComponent(cleanSlug)}`, { method: 'DELETE' });
+      } catch (fErr) {
+        console.error("Direct fetch delete also failed:", fErr);
+      }
     }
 
+    ApiClient.clearCache('/api/v1/platform/tenants');
     return true;
   }
 

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getMongoClient } from '@/lib/mongodb';
 
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-slug, X-Tenant-Slug, x-tenant, x-store-id',
   };
 }
 
@@ -16,6 +16,8 @@ export async function OPTIONS() {
 export async function GET() {
   try {
     const db = await getDatabase();
+    const mongoClient = await getMongoClient();
+
     if (db) {
       const [tDocs, rDocs] = await Promise.all([
         db.collection('tenants').find({ status: { $ne: 'deleted' } }).sort({ createdAt: -1 }).toArray(),
@@ -24,17 +26,54 @@ export async function GET() {
 
       const mergedMap = new Map<string, any>();
       for (const t of [...rDocs, ...tDocs]) {
-        const slug = (t.slug || t.id || '').toLowerCase().trim();
+        const slug = (t.slug || t.id || '').toLowerCase().trim().replace(/^store_/, '');
         if (slug && !mergedMap.has(slug)) {
           const { _id, ...clean } = t;
-          mergedMap.set(slug, clean);
+          mergedMap.set(slug, {
+            ...clean,
+            slug,
+            id: clean.id || `store_${slug}`,
+            databaseName: clean.databaseName || `tenant_${slug}`,
+          });
+        }
+      }
+
+      // Discover databases directly from MongoDB cluster
+      if (mongoClient) {
+        try {
+          const dbsList = await mongoClient.db().admin().listDatabases();
+          for (const dbInfo of dbsList.databases || []) {
+            if (dbInfo.name.startsWith('tenant_')) {
+              const slug = dbInfo.name.replace(/^tenant_/, '').toLowerCase().trim();
+              if (slug && !mergedMap.has(slug)) {
+                mergedMap.set(slug, {
+                  id: `store_${slug}`,
+                  slug,
+                  name: slug
+                    .split(/[-_]/)
+                    .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(' '),
+                  status: 'active',
+                  planId: 'plan_pro',
+                  planName: 'Professional',
+                  databaseName: dbInfo.name,
+                  currency: 'USD',
+                  ownerEmail: `admin@${slug}.com`,
+                  ownerName: 'Store Administrator',
+                  primaryDomain: `${slug}.mavenco.cloud`,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                });
+              }
+            }
+          }
+        } catch (listErr) {
+          console.warn('[Admin GET tenants] DB discovery warning:', listErr);
         }
       }
 
       const clean = Array.from(mergedMap.values());
-      if (clean.length > 0) {
-        return NextResponse.json({ data: clean, count: clean.length, source: 'mongodb' }, { headers: corsHeaders() });
-      }
+      return NextResponse.json({ data: clean, count: clean.length, source: 'mongodb' }, { headers: corsHeaders() });
     }
   } catch (err) {
     console.error('Failed to load tenants from MongoDB:', err);
@@ -222,47 +261,153 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const identifier = (searchParams.get('id') || searchParams.get('slug') || '').toLowerCase().trim();
-    if (!identifier) {
-      return NextResponse.json({ error: 'Missing tenant identifier' }, { status: 400, headers: corsHeaders() });
+    const deleteAll = searchParams.get('all') === 'true';
+    let identifier = (
+      searchParams.get('tenantId') ||
+      searchParams.get('id') ||
+      searchParams.get('slug') ||
+      searchParams.get('target') ||
+      ''
+    ).toLowerCase().trim();
+
+    if (!identifier && !deleteAll) {
+      try {
+        const body = await request.json();
+        identifier = (
+          body.tenantId ||
+          body.id ||
+          body.slug ||
+          body.target ||
+          ''
+        ).toLowerCase().trim();
+      } catch {}
     }
 
-    const safeSlug = identifier.replace(/^store_/, '');
-    const now = new Date().toISOString();
+    if (!identifier && !deleteAll) {
+      const qTenant = (searchParams.get('tenant') || '').toLowerCase().trim();
+      if (qTenant && qTenant !== 'all' && qTenant !== 'lumina' && !qTenant.startsWith('_')) {
+        identifier = qTenant;
+      }
+    }
+
+    if (!identifier && !deleteAll) {
+      return NextResponse.json(
+        { success: false, error: 'tenantId, id, or slug is required for deletion' },
+        { status: 400, headers: corsHeaders() }
+      );
+    }
+
     const db = await getDatabase();
+    const mongoClient = await getMongoClient();
+    const now = new Date().toISOString();
+
+    if (deleteAll) {
+      if (db) {
+        await Promise.all([
+          db.collection('tenants').deleteMany({}),
+          db.collection('platform_tenants_registry').deleteMany({}),
+          db.collection('tenant_module_entitlements').deleteMany({}),
+          db.collection('tenant_roles').deleteMany({}),
+          db.collection('storefronts').deleteMany({}),
+          db.collection('storefront_pages').deleteMany({}),
+          db.collection('storefront_versions').deleteMany({}),
+          db.collection('stores').deleteMany({}),
+        ]);
+      }
+      return NextResponse.json({ success: true, message: 'All tenants purged from database' }, { headers: corsHeaders() });
+    }
+
+    const cleanId = identifier.toLowerCase().trim();
+    const safeSlug = cleanId.replace(/^store_/, '');
+
     if (db) {
       const filter = {
         $or: [
-          { slug: identifier },
-          { id: identifier },
+          { slug: cleanId },
+          { id: cleanId },
           { slug: safeSlug },
           { id: `store_${safeSlug}` },
+          { databaseName: `tenant_${safeSlug}` },
+          { databaseIdentifier: `tenant_${safeSlug}` },
         ],
       };
 
+      // 1. Permanently delete from platform_tenants_registry and tenants
       await Promise.all([
-        db.collection('tenants').updateMany(filter, {
-          $set: { status: 'deleted', deletedAt: now, updatedAt: now },
-        }),
-        db.collection('platform_tenants_registry').updateMany(filter, {
-          $set: { status: 'deleted', deletedAt: now, updatedAt: now },
-        }),
+        db.collection('tenants').deleteMany(filter),
+        db.collection('platform_tenants_registry').deleteMany(filter),
       ]);
 
-      // Record activity in MongoDB
+      // 2. Permanently delete merchant users belonging to this tenant
+      await db.collection('users').deleteMany({
+        $or: [
+          { tenantSlug: cleanId },
+          { tenantSlug: safeSlug },
+          { tenantId: cleanId },
+          { tenantId: safeSlug },
+          { tenantId: `store_${safeSlug}` },
+        ],
+      });
+
+      // 3. Permanently delete governance and configuration documents
+      await Promise.allSettled([
+        db.collection('tenant_roles').deleteMany({ $or: [{ tenantId: cleanId }, { tenantId: safeSlug }, { tenantId: `store_${safeSlug}` }] }),
+        db.collection('tenant_module_entitlements').deleteMany({ $or: [{ tenantId: cleanId }, { tenantId: safeSlug }, { tenantId: `store_${safeSlug}` }] }),
+        db.collection('storefronts').deleteMany({ $or: [{ tenantId: cleanId }, { tenantId: safeSlug }, { slug: safeSlug }] }),
+        db.collection('storefront_pages').deleteMany({ $or: [{ tenantId: cleanId }, { tenantId: safeSlug }, { tenantSlug: safeSlug }] }),
+        db.collection('storefront_versions').deleteMany({ $or: [{ tenantId: cleanId }, { tenantId: safeSlug }, { tenantSlug: safeSlug }] }),
+        db.collection('stores').deleteMany({ $or: [{ tenantId: cleanId }, { tenantId: safeSlug }, { slug: safeSlug }, { id: cleanId }] }),
+        db.collection('store_domains').deleteMany({ $or: [{ tenantId: cleanId }, { storeSlug: safeSlug }] }),
+        db.collection('store_environments').deleteMany({ $or: [{ tenantId: cleanId }, { storeSlug: safeSlug }] }),
+      ]);
+
+      // 4. Drop the dedicated tenant database(s) in MongoDB
+      if (mongoClient) {
+        const dbsToDrop = new Set<string>([
+          `tenant_${safeSlug}`,
+          `tenant_${safeSlug.replace(/-/g, '_')}`,
+          `tenant_${safeSlug.replace(/_/g, '-')}`,
+          safeSlug,
+        ]);
+        for (const dbName of dbsToDrop) {
+          try {
+            await mongoClient.db(dbName).dropDatabase();
+            console.log(`[Admin DELETE] Dropped database: ${dbName}`);
+          } catch (dropErr) {
+            console.warn(`[Admin DELETE] Drop DB warning for ${dbName}:`, dropErr);
+          }
+        }
+      }
+
+      // 5. Record activity in MongoDB
       await db.collection('platform_activities').insertOne({
-        event: `Store ${identifier} archived from platform`,
+        event: `Tenant store ${cleanId} (${safeSlug}) and database tenant_${safeSlug} permanently purged by Superadmin`,
         actor: 'superadmin@platform.com',
-        tenantId: identifier,
-        tenantName: identifier,
+        tenantId: `store_${safeSlug}`,
+        tenantName: safeSlug,
         severity: 'critical',
         ipAddress: '127.0.0.1',
         createdAt: now,
       });
+
+      // 6. Notify storefront API
+      const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://mavenco-storefront.vercel.app';
+      try {
+        fetch(`${storefrontUrl}/api/v1/platform/tenants?tenantId=${encodeURIComponent(safeSlug)}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }).catch(() => {});
+      } catch {}
     }
 
-    return NextResponse.json({ success: true, message: 'Tenant archived in database' }, { headers: corsHeaders() });
+    return NextResponse.json({
+      success: true,
+      tenantId: identifier,
+      slug: safeSlug,
+      message: `Tenant '${safeSlug}' and dedicated database 'tenant_${safeSlug}' successfully deleted from MongoDB.`,
+    }, { headers: corsHeaders() });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400, headers: corsHeaders() });
+    console.error('Tenant deletion error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500, headers: corsHeaders() });
   }
 }

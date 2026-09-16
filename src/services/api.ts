@@ -181,9 +181,10 @@ export class ApiClient {
       currentTenantSlug = "jq-trends";
     }
 
-    // Explicitly append tenant query param if not already present
+    // Explicitly append tenant query param if not already present and not a platform-wide route
     let finalEndpoint = endpoint;
-    if (!finalEndpoint.includes("tenant=") && currentTenantSlug) {
+    const isPlatformWide = finalEndpoint.startsWith("/api/v1/platform");
+    if (!isPlatformWide && !finalEndpoint.includes("tenant=") && currentTenantSlug) {
       const sep = finalEndpoint.includes("?") ? "&" : "?";
       finalEndpoint = `${finalEndpoint}${sep}tenant=${encodeURIComponent(currentTenantSlug)}`;
     }
