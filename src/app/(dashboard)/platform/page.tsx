@@ -75,6 +75,141 @@ const ADMIN_BASE_URL = process.env.NEXT_PUBLIC_ADMIN_URL || 'https://mavenco-adm
 
 type TabType = 'overview' | 'tenants' | 'plans' | 'domains' | 'inquiries' | 'activity' | 'reviews';
 
+export interface CategoryBlueprint {
+  id: string;
+  name: string;
+  label: string;
+  tagline: string;
+  primaryColor: string;
+  accentColor: string;
+  planId: string;
+  preset: string;
+  demoStoreSlug: string;
+  description: string;
+  catalogHighlights: string[];
+}
+
+export const CATEGORY_BLUEPRINTS: CategoryBlueprint[] = [
+  {
+    id: 'fashion',
+    name: 'Fashion & Luxury Apparel',
+    label: '👗 Fashion & Luxury Apparel (Atelier & Heritage Sarees)',
+    tagline: 'Curated High-End Designer Fashion, Heritage Sarees & Contemporary Tailoring',
+    primaryColor: '#0F172A',
+    accentColor: '#E11D48',
+    planId: 'plan_enterprise',
+    preset: 'apparel',
+    demoStoreSlug: 'demo-fashion',
+    description: 'Pre-loads luxury lookbook layout: Sticky Glass Navbar, Hero Lookbook Canvas, Silk Sarees, and Velvet Tuxedos.',
+    catalogHighlights: ['Mulberry Silk Sarees', 'Velvet Tuxedo Blazers', 'Chiffon Evening Gowns', 'Italian Calfskin Bags'],
+  },
+  {
+    id: 'electronics',
+    name: 'Electronics & Smart Tech',
+    label: '⚡ Electronics, Gadgets & Audio (ANC Studio & Smart Wearables)',
+    tagline: 'Active Noise Cancelling Studio Audio, Smart Wearables & Flagship Power Docks',
+    primaryColor: '#0A0F1D',
+    accentColor: '#06B6D4',
+    planId: 'plan_pro',
+    preset: 'electronics',
+    demoStoreSlug: 'demo-electronics',
+    description: 'Pre-loads tech layout: Dark Obsidian canvas, Spec comparison tables, GaN fast chargers, and Studio ANC headphones.',
+    catalogHighlights: ['Volt Pro ANC Headphones', 'Titanium GPS Smartwatch', '140W GaN Charging Docks', 'Spatial Soundbars'],
+  },
+  {
+    id: 'home',
+    name: 'Home, Furniture & Living',
+    label: '🛋️ Home, Furniture & Modern Living (Artisanal Decor & Teak)',
+    tagline: 'Artisanal Home Decor, Sustainable Solid Wood Furniture & Scandinavian Interior',
+    primaryColor: '#1C1917',
+    accentColor: '#D97706',
+    planId: 'plan_pro',
+    preset: 'home',
+    demoStoreSlug: 'demo-home',
+    description: 'Pre-loads architectural interior layout: Fluted ceramic vases, Teakwood armchairs, and Nordic wool rugs.',
+    catalogHighlights: ['Fluted Ceramic Vases', 'Teakwood Armchairs', 'Brushed Brass Arc Lamps', 'Handwoven Wool Rugs'],
+  },
+  {
+    id: 'beauty',
+    name: 'Beauty, Cosmetics & Skincare',
+    label: '💄 Beauty, Cosmetics & Skincare (Botanical Serums & Perfumes)',
+    tagline: 'Clean Botanical Serums, Certified Organic Actives & Luxury Fragrances',
+    primaryColor: '#190F16',
+    accentColor: '#EC4899',
+    planId: 'plan_pro',
+    preset: 'beauty',
+    demoStoreSlug: 'demo-beauty',
+    description: 'Pre-loads clean beauty layout: Pastel gradient accents, Botanical Radiance serums, Rose night balms, and Perfumes.',
+    catalogHighlights: ['Vitamin C Radiance Serums', 'Midnight Rose Balms', 'Santal Niche Perfumes', 'Hydrating Peptide Lipsticks'],
+  },
+  {
+    id: 'activewear',
+    name: 'Sports & Activewear',
+    label: '🏃 Sports, Gym & Activewear (Compressive Tights & Carbon Runners)',
+    tagline: 'Engineered Compressive Activewear, Carbon Runners & Training Equipment',
+    primaryColor: '#09090B',
+    accentColor: '#F97316',
+    planId: 'plan_pro',
+    preset: 'activewear',
+    demoStoreSlug: 'demo-fitness',
+    description: 'Pre-loads high-energy athletic layout: Carbon speed runners, Squat-proof tights, and Precision cast kettlebells.',
+    catalogHighlights: ['Apex Seamless Leggings', 'Hyper-Vent Storm Jackets', 'Carbon-Plate Trainers', 'Precision Kettlebells'],
+  },
+  {
+    id: 'jewelry',
+    name: 'Luxury Jewelry & Watches',
+    label: '💎 Luxury Jewelry, Watches & Gems (18K Gold & Solitaires)',
+    tagline: 'Certified Solitaire Diamonds, 18K Solid Gold & Swiss Horological Watches',
+    primaryColor: '#070C18',
+    accentColor: '#EAB308',
+    planId: 'plan_enterprise',
+    preset: 'jewelry',
+    demoStoreSlug: 'demo-jewelry',
+    description: 'Pre-loads imperial jewelry layout: Deep navy background, Floating diamond pendants, and Swiss mechanical watches.',
+    catalogHighlights: ['18K Floating Diamond Pendants', 'Baguette Eternity Bands', 'Swiss Automatic Watches', 'Baroque Pearl Chokers'],
+  },
+  {
+    id: 'grocery',
+    name: 'Gourmet Grocery & Organics',
+    label: '🌿 Gourmet Grocery & Organics (Specialty Coffee & Superfoods)',
+    tagline: 'Single-Estate Specialty Coffee, Extra Virgin Cold-Pressed Oils & Organic Superfoods',
+    primaryColor: '#09160E',
+    accentColor: '#10B981',
+    planId: 'plan_pro',
+    preset: 'grocery',
+    demoStoreSlug: 'demo-grocery',
+    description: 'Pre-loads fresh organic pantry layout: Ethiopian single-estate coffee, Avocado oils, and Uji ceremonial matcha.',
+    catalogHighlights: ['Single-Estate Coffee Beans', 'Cold-Pressed Avocado Oils', 'Uji Ceremonial Matcha', 'Raw Forest Wild Honey'],
+  },
+  {
+    id: 'footwear',
+    name: 'Footwear & Streetwear Sneakers',
+    label: '👟 Footwear & Streetwear Sneakers (Hype High-Tops & Boots)',
+    tagline: 'Limited Edition Retro High-Tops, Performance Runners & Handcrafted Leather Shoes',
+    primaryColor: '#111827',
+    accentColor: '#8B5CF6',
+    planId: 'plan_pro',
+    preset: 'footwear',
+    demoStoreSlug: 'demo-footwear',
+    description: 'Pre-loads hype sneakerhead layout: High-top basketball retros, Sub-200g cloud runners, and Chelsea boots.',
+    catalogHighlights: ['Retro High Hypecourts', 'AeroFoam Cloud Runners', 'Italian Leather Chelsea Boots', 'Canvas Skate Low-Tops'],
+  },
+  {
+    id: 'multipurpose',
+    name: 'Multi-Purpose Universal Megastore',
+    label: '🛍️ Multi-Purpose Universal Megastore (All-in-One Catalog)',
+    tagline: 'The Multi-Purpose Flagship Destination for Fashion, Electronics & Modern Living',
+    primaryColor: '#0F172A',
+    accentColor: '#E11D48',
+    planId: 'plan_enterprise',
+    preset: 'multipurpose',
+    demoStoreSlug: 'demo',
+    description: 'Pre-loads universal flagship layout: Combined multi-department showcase spanning Fashion, Tech, Living, and Sports.',
+    catalogHighlights: ['Silk Banarasi Sarees', 'Volt Studio Audio', 'Fluted Stoneware', 'Retro High Sneakers'],
+  },
+];
+
+
 function PlatformContent() {
   const { showToast } = useToast();
   const router = useRouter();
@@ -234,29 +369,23 @@ function PlatformContent() {
     };
   };
 
-  const handleApplyBlueprint = (sourceSlug: string) => {
-    setBlueprintSource(sourceSlug);
-    if (sourceSlug === 'demo' || sourceSlug === 'flagship') {
-      setPrimaryColor('#0F172A');
-      setAccentColor('#E11D48');
-      setTagline('Curated Luxury Fashion & Contemporary Atelier');
-      showToast('Applied Official Demo Store theme & layout blueprint!', 'success');
-      return;
-    }
-    if (sourceSlug === 'none') {
+  const handleApplyBlueprint = (sourceId: string) => {
+    setBlueprintSource(sourceId);
+    if (sourceId === 'none') {
       showToast('Clean slate selected (manual configuration)', 'info');
       return;
     }
 
-    const sourceTenant = tenants.find((t) => t.slug === sourceSlug);
-    if (sourceTenant) {
-      setPrimaryColor(sourceTenant.theme?.primaryColor || '#0F172A');
-      setAccentColor(sourceTenant.theme?.accentColor || '#E11D48');
-      setTagline(sourceTenant.tagline || 'Curated Modern Lifestyle Brand');
-      if (sourceTenant.planId) {
-        setSelectedPlanId(sourceTenant.planId);
-      }
-      showToast(`Blueprint layout & theme cloned from ${sourceTenant.name}!`, 'info');
+    const bp = CATEGORY_BLUEPRINTS.find((b) => b.id === sourceId);
+    if (bp) {
+      setPrimaryColor(bp.primaryColor);
+      setAccentColor(bp.accentColor);
+      setTagline(bp.tagline);
+      setSelectedPlanId(bp.planId);
+      const defaults = PlatformService.getDefaultFeaturesForPlan(bp.planId);
+      setCustomFeatures(defaults);
+      showToast(`Applied ${bp.name} blueprint preset & default theme!`, 'success');
+      return;
     }
   };
 
@@ -1067,6 +1196,16 @@ function PlatformContent() {
         temporaryPassword: tempPassword,
         features: customFeatures,
       });
+
+      // Automatically seed the new tenant with the chosen category catalog!
+      const chosenBlueprint = CATEGORY_BLUEPRINTS.find((b) => b.id === blueprintSource);
+      if (chosenBlueprint && blueprintSource !== 'none') {
+        try {
+          await PlatformService.seedTenant(newTenant.slug, chosenBlueprint.preset);
+        } catch (seedErr) {
+          console.warn('Post-provision seeding notice:', seedErr);
+        }
+      }
 
       setProvisionedDetails({
         storeName: newTenant.name,
@@ -1914,6 +2053,94 @@ function PlatformContent() {
                 <Plus className="w-4 h-4" />
                 <span>Provision New Store</span>
               </button>
+            </div>
+          </div>
+
+          {/* MULTI-PURPOSE CATEGORY DEMO SHOWCASES (CLIENT PRESENTATION) */}
+          <div className="p-5 bg-[#0E1017] rounded-2xl border border-slate-800 space-y-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Client Presentation Ready
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">9 Multi-Purpose Category Demos</span>
+                </div>
+                <h2 className="text-base font-extrabold text-white mt-1 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Multi-Purpose Category Demo Storefronts</span>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Ready-to-show client storefronts across every major retail industry. Click &apos;View Live Demo&apos; to showcase any category to prospective merchants.
+                </p>
+              </div>
+              <a
+                href={STOREFRONT_BASE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold border border-slate-700 transition-all self-start sm:self-auto"
+              >
+                <Globe className="w-3.5 h-3.5 text-rose-400" />
+                <span>Main Storefront Hub</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {CATEGORY_BLUEPRINTS.map((cat) => {
+                const demoUrl = `${STOREFRONT_BASE_URL}/stores/${cat.demoStoreSlug}`;
+                return (
+                  <div
+                    key={cat.id}
+                    className="p-3.5 rounded-xl bg-[#141724] border border-slate-800/80 hover:border-rose-500/40 transition-all space-y-2.5 flex flex-col justify-between group hover:shadow-lg hover:shadow-rose-950/10"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white group-hover:text-rose-300 transition-colors line-clamp-1">
+                          {cat.label}
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                          LIVE DEMO
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                        {cat.tagline}
+                      </p>
+                      <div className="flex items-center gap-1 flex-wrap pt-1">
+                        {cat.catalogHighlights.slice(0, 3).map((item) => (
+                          <span key={item} className="px-1.5 py-0.5 rounded text-[9px] bg-slate-800/80 text-slate-300 border border-slate-700/50">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                      <a
+                        href={demoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-bold border border-rose-500/30 transition-all"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>View Live Demo</span>
+                      </a>
+                      <button
+                        onClick={() => {
+                          if (typeof navigator !== 'undefined') {
+                            navigator.clipboard.writeText(demoUrl);
+                            showToast(`Copied ${cat.name} demo link to clipboard!`, 'success');
+                          }
+                        }}
+                        title="Copy Demo Storefront Link"
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-all"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -3319,7 +3546,7 @@ function PlatformContent() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-rose-300 flex items-center gap-1.5">
                           <Sparkles className="w-4 h-4 text-rose-400 animate-pulse" />
-                          <span>Storefront Design Blueprint &amp; Default Theme</span>
+                          <span>Storefront Category Blueprint &amp; Industry Theme</span>
                         </span>
                         <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                           BEST PRESET ACTIVE
@@ -3330,21 +3557,44 @@ function PlatformContent() {
                         onChange={(e) => handleApplyBlueprint(e.target.value)}
                         className="w-full p-2.5 bg-[#141724] border border-slate-700 rounded-xl text-xs text-white focus:border-rose-500 focus:outline-hidden font-medium"
                       >
-                        <option value="demo">✨ Clone from Demo Store (Recommended - Best Layout &amp; Theme Preset)</option>
-                        {tenants
-                          .filter((t) => t.slug !== 'demo')
-                          .map((t) => (
-                            <option key={t.slug} value={t.slug}>
-                              🏬 Clone From Existing Store: {t.name} ({t.planName || 'Custom'})
-                            </option>
-                          ))}
+                        {CATEGORY_BLUEPRINTS.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.label}
+                          </option>
+                        ))}
                         <option value="none">🛠️ Custom Clean Slate (Manual Configuration)</option>
                       </select>
 
-                      <div className="p-2.5 rounded-xl bg-gradient-to-r from-rose-950/30 via-[#12141F] to-amber-950/20 border border-rose-500/20 text-[11px] text-slate-300 flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>Pre-loads our <strong>best editorial layout</strong>: Sticky Glass Navbar, Hero Lookbook Canvas, Minimalist Product Cards, and 4-Column Editorial Footer.</span>
-                      </div>
+                      {(() => {
+                        const activeBp = CATEGORY_BLUEPRINTS.find((b) => b.id === blueprintSource) || CATEGORY_BLUEPRINTS[0];
+                        return (
+                          <div className="p-3 rounded-xl bg-gradient-to-r from-rose-950/30 via-[#12141F] to-amber-950/20 border border-rose-500/20 text-[11px] text-slate-300 space-y-2">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span className="flex items-center gap-1.5 font-semibold text-white">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                <span>{activeBp.description}</span>
+                              </span>
+                              <a
+                                href={`${STOREFRONT_BASE_URL}/stores/${activeBp.demoStoreSlug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold transition-all"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>Preview Live Client Demo</span>
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-800/80">
+                              <span className="text-[10px] text-slate-400 font-bold">Catalog Includes:</span>
+                              {activeBp.catalogHighlights.map((tag) => (
+                                <span key={tag} className="px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-300 text-[10px] font-mono border border-slate-700/60">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
