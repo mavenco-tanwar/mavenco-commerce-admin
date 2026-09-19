@@ -63,6 +63,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  SplitSquareVertical,
+  Columns,
+  View,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
@@ -681,10 +684,522 @@ function getDefaultHomepageDocument(tenantSlug: string = 'lumina', storeName: st
   };
 }
 
+/**
+ * SectionVisualRenderer
+ * Faithfully renders each section with real typography, live images, slider arrows/dots,
+ * button placements, orientation, colors, border-radius, and overlays.
+ */
+function SectionVisualRenderer({
+  section,
+  device = 'desktop',
+  onCustomize,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+  canMoveUp = false,
+  canMoveDown = false,
+  showActions = true,
+  activeSlideIdx = 0,
+  onSlideChange,
+}: {
+  section: HomepageSection;
+  device?: 'desktop' | 'tablet' | 'mobile';
+  onCustomize?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onDelete?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  showActions?: boolean;
+  activeSlideIdx?: number;
+  onSlideChange?: (idx: number) => void;
+}) {
+  const [internalSlide, setInternalSlide] = useState(0);
+  const slideIdx = onSlideChange ? activeSlideIdx : internalSlide;
+  const changeSlide = onSlideChange || setInternalSlide;
+
+  const isSecHero =
+    section.type === 'hero' ||
+    section.type === 'slider' ||
+    section.type === 'hero_slider' ||
+    section.type === 'hero-slider';
+
+  const layout = section.data?.layout || (isSecHero ? (section.type === 'hero_slider' ? 'slider' : 'slider') : 'standard');
+  const slides = (section.data?.slides as HeroSlide[]) || [];
+  const curSlide = slides[slideIdx % (slides.length || 1)] || {};
+
+  const bgImg = curSlide.desktopImage || section.data?.desktopImage || section.data?.bgImage || '';
+  const overlayOp =
+    typeof curSlide.overlayOpacity === 'number'
+      ? curSlide.overlayOpacity <= 1
+        ? curSlide.overlayOpacity * 100
+        : curSlide.overlayOpacity
+      : typeof section.data?.overlayOpacity === 'number'
+      ? section.data.overlayOpacity <= 1
+        ? section.data.overlayOpacity * 100
+        : section.data.overlayOpacity
+      : 45;
+
+  const btnPlacement = section.data?.buttonPlacement || section.data?.contentAlign || 'center';
+  const btnOrientation = section.data?.buttonOrientation || 'inline';
+  const btnRadius = section.data?.btnBorderRadius || '8px';
+  const primaryBg = section.data?.primaryBtnColor || '#E11D48';
+  const primaryText = section.data?.primaryBtnTextColor || '#FFFFFF';
+  const secondaryBg = section.data?.secondaryBtnColor || '#FFFFFF';
+  const secondaryText = section.data?.secondaryBtnTextColor || '#111827';
+
+  return (
+    <div className="relative group/section w-full transition-all">
+      {/* Visual Hover Action Toolbar (For Canvas Mode) */}
+      {showActions && (
+        <div className="absolute top-3 right-3 z-30 opacity-0 group-hover/section:opacity-100 transition-all duration-200 flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-950/90 border border-slate-700 shadow-2xl backdrop-blur-md">
+          <span className="text-[10px] font-mono font-bold text-rose-400 px-2 uppercase">
+            {section.name}
+          </span>
+          {onCustomize && (
+            <button
+              onClick={onCustomize}
+              className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1 shadow-sm"
+              title="Customize Section"
+            >
+              <Edit className="w-3 h-3" />
+              <span>Customize</span>
+            </button>
+          )}
+          {onMoveUp && canMoveUp && (
+            <button
+              onClick={onMoveUp}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              title="Move Up"
+            >
+              <MoveUp className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onMoveDown && canMoveDown && (
+            <button
+              onClick={onMoveDown}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              title="Move Down"
+            >
+              <MoveDown className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800"
+              title="Delete Section"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* RENDER BY TYPE */}
+      {/* 1. HERO SECTION / SLIDER */}
+      {isSecHero && (
+        <div
+          className="relative w-full overflow-hidden flex items-center justify-center text-white"
+          style={{
+            minHeight: device === 'mobile' ? '400px' : (section.data?.minHeight || '580px'),
+            backgroundImage: bgImg ? `url('${bgImg}')` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundColor: section.data?.bgColor || '#0F172A',
+            paddingTop: section.data?.paddingTop || '40px',
+            paddingBottom: section.data?.paddingBottom || '40px',
+          }}
+        >
+          {/* Darkening Overlay */}
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              backgroundColor: section.data?.overlayColor || '#000000',
+              opacity: overlayOp / 100,
+            }}
+          />
+
+          {/* Slider Prev / Next Arrows */}
+          {layout === 'slider' && slides.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => changeSlide(slideIdx > 0 ? slideIdx - 1 : slides.length - 1)}
+                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-md flex items-center justify-center text-white border border-white/20 transition-transform hover:scale-110 cursor-pointer shadow-lg"
+              >
+                <ChevronLeft className="w-4 sm:w-5 h-4 sm:h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => changeSlide((slideIdx + 1) % slides.length)}
+                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-md flex items-center justify-center text-white border border-white/20 transition-transform hover:scale-110 cursor-pointer shadow-lg"
+              >
+                <ChevronRight className="w-4 sm:w-5 h-4 sm:h-5" />
+              </button>
+
+              {/* Dots */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
+                {slides.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    type="button"
+                    onClick={() => changeSlide(dotIdx)}
+                    className={`transition-all cursor-pointer ${
+                      slideIdx % slides.length === dotIdx
+                        ? 'w-6 h-1.5 rounded-full bg-rose-500'
+                        : 'w-1.5 h-1.5 rounded-full bg-white/50 hover:bg-white'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Content Container */}
+          {layout === 'split_left' || layout === 'split_right' ? (
+            /* Split Screen Layout */
+            <div className={`relative z-10 w-full max-w-6xl px-6 sm:px-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center ${
+              layout === 'split_left' ? '' : 'md:[&>*:first-child]:order-2'
+            }`}>
+              <div className="rounded-2xl overflow-hidden shadow-2xl aspect-[4/3] relative border border-white/10">
+                <img src={bgImg || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop'} alt="Hero Frame" className="w-full h-full object-cover" />
+                <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/70 backdrop-blur-md text-rose-400 border border-white/10">
+                  {curSlide.tagline || section.data?.tagline || 'ATELIER LUXURY'}
+                </div>
+              </div>
+
+              <div className="space-y-4 text-left">
+                {(curSlide.tagline || section.data?.tagline) && (
+                  <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-rose-600 text-white inline-block shadow-md">
+                    {curSlide.tagline || section.data?.tagline}
+                  </span>
+                )}
+                <h2 className="text-2xl sm:text-4xl font-serif font-black tracking-tight leading-tight drop-shadow-md">
+                  {curSlide.title || section.data?.heading || section.name}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed drop-shadow">
+                  {curSlide.subtitle || section.data?.subheading || section.data?.description}
+                </p>
+
+                <div className={`flex items-center gap-3 pt-2 ${btnOrientation === 'stacked' ? 'flex-col' : 'flex-row flex-wrap'}`}>
+                  {(curSlide.primaryBtnText || section.data?.primaryBtnText) && (
+                    <button
+                      style={{ backgroundColor: primaryBg, color: primaryText, borderRadius: btnRadius }}
+                      className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105"
+                    >
+                      {curSlide.primaryBtnText || section.data?.primaryBtnText}
+                    </button>
+                  )}
+                  {(curSlide.secondaryBtnText || section.data?.secondaryBtnText) && (
+                    <button
+                      style={{ backgroundColor: secondaryBg, color: secondaryText, borderRadius: btnRadius }}
+                      className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105"
+                    >
+                      {curSlide.secondaryBtnText || section.data?.secondaryBtnText}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Centered / Slider / Editorial Standard */
+            <div
+              className={`relative z-10 w-full max-w-4xl px-6 py-8 ${
+                btnPlacement === 'left' ? 'text-left' : btnPlacement === 'right' ? 'text-right' : 'text-center'
+              }`}
+            >
+              {(curSlide.tagline || section.data?.tagline) && (
+                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-rose-600 text-white inline-block mb-3 shadow-lg">
+                  {curSlide.tagline || section.data?.tagline}
+                </span>
+              )}
+
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-serif font-black tracking-tight leading-tight mb-4 drop-shadow-md">
+                {curSlide.title || section.data?.heading || section.name}
+              </h2>
+
+              <p className={`text-xs sm:text-sm text-slate-200 mb-6 leading-relaxed drop-shadow ${
+                btnPlacement === 'center' ? 'max-w-xl mx-auto' : 'max-w-xl'
+              }`}>
+                {curSlide.subtitle || section.data?.subheading || section.data?.description}
+              </p>
+
+              {/* Dual Buttons */}
+              <div
+                className={`flex items-center gap-3 ${
+                  btnPlacement === 'left'
+                    ? 'justify-start'
+                    : btnPlacement === 'right'
+                    ? 'justify-end'
+                    : 'justify-center'
+                } ${btnOrientation === 'stacked' ? 'flex-col' : 'flex-row flex-wrap'}`}
+              >
+                {(curSlide.primaryBtnText || section.data?.primaryBtnText) && (
+                  <button
+                    style={{ backgroundColor: primaryBg, color: primaryText, borderRadius: btnRadius }}
+                    className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    {curSlide.primaryBtnText || section.data?.primaryBtnText}
+                  </button>
+                )}
+
+                {(curSlide.secondaryBtnText || section.data?.secondaryBtnText) && (
+                  <button
+                    style={{ backgroundColor: secondaryBg, color: secondaryText, borderRadius: btnRadius }}
+                    className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    {curSlide.secondaryBtnText || section.data?.secondaryBtnText}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 2. CATEGORIES */}
+      {section.type === 'categories' && (
+        <div className="py-12 px-6 sm:px-12 bg-[#FAFAF9] border-b border-black/5">
+          <div className="text-center max-w-xl mx-auto mb-8">
+            <h2 className="text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Shop By Category'}</h2>
+            <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>
+          </div>
+          <div className={`grid gap-4 ${device === 'mobile' ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            {((section.data?.categoriesList as any[]) || []).map((cat, idx) => (
+              <div
+                key={idx}
+                className="group relative rounded-2xl overflow-hidden aspect-[3/4] bg-slate-200 shadow-md cursor-pointer"
+                style={{ borderRadius: section.data?.cardBorderRadius || '16px' }}
+              >
+                {cat.image && (
+                  <img src={cat.image} alt={cat.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
+                  {cat.badge && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-rose-400 mb-1">{cat.badge}</span>
+                  )}
+                  <span className="font-bold text-sm">{cat.label}</span>
+                  <span className="text-[10px] text-slate-300">{cat.count}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3. PRODUCTS GRID */}
+      {(section.type === 'products_grid' || section.type === 'product_carousel') && (
+        <div className="py-12 px-6 sm:px-12 bg-white border-b border-black/5">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
+                {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
+              </span>
+              <h2 className="text-2xl font-serif font-black text-slate-900 mt-1">
+                {section.data?.heading || 'Featured Essentials'}
+              </h2>
+              <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>
+            </div>
+            {section.data?.showViewAll !== false && (
+              <span className="text-xs font-bold text-rose-600 flex items-center gap-1 cursor-pointer">
+                <span>View Full Catalog</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            )}
+          </div>
+
+          <div className={`grid gap-4 ${
+            device === 'mobile'
+              ? (section.data?.columnsMobile === 2 ? 'grid-cols-2' : 'grid-cols-1')
+              : device === 'tablet'
+              ? 'grid-cols-2'
+              : 'grid-cols-2 sm:grid-cols-4'
+          }`}>
+            {[
+              { title: 'Chanderi Silk Co-ord Set', price: '$280', tag: 'Bestseller', img: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop' },
+              { title: 'Hand-Tailored Linen Trench', price: '$420', tag: 'New Season', img: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=600&auto=format&fit=crop' },
+              { title: 'Pleated Organza Evening Gown', price: '$590', tag: 'Runway', img: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=600&auto=format&fit=crop' },
+              { title: 'Bespoke Atelier Tote Bag', price: '$340', tag: 'Limited', img: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop' },
+            ].slice(0, section.data?.limit || 4).map((prod, pIdx) => (
+              <div key={pIdx} className="group rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 shadow-sm flex flex-col">
+                <div className="aspect-[3/4] relative overflow-hidden bg-slate-200">
+                  <img src={prod.img} alt={prod.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-black/70 text-white backdrop-blur-md">
+                    {prod.tag}
+                  </span>
+                </div>
+                <div className="p-3.5 space-y-1">
+                  <h4 className="font-bold text-xs text-slate-900 truncate">{prod.title}</h4>
+                  <span className="text-xs font-mono font-bold text-rose-600">{prod.price}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 4. VALUE PROPOSITIONS */}
+      {section.type === 'value_props' && (
+        <div className="py-10 px-6 sm:px-12 bg-white border-b border-black/5">
+          <div className={`grid gap-6 ${device === 'mobile' ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-4'}`}>
+            {((section.data?.items as any[]) || []).map((v, idx) => (
+              <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xs text-slate-900">{v.title}</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{v.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 5. PROMOTIONAL BANNER */}
+      {section.type === 'promotional_banner' && (
+        <div
+          className="py-12 px-6 sm:px-12 text-center text-white relative overflow-hidden"
+          style={{ backgroundColor: section.data?.bgColor || '#0F172A' }}
+        >
+          {section.data?.tagline && (
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-400 block mb-2">
+              {section.data.tagline}
+            </span>
+          )}
+          <h2 className="text-xl sm:text-2xl font-serif font-black mb-2">{section.data?.heading}</h2>
+          <p className="text-xs text-slate-300 max-w-xl mx-auto mb-4">{section.data?.description}</p>
+          {section.data?.btnText && (
+            <button className="px-6 py-2.5 rounded-lg bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
+              {section.data.btnText}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 6. SPLIT EDITORIAL */}
+      {section.type === 'image_text' && (
+        <div className="py-12 px-6 sm:px-12 bg-[#FAFAF9] border-b border-black/5">
+          <div className={`max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center ${
+            section.data?.imagePosition === 'right' ? 'md:[&>*:first-child]:order-2' : ''
+          }`}>
+            <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-lg">
+              <img src={section.data?.image || 'https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1200&auto=format&fit=crop'} alt="Story" className="w-full h-full object-cover" />
+            </div>
+            <div className="space-y-3">
+              {section.data?.tagline && (
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">{section.data.tagline}</span>
+              )}
+              <h3 className="text-2xl font-serif font-black text-slate-900">{section.data?.heading}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">{section.data?.description}</p>
+              {section.data?.btnText && (
+                <button className="px-5 py-2 rounded-lg bg-slate-900 text-white font-bold text-xs uppercase tracking-wider">
+                  {section.data.btnText}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. COUNTDOWN */}
+      {section.type === 'countdown' && (
+        <div className="py-12 px-6 sm:px-12 bg-slate-900 text-white text-center">
+          <h3 className="text-xl sm:text-2xl font-serif font-black mb-1">{section.data?.heading}</h3>
+          <p className="text-xs text-slate-300 mb-6">{section.data?.subtitle}</p>
+          <div className="flex items-center justify-center gap-3 font-mono font-bold mb-6">
+            <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
+              <span className="text-lg text-rose-400 block">03</span>
+              <span className="text-[9px] text-slate-400 uppercase">Days</span>
+            </div>
+            <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
+              <span className="text-lg text-rose-400 block">14</span>
+              <span className="text-[9px] text-slate-400 uppercase">Hours</span>
+            </div>
+            <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
+              <span className="text-lg text-rose-400 block">28</span>
+              <span className="text-[9px] text-slate-400 uppercase">Mins</span>
+            </div>
+            <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
+              <span className="text-lg text-rose-400 block">45</span>
+              <span className="text-[9px] text-slate-400 uppercase">Secs</span>
+            </div>
+          </div>
+          {section.data?.btnText && (
+            <button className="px-6 py-2.5 rounded-lg bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
+              {section.data.btnText}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 8. TESTIMONIALS */}
+      {section.type === 'testimonials' && (
+        <div className="py-12 px-6 sm:px-12 bg-[#FAFAF9] border-b border-black/5">
+          <div className="text-center max-w-xl mx-auto mb-8">
+            <h2 className="text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Patron Reflections'}</h2>
+            <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {((section.data?.testimonialsList as any[]) || []).map((t, idx) => (
+              <div key={idx} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-3">
+                <div className="flex items-center gap-1 text-amber-400">
+                  {[...Array(5)].map((_, s) => (
+                    <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <p className="text-xs text-slate-700 italic leading-relaxed">"{t.text}"</p>
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">{t.name}</span>
+                  <span className="text-[10px] text-slate-500">{t.role}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 9. NEWSLETTER */}
+      {section.type === 'newsletter' && (
+        <div className="py-12 px-6 sm:px-12 bg-white text-center border-b border-black/5">
+          <div className="max-w-xl mx-auto space-y-3">
+            <h3 className="text-xl sm:text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Join The Private Circle'}</h3>
+            <p className="text-xs text-slate-600">{section.data?.description}</p>
+            <div className="flex items-center gap-2 max-w-md mx-auto pt-2">
+              <input
+                type="email"
+                placeholder={section.data?.placeholder || 'Enter your email...'}
+                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white"
+                readOnly
+              />
+              <button className="px-5 py-2.5 rounded-xl bg-slate-950 text-white font-bold text-xs uppercase tracking-wider shrink-0">
+                {section.data?.btnText || 'Subscribe'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. SPACER */}
+      {section.type === 'spacer' && (
+        <div
+          className="w-full flex items-center justify-center text-[10px] text-slate-400 font-mono select-none"
+          style={{ height: device === 'mobile' ? (section.data?.heightMobile || '30px') : (section.data?.heightDesktop || '60px') }}
+        >
+          <span className="opacity-40">--- Spacer ({device === 'mobile' ? (section.data?.heightMobile || '30px') : (section.data?.heightDesktop || '60px')}) ---</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HomepageBuilderStudio() {
   const { showToast } = useToast();
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [activeTab, setActiveTab] = useState<'canvas' | 'library' | 'catalog' | 'responsive' | 'seo'>('canvas');
+  const [canvasViewMode, setCanvasViewMode] = useState<'split' | 'visual' | 'pipeline'>('split');
   const [activeTenant, setActiveTenant] = useState(PlatformService.getActiveTenant());
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -692,13 +1207,9 @@ export default function HomepageBuilderStudio() {
 
   // Modals & State
   const [isLivePreviewOpen, setIsLivePreviewOpen] = useState(false);
-  const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
-  const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<HomepageSection | null>(null);
   const [inspectorTab, setInspectorTab] = useState<'layout' | 'content' | 'styles' | 'responsive'>('layout');
   const [activeSlideIdx, setActiveSlideIdx] = useState<number>(0);
-  const [simulatorSlideIdx, setSimulatorSlideIdx] = useState<number>(0);
-  const [versionHistory, setVersionHistory] = useState<any[]>([]);
 
   // Core Configuration State
   const [doc, setDoc] = useState<HomepageDocument>(getDefaultHomepageDocument('lumina', 'Lumina Atelier'));
@@ -878,6 +1389,9 @@ export default function HomepageBuilderStudio() {
     const next = { ...doc, sections: nextSections };
     setDoc(next);
     pushHistory(next);
+    if (editingSection?.id === secId) {
+      setEditingSection(null);
+    }
     showToast('Section removed', 'info');
   };
 
@@ -1075,7 +1589,11 @@ export default function HomepageBuilderStudio() {
     editingSection?.type === 'hero_slider' ||
     editingSection?.type === 'hero-slider';
 
-  const isSliderMode = isHeroOrSlider && (editingSection?.data?.layout === 'slider' || editingSection?.type === 'hero_slider' || editingSection?.type === 'slider');
+  const isSliderMode =
+    isHeroOrSlider &&
+    (editingSection?.data?.layout === 'slider' ||
+      editingSection?.type === 'hero_slider' ||
+      editingSection?.type === 'slider');
 
   return (
     <div className="min-h-screen bg-[#07090E] text-slate-100 flex flex-col font-sans">
@@ -1089,16 +1607,16 @@ export default function HomepageBuilderStudio() {
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-bold tracking-wide text-white">Homepage Visual Studio</h1>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                PRO BUILDER
+                WYSIWYG LIVE BUILDER
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Tenant: <span className="text-slate-200 font-semibold">{activeTenant?.name || doc.tenantSlug}</span> &bull; {doc.sections.length} Sections Configured
+              Store: <span className="text-slate-200 font-semibold">{activeTenant?.name || doc.tenantSlug}</span> &bull; {doc.sections.length} Sections Configured
             </p>
           </div>
         </div>
 
-        {/* Center Device & Preview Controls */}
+        {/* Center Device Viewport Switcher */}
         <div className="hidden md:flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/90 border border-slate-800">
           <button
             onClick={() => setDevice('desktop')}
@@ -1129,7 +1647,7 @@ export default function HomepageBuilderStudio() {
           </button>
         </div>
 
-        {/* Right Actions */}
+        {/* Right Action Buttons */}
         <div className="flex items-center gap-2">
           {/* History Undo / Redo */}
           <div className="hidden sm:flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800 mr-2">
@@ -1160,7 +1678,7 @@ export default function HomepageBuilderStudio() {
             className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-2 transition-all shadow-sm"
           >
             <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Live Simulator</span>
+            <span className="hidden sm:inline">Fullscreen Simulator</span>
           </button>
 
           <button
@@ -1183,254 +1701,434 @@ export default function HomepageBuilderStudio() {
         </div>
       </header>
 
-      {/* 2. SUB NAVIGATION TABS */}
-      <div className="bg-[#0A0E17] border-b border-slate-800/80 px-4 sm:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
-        <button
-          onClick={() => setActiveTab('canvas')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-            activeTab === 'canvas'
-              ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
-              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>Canvas &amp; Section Layout ({doc.sections.length})</span>
-        </button>
+      {/* 2. SUB-NAVIGATION & VIEW MODE BAR */}
+      <div className="bg-[#0A0E17] border-b border-slate-800/80 px-4 sm:px-8 py-2.5 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
+        {/* Main Tabs */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setActiveTab('canvas')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+              activeTab === 'canvas'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Studio Canvas ({doc.sections.length})</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('library')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-            activeTab === 'library'
-              ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
-              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
-          }`}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Section Library</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('library')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+              activeTab === 'library'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Component Library</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('catalog')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-            activeTab === 'catalog'
-              ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
-              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
-          }`}
-        >
-          <ShoppingBag className="w-4 h-4" />
-          <span>Catalog Binding</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('catalog')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+              activeTab === 'catalog'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Catalog Binding</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('responsive')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-            activeTab === 'responsive'
-              ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
-              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
-          }`}
-        >
-          <Smartphone className="w-4 h-4" />
-          <span>Responsive Viewports</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('responsive')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+              activeTab === 'responsive'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <Smartphone className="w-4 h-4" />
+            <span>Responsive Viewports</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('seo')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-            activeTab === 'seo'
-              ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
-              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
-          }`}
-        >
-          <Search className="w-4 h-4" />
-          <span>SEO &amp; Social Graph</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('seo')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+              activeTab === 'seo'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <Search className="w-4 h-4" />
+            <span>SEO &amp; Social</span>
+          </button>
+        </div>
+
+        {/* Visual Studio View Mode Segmented Controls (When on Canvas Tab) */}
+        {activeTab === 'canvas' && (
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 shrink-0">
+            <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider hidden xl:inline">
+              Canvas View:
+            </span>
+            <button
+              onClick={() => setCanvasViewMode('split')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                canvasViewMode === 'split'
+                  ? 'bg-slate-800 text-rose-400 border border-rose-500/30'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Split View: Drag Pipeline on Left + Live Visual Viewport on Right"
+            >
+              <SplitSquareVertical className="w-3.5 h-3.5" />
+              <span>Split Studio</span>
+            </button>
+
+            <button
+              onClick={() => setCanvasViewMode('visual')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                canvasViewMode === 'visual'
+                  ? 'bg-slate-800 text-rose-400 border border-rose-500/30'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Full Visual WYSIWYG Viewport"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Visual Canvas</span>
+            </button>
+
+            <button
+              onClick={() => setCanvasViewMode('pipeline')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                canvasViewMode === 'pipeline'
+                  ? 'bg-slate-800 text-rose-400 border border-rose-500/30'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Pipeline List for Quick Drag and Drop"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Pipeline List</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 3. MAIN WORKSPACE CONTENT */}
-      <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
-        {/* TAB 1: CANVAS SECTION LIST (DRAG AND DROP) */}
+      <main className="flex-1 p-3 sm:p-6 w-full mx-auto space-y-6">
+        {/* TAB 1: CANVAS - SPLIT / VISUAL / PIPELINE */}
         {activeTab === 'canvas' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div>
-                <h2 className="text-base font-bold text-white tracking-wide">Homepage Section Pipeline</h2>
-                <p className="text-xs text-slate-400">
-                  Drag and drop to reorder sections. Click <span className="text-rose-400 font-bold">Customize</span> to edit layouts, slides, buttons, backgrounds, and styling.
-                </p>
-              </div>
-              <button
-                onClick={() => setActiveTab('library')}
-                className="px-4 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Section</span>
-              </button>
-            </div>
+          <div className="w-full">
+            {/* SPLIT STUDIO MODE: Pipeline on Left, Real-Time Interactive Visual Viewport on Right */}
+            {canvasViewMode === 'split' && (
+              <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
+                {/* Left Side: Pipeline List (400px wide) */}
+                <div className="w-full lg:w-[420px] shrink-0 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <div>
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-white">
+                        Section Structure ({doc.sections.length})
+                      </h2>
+                      <p className="text-[11px] text-slate-400">
+                        Drag to reorder. Click Customize to edit.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('library')}
+                      className="px-2.5 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1 transition-all"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>+ Add</span>
+                    </button>
+                  </div>
 
-            <div className="space-y-3.5">
-              {doc.sections.map((section, sIdx) => {
-                const isSecHero =
-                  section.type === 'hero' ||
-                  section.type === 'slider' ||
-                  section.type === 'hero_slider' ||
-                  section.type === 'hero-slider';
-                const currentLayout = section.data?.layout || (isSecHero ? 'slider' : 'standard');
-                const slideCount = section.data?.slides?.length || (isSecHero ? 1 : 0);
+                  <div className="space-y-2.5 max-h-[calc(100vh-210px)] overflow-y-auto pr-1">
+                    {doc.sections.map((section, sIdx) => {
+                      const isSecHero =
+                        section.type === 'hero' ||
+                        section.type === 'slider' ||
+                        section.type === 'hero_slider' ||
+                        section.type === 'hero-slider';
+                      const currentLayout = section.data?.layout || (isSecHero ? 'slider' : 'standard');
 
-                return (
-                  <div
-                    key={section.id}
-                    draggable={true}
-                    onDragStart={() => handleDragStart(sIdx)}
-                    onDragOver={(e) => handleDragOver(e, sIdx)}
-                    onDrop={() => handleDrop(sIdx)}
-                    className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                      draggedSectionIndex === sIdx
-                        ? 'opacity-40 scale-95 border-rose-500 bg-rose-950/20'
-                        : dragOverIndex === sIdx
-                        ? 'border-t-2 border-t-rose-500 bg-slate-800/80'
-                        : section.enabled
-                        ? 'bg-[#0D111A] border-slate-800/90 shadow-xl hover:border-slate-700'
-                        : 'bg-slate-950/40 border-dashed border-slate-800/60 opacity-60'
-                    }`}
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      {/* Left Drag & Meta */}
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <GripVertical className="w-4 h-4 text-slate-600 cursor-grab active:cursor-grabbing hover:text-slate-300" />
-                          <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/80 flex items-center justify-center font-bold text-xs text-rose-400">
-                            {section.badge || sIdx + 1}
+                      return (
+                        <div
+                          key={section.id}
+                          draggable={true}
+                          onDragStart={() => handleDragStart(sIdx)}
+                          onDragOver={(e) => handleDragOver(e, sIdx)}
+                          onDrop={() => handleDrop(sIdx)}
+                          className={`p-3.5 rounded-xl border transition-all ${
+                            draggedSectionIndex === sIdx
+                              ? 'opacity-40 scale-95 border-rose-500 bg-rose-950/20'
+                              : dragOverIndex === sIdx
+                              ? 'border-t-2 border-t-rose-500 bg-slate-800'
+                              : section.enabled
+                              ? 'bg-[#0D111A] border-slate-800/90 shadow-md hover:border-slate-700'
+                              : 'bg-slate-950/40 border-dashed border-slate-800/60 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <GripVertical className="w-4 h-4 text-slate-600 cursor-grab active:cursor-grabbing hover:text-slate-300 shrink-0" />
+                              <div className="w-6 h-6 rounded-lg bg-slate-800 border border-slate-700 text-rose-400 font-bold text-xs flex items-center justify-center font-mono shrink-0">
+                                {sIdx + 1}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <h4 className="text-xs font-bold text-white truncate max-w-[150px]">
+                                    {section.name}
+                                  </h4>
+                                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 uppercase">
+                                    {section.type}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-400 truncate">
+                                  {isSecHero ? `Layout: ${currentLayout.toUpperCase()}` : section.data?.heading || section.subtitle || 'Component'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => handleOpenInspector(section)}
+                                className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold flex items-center gap-1 transition-all shadow-sm"
+                              >
+                                <Edit className="w-3 h-3" />
+                                <span>Customize</span>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  const next = {
+                                    ...doc,
+                                    sections: doc.sections.map((s) => (s.id === section.id ? { ...s, enabled: !s.enabled } : s)),
+                                  };
+                                  setDoc(next);
+                                  pushHistory(next);
+                                }}
+                                className="p-1 rounded-lg text-slate-400 hover:text-white"
+                                title={section.enabled ? 'Hide Section' : 'Show Section'}
+                              >
+                                {section.enabled ? (
+                                  <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                                ) : (
+                                  <EyeOff className="w-3.5 h-3.5 text-rose-400" />
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-white tracking-wide truncate">{section.name}</h3>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-slate-800 text-slate-400 border border-slate-700">
-                              {section.type}
-                            </span>
-                            {/* Visual Layout Pills */}
-                            {isSecHero && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                                {currentLayout.toUpperCase()} {currentLayout === 'slider' ? `(${slideCount} SLIDES)` : ''}
-                              </span>
-                            )}
-                            {section.data?.buttonPlacement && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                                BTN: {section.data.buttonPlacement} ({section.data.buttonOrientation || 'inline'})
-                              </span>
-                            )}
-                            {section.data?.querySource && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                SOURCE: {section.data.querySource}
-                              </span>
-                            )}
-                            {section.data?.categoriesList && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                                {section.data.categoriesList.length} CATEGORIES
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-slate-400 truncate mt-0.5">
-                            {section.subtitle || section.data?.heading || 'Configurable homepage component'}
-                          </p>
-                        </div>
-                      </div>
+                {/* Right Side: Embedded Live Real-Time Interactive Visual Viewport */}
+                <div className="flex-1 min-w-0 bg-[#080B12] border border-slate-800/90 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+                  {/* Viewport Header Bar */}
+                  <div className="h-12 bg-slate-900/90 border-b border-slate-800 px-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                        Live Storefront Viewport
+                      </span>
+                      <span className="text-[10px] text-slate-400 hidden sm:inline">
+                        (WYSIWYG Interactive Rendering &bull; Hover any section to customize)
+                      </span>
+                    </div>
 
-                      {/* Right Action Controls */}
-                      <div className="flex items-center gap-2 flex-wrap shrink-0">
-                        {/* Reorder Up / Down */}
-                        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800">
-                          <button
-                            onClick={() => handleMoveSection(sIdx, 'up')}
-                            disabled={sIdx === 0}
-                            className={`p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 ${
-                              sIdx === 0 ? 'opacity-30 cursor-not-allowed' : ''
-                            }`}
-                            title="Move Section Up"
-                          >
-                            <MoveUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleMoveSection(sIdx, 'down')}
-                            disabled={sIdx === doc.sections.length - 1}
-                            className={`p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 ${
-                              sIdx === doc.sections.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
-                            }`}
-                            title="Move Section Down"
-                          >
-                            <MoveDown className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        {/* Duplicate */}
-                        <button
-                          onClick={() => handleDuplicateSection(section.id)}
-                          className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
-                          title="Duplicate Section"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Toggle Visibility */}
-                        <button
-                          onClick={() => {
-                            const next = {
-                              ...doc,
-                              sections: doc.sections.map((s) => (s.id === section.id ? { ...s, enabled: !s.enabled } : s)),
-                            };
-                            setDoc(next);
-                            pushHistory(next);
-                          }}
-                          className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
-                          title={section.enabled ? 'Hide Section' : 'Show Section'}
-                        >
-                          {section.enabled ? (
-                            <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                          ) : (
-                            <EyeOff className="w-3.5 h-3.5 text-rose-400" />
-                          )}
-                        </button>
-
-                        {/* Customize Inspector Button */}
-                        <button
-                          onClick={() => handleOpenInspector(section)}
-                          className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white hover:bg-rose-500 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-rose-950/40"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                          <span>Customize</span>
-                        </button>
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => handleDeleteSection(section.id)}
-                          className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-rose-400 transition-colors"
-                          title="Delete Section"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                    <div className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-950 border border-slate-800">
+                      <button
+                        onClick={() => setDevice('desktop')}
+                        className={`p-1 rounded ${device === 'desktop' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        title="Desktop View"
+                      >
+                        <Monitor className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDevice('tablet')}
+                        className={`p-1 rounded ${device === 'tablet' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        title="Tablet View"
+                      >
+                        <Tablet className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDevice('mobile')}
+                        className={`p-1 rounded ${device === 'mobile' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        title="Mobile View"
+                      >
+                        <Smartphone className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                );
-              })}
 
-              {/* Add Section Prompt at bottom */}
-              <div className="flex justify-center pt-4">
-                <button
-                  onClick={() => setActiveTab('library')}
-                  className="px-6 py-3.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border-2 border-dashed border-slate-800 hover:border-rose-500/50 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg group"
-                >
-                  <Plus className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
-                  <span>Add Another Component to Homepage</span>
-                </button>
+                  {/* Viewport Body */}
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-black/60 flex flex-col items-center justify-start min-h-[600px] max-h-[calc(100vh-220px)]">
+                    <div
+                      className={`transition-all duration-300 bg-[#FAFAF9] rounded-2xl shadow-2xl overflow-hidden border border-white/10 w-full ${
+                        device === 'desktop'
+                          ? 'max-w-5xl'
+                          : device === 'tablet'
+                          ? 'max-w-[768px]'
+                          : 'max-w-[390px]'
+                      }`}
+                    >
+                      {doc.sections
+                        .filter((s) => s.enabled)
+                        .map((sec, sIdx) => (
+                          <SectionVisualRenderer
+                            key={sec.id}
+                            section={sec}
+                            device={device}
+                            onCustomize={() => handleOpenInspector(sec)}
+                            onMoveUp={() => handleMoveSection(sIdx, 'up')}
+                            onMoveDown={() => handleMoveSection(sIdx, 'down')}
+                            onDelete={() => handleDeleteSection(sec.id)}
+                            canMoveUp={sIdx > 0}
+                            canMoveDown={sIdx < doc.sections.length - 1}
+                            showActions={true}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* FULL VISUAL CANVAS MODE */}
+            {canvasViewMode === 'visual' && (
+              <div className="w-full flex flex-col items-center justify-start space-y-4">
+                <div className="flex items-center justify-between w-full max-w-5xl pb-2 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                      Storefront Live Interactive Canvas
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Hover any section to move, customize, or reconfigure.
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveTab('library')}
+                    className="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-950"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Insert Component</span>
+                  </button>
+                </div>
+
+                <div
+                  className={`transition-all duration-300 bg-[#FAFAF9] rounded-2xl shadow-2xl overflow-hidden border border-white/10 w-full ${
+                    device === 'desktop'
+                      ? 'max-w-5xl'
+                      : device === 'tablet'
+                      ? 'max-w-[768px]'
+                      : 'max-w-[390px]'
+                  }`}
+                >
+                  {doc.sections
+                    .filter((s) => s.enabled)
+                    .map((sec, sIdx) => (
+                      <SectionVisualRenderer
+                        key={sec.id}
+                        section={sec}
+                        device={device}
+                        onCustomize={() => handleOpenInspector(sec)}
+                        onMoveUp={() => handleMoveSection(sIdx, 'up')}
+                        onMoveDown={() => handleMoveSection(sIdx, 'down')}
+                        onDelete={() => handleDeleteSection(sec.id)}
+                        canMoveUp={sIdx > 0}
+                        canMoveDown={sIdx < doc.sections.length - 1}
+                        showActions={true}
+                      />
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* PIPELINE LIST MODE */}
+            {canvasViewMode === 'pipeline' && (
+              <div className="max-w-4xl mx-auto space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div>
+                    <h2 className="text-base font-bold text-white tracking-wide">Homepage Section Pipeline</h2>
+                    <p className="text-xs text-slate-400">
+                      Drag and drop cards to reorder homepage rendering sequence.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('library')}
+                    className="px-4 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Add Section</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {doc.sections.map((section, sIdx) => (
+                    <div
+                      key={section.id}
+                      draggable={true}
+                      onDragStart={() => handleDragStart(sIdx)}
+                      onDragOver={(e) => handleDragOver(e, sIdx)}
+                      onDrop={() => handleDrop(sIdx)}
+                      className={`p-4 rounded-2xl border transition-all ${
+                        draggedSectionIndex === sIdx
+                          ? 'opacity-40 scale-95 border-rose-500 bg-rose-950/20'
+                          : dragOverIndex === sIdx
+                          ? 'border-t-2 border-t-rose-500 bg-slate-800/80'
+                          : section.enabled
+                          ? 'bg-[#0D111A] border-slate-800/90 shadow-xl hover:border-slate-700'
+                          : 'bg-slate-950/40 border-dashed border-slate-800/60 opacity-60'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <GripVertical className="w-4 h-4 text-slate-600 cursor-grab active:cursor-grabbing hover:text-slate-300" />
+                          <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/80 flex items-center justify-center font-bold text-xs text-rose-400">
+                            {sIdx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-bold text-white truncate">{section.name}</h3>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-slate-800 text-slate-400 border border-slate-700">
+                                {section.type}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-400 truncate mt-0.5">
+                              {section.subtitle || section.data?.heading || 'Component'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleOpenInspector(section)}
+                            className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Customize</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSection(section.id)}
+                            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* TAB 2: SECTION LIBRARY */}
+        {/* TAB 2: COMPONENT LIBRARY */}
         {activeTab === 'library' && (
           <div className="p-6 rounded-2xl bg-[#0D111A] border border-slate-800/90 shadow-xl space-y-6">
             <div>
@@ -1598,12 +2296,12 @@ export default function HomepageBuilderStudio() {
         )}
       </main>
 
-      {/* 4. EXECUTIVE SECTION CUSTOMIZATION INSPECTOR MODAL */}
+      {/* 4. EXECUTIVE SECTION CUSTOMIZATION INSPECTOR MODAL WITH LIVE COMPONENT VISUALIZER */}
       {editingSection && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-          <div className="w-full max-w-4xl bg-[#0B0E17] border border-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-7xl bg-[#0B0E17] border border-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
+            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
                   <Sliders className="w-4 h-4" />
@@ -1618,7 +2316,7 @@ export default function HomepageBuilderStudio() {
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400">
-                    Comprehensive visual controls for layout, content, buttons, styles, and responsive viewports.
+                    Live visual representation: edit any control on the left and see it update instantly on the right.
                   </p>
                 </div>
               </div>
@@ -1633,1808 +2331,804 @@ export default function HomepageBuilderStudio() {
               </div>
             </div>
 
-            {/* Inspector Tab Bar */}
-            <div className="bg-[#080B12] border-b border-slate-800/80 px-6 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-              {[
-                { id: 'layout', label: 'Layout & Structure', icon: LayoutTemplate },
-                { id: 'content', label: 'Content & Media', icon: Type },
-                { id: 'styles', label: 'Design & Styling', icon: Palette },
-                { id: 'responsive', label: 'Responsive & Devices', icon: Smartphone },
-              ].map((tab) => {
-                const TabIcon = tab.icon;
-                const isActive = inspectorTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setInspectorTab(tab.id as any)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-                      isActive
-                        ? 'bg-rose-600 text-white shadow-md shadow-rose-950/40'
-                        : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800/80'
-                    }`}
-                  >
-                    <TabIcon className="w-3.5 h-3.5" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {/* Split Screen Inspector Body */}
+            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+              {/* LEFT COLUMN: 4-TAB CONTROL PANEL (55% Width) */}
+              <div className="w-full lg:w-[55%] flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 overflow-hidden">
+                {/* Inspector Tab Bar */}
+                <div className="bg-[#080B12] border-b border-slate-800/80 px-6 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+                  {[
+                    { id: 'layout', label: 'Layout & Structure', icon: LayoutTemplate },
+                    { id: 'content', label: 'Content & Media', icon: Type },
+                    { id: 'styles', label: 'Design & Styling', icon: Palette },
+                    { id: 'responsive', label: 'Responsive & Devices', icon: Smartphone },
+                  ].map((tab) => {
+                    const TabIcon = tab.icon;
+                    const isActive = inspectorTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setInspectorTab(tab.id as any)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                          isActive
+                            ? 'bg-rose-600 text-white shadow-md shadow-rose-950/40'
+                            : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800/80'
+                        }`}
+                      >
+                        <TabIcon className="w-3.5 h-3.5" />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-            {/* Inspector Tab Content Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-slate-200">
-              {/* ========================================================= */}
-              {/* TAB 1: LAYOUT & STRUCTURE */}
-              {/* ========================================================= */}
-              {inspectorTab === 'layout' && (
-                <div className="space-y-6">
-                  {/* Container Width & Content Alignment */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                        Container Width
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { id: 'contained', label: 'Contained (Max 7xl)' },
-                          { id: 'full_width', label: 'Full Bleed (Edge-to-Edge)' },
-                        ].map((w) => (
-                          <button
-                            key={w.id}
-                            type="button"
-                            onClick={() => updateSectionData('containerWidth', w.id)}
-                            className={`py-2 px-3 rounded-xl font-bold transition-all border text-center ${
-                              (editingSection.data?.containerWidth || 'contained') === w.id
-                                ? 'bg-rose-600 text-white border-rose-500'
-                                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                            }`}
-                          >
-                            {w.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                        Content Text Alignment
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { id: 'left', label: 'Left', icon: AlignLeft },
-                          { id: 'center', label: 'Center', icon: AlignCenter },
-                          { id: 'right', label: 'Right', icon: AlignRight },
-                        ].map((al) => {
-                          const AlIcon = al.icon;
-                          const isSel = (editingSection.data?.contentAlign || editingSection.data?.textAlignment || 'center') === al.id;
-                          return (
-                            <button
-                              key={al.id}
-                              type="button"
-                              onClick={() => {
-                                updateSectionData('contentAlign', al.id);
-                                updateSectionData('textAlignment', al.id);
-                              }}
-                              className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all border ${
-                                isSel
-                                  ? 'bg-rose-600 text-white border-rose-500'
-                                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                              }`}
-                            >
-                              <AlIcon className="w-3.5 h-3.5" />
-                              <span>{al.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* HERO / SLIDER LAYOUT CONTROLS */}
-                  {isHeroOrSlider && (
-                    <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-5">
-                      <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                        <Sparkles className="w-4 h-4 text-rose-400" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                          Hero Section Layout Engine
-                        </h4>
-                      </div>
-
-                      {/* Layout Variant Chips */}
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                          Hero Layout Variant
-                        </label>
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                          {[
-                            { id: 'slider', label: 'Multi-Slide Slider', desc: 'Carousels with swipe & auto' },
-                            { id: 'centered', label: 'Full Bleed Centered', desc: 'Classic centered luxury' },
-                            { id: 'split_left', label: 'Split Left', desc: 'Image Left, Text Right' },
-                            { id: 'split_right', label: 'Split Right', desc: 'Text Left, Framed Image' },
-                            { id: 'editorial', label: 'Editorial Magazine', desc: 'Minimalist haute couture' },
-                          ].map((l) => (
-                            <button
-                              key={l.id}
-                              type="button"
-                              onClick={() => {
-                                updateSectionData('layout', l.id);
-                                if (l.id === 'slider' && (!editingSection.data?.slides || editingSection.data.slides.length === 0)) {
-                                  // Auto seed default 3 slides if none exist
-                                  const defaultSlides: HeroSlide[] = [
-                                    {
-                                      id: 'slide-1',
-                                      tagline: editingSection.data?.tagline || 'SPRING DROP 2026',
-                                      title: editingSection.data?.heading || 'Timeless Elegance Redefined',
-                                      subtitle: editingSection.data?.subheading || 'Experience runway-inspired luxury handcrafted with ethical organic textiles.',
-                                      primaryBtnText: editingSection.data?.primaryBtnText || 'Shop Collection',
-                                      primaryBtnLink: editingSection.data?.primaryBtnLink || '/collections',
-                                      secondaryBtnText: editingSection.data?.secondaryBtnText || 'Explore Lookbook',
-                                      secondaryBtnLink: editingSection.data?.secondaryBtnLink || '/about',
-                                      desktopImage: editingSection.data?.desktopImage || editingSection.data?.bgImage || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop',
-                                      overlayOpacity: 45,
-                                      overlayColor: '#000000',
-                                      contentAlign: 'center',
-                                    },
-                                    {
-                                      id: 'slide-2',
-                                      tagline: 'SUMMER RUNWAY EDIT',
-                                      title: 'Effortless Modern Silhouettes',
-                                      subtitle: 'Breathable chanderi silk and structured linen essentials designed for seamless style.',
-                                      primaryBtnText: 'SHOP SUMMER EDIT',
-                                      primaryBtnLink: '/collections/summer',
-                                      secondaryBtnText: 'VIEW LOOKBOOK',
-                                      secondaryBtnLink: '/lookbook',
-                                      desktopImage: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1600&auto=format&fit=crop',
-                                      overlayOpacity: 40,
-                                      overlayColor: '#000000',
-                                      contentAlign: 'center',
-                                    },
-                                    {
-                                      id: 'slide-3',
-                                      tagline: 'PRIVATE ATELIER ACCESS',
-                                      title: 'Bridal & Ceremonial Couture',
-                                      subtitle: 'Hand-embroidered zardozi and artisanal motifs tailored exclusively for celebratory moments.',
-                                      primaryBtnText: 'REQUEST CONSULTATION',
-                                      primaryBtnLink: '/contact',
-                                      secondaryBtnText: 'DISCOVER BRIDAL',
-                                      secondaryBtnLink: '/bridal',
-                                      desktopImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
-                                      overlayOpacity: 50,
-                                      overlayColor: '#000000',
-                                      contentAlign: 'center',
-                                    },
-                                  ];
-                                  updateSectionData('slides', defaultSlides);
-                                }
-                              }}
-                              className={`p-2.5 rounded-xl border text-left transition-all ${
-                                (editingSection.data?.layout || 'slider') === l.id
-                                  ? 'bg-rose-600/20 border-rose-500 text-white shadow-md'
-                                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
-                              }`}
-                            >
-                              <div className="font-bold text-xs">{l.label}</div>
-                              <div className="text-[10px] text-slate-400 mt-0.5">{l.desc}</div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Button Placement & Orientation */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                {/* Form Controls Scroll Area */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-slate-200">
+                  {/* TAB 1: LAYOUT & STRUCTURE */}
+                  {inspectorTab === 'layout' && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                            Button Placement
-                          </label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {['left', 'center', 'right'].map((pos) => (
-                              <button
-                                key={pos}
-                                type="button"
-                                onClick={() => updateSectionData('buttonPlacement', pos)}
-                                className={`py-2 px-2 rounded-xl font-bold uppercase text-[11px] transition-all border text-center ${
-                                  (editingSection.data?.buttonPlacement || 'center') === pos
-                                    ? 'bg-rose-600 text-white border-rose-500'
-                                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                                }`}
-                              >
-                                {pos}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                            Button Orientation
+                            Container Width
                           </label>
                           <div className="grid grid-cols-2 gap-2">
                             {[
-                              { id: 'inline', label: 'Inline (Side by Side)' },
-                              { id: 'stacked', label: 'Stacked (Vertical Column)' },
-                            ].map((o) => (
+                              { id: 'contained', label: 'Contained (Max 7xl)' },
+                              { id: 'full_width', label: 'Full Bleed (Edge-to-Edge)' },
+                            ].map((w) => (
                               <button
-                                key={o.id}
+                                key={w.id}
                                 type="button"
-                                onClick={() => updateSectionData('buttonOrientation', o.id)}
-                                className={`py-2 px-2 rounded-xl font-bold text-[11px] transition-all border text-center ${
-                                  (editingSection.data?.buttonOrientation || 'inline') === o.id
+                                onClick={() => updateSectionData('containerWidth', w.id)}
+                                className={`py-2 px-3 rounded-xl font-bold transition-all border text-center ${
+                                  (editingSection.data?.containerWidth || 'contained') === w.id
                                     ? 'bg-rose-600 text-white border-rose-500'
                                     : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
                                 }`}
                               >
-                                {o.label}
+                                {w.label}
                               </button>
                             ))}
                           </div>
                         </div>
-                      </div>
 
-                      {/* Hero Min Height */}
-                      <div className="space-y-2 pt-2">
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                          Hero Section Minimum Height
-                        </label>
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                          {['500px', '600px', '650px', '750px', '850px', '100vh'].map((h) => (
-                            <button
-                              key={h}
-                              type="button"
-                              onClick={() => updateSectionData('minHeight', h)}
-                              className={`py-2 px-2 rounded-xl font-bold font-mono text-[11px] transition-all border text-center ${
-                                (editingSection.data?.minHeight || '650px') === h
-                                  ? 'bg-rose-600 text-white border-rose-500'
-                                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                              }`}
-                            >
-                              {h}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* PRODUCTS GRID / CAROUSEL LAYOUT CONTROLS */}
-                  {(editingSection.type === 'products_grid' || editingSection.type === 'product_carousel') && (
-                    <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                      <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                        <ShoppingBag className="w-4 h-4 text-emerald-400" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                          Product Grid &amp; Column Dimensions
-                        </h4>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Desktop Columns</label>
-                          <select
-                            value={editingSection.data?.columnsDesktop || 4}
-                            onChange={(e) => updateSectionData('columnsDesktop', parseInt(e.target.value, 10))}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value={2}>2 Columns</option>
-                            <option value={3}>3 Columns</option>
-                            <option value={4}>4 Columns (Standard)</option>
-                            <option value={5}>5 Columns (Wide)</option>
-                            <option value={6}>6 Columns (Compact)</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Tablet Columns</label>
-                          <select
-                            value={editingSection.data?.columnsTablet || 2}
-                            onChange={(e) => updateSectionData('columnsTablet', parseInt(e.target.value, 10))}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value={2}>2 Columns (Recommended)</option>
-                            <option value={3}>3 Columns</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Mobile Columns</label>
-                          <select
-                            value={editingSection.data?.columnsMobile || 1}
-                            onChange={(e) => updateSectionData('columnsMobile', parseInt(e.target.value, 10))}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value={1}>1 Column (Standard Feed)</option>
-                            <option value={2}>2 Columns (Instagram Grid)</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Total Products Limit</label>
-                          <select
-                            value={editingSection.data?.limit || 8}
-                            onChange={(e) => updateSectionData('limit', parseInt(e.target.value, 10))}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value={4}>4 Products</option>
-                            <option value={8}>8 Products (Recommended)</option>
-                            <option value={12}>12 Products</option>
-                            <option value={16}>16 Products</option>
-                            <option value={24}>24 Products</option>
-                          </select>
-                        </div>
-
-                        <div className="flex items-center gap-3 pt-5">
-                          <input
-                            type="checkbox"
-                            id="showViewAll"
-                            checked={editingSection.data?.showViewAll !== false}
-                            onChange={(e) => updateSectionData('showViewAll', e.target.checked)}
-                            className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
-                          />
-                          <label htmlFor="showViewAll" className="text-xs font-bold text-white cursor-pointer">
-                            Display "View All Collection" Button
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                            Content Text Alignment
                           </label>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* CATEGORIES LAYOUT CONTROLS */}
-                  {editingSection.type === 'categories' && (
-                    <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                      <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                        <FolderTree className="w-4 h-4 text-purple-400" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                          Category Grid Presentation
-                        </h4>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Card Aspect Ratio</label>
-                          <select
-                            value={editingSection.data?.aspectRatio || '3/4'}
-                            onChange={(e) => updateSectionData('aspectRatio', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value="3/4">Portrait 3:4 (Luxury High Fashion)</option>
-                            <option value="1/1">Square 1:1 (Classic Boutique)</option>
-                            <option value="16/9">Landscape 16:9 (Wide Banners)</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Card Corner Radius</label>
-                          <select
-                            value={editingSection.data?.cardBorderRadius || '16px'}
-                            onChange={(e) => updateSectionData('cardBorderRadius', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value="0px">0px (Sharp Atelier)</option>
-                            <option value="8px">8px (Subtle)</option>
-                            <option value="16px">16px (Modern Rounded)</option>
-                            <option value="24px">24px (Soft)</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* VALUE PROPOSITIONS LAYOUT */}
-                  {editingSection.type === 'value_props' && (
-                    <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                      <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                        <Sparkles className="w-4 h-4 text-amber-400" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                          Value Props Card Layout
-                        </h4>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Columns Count</label>
-                          <select
-                            value={editingSection.data?.columns || 4}
-                            onChange={(e) => updateSectionData('columns', parseInt(e.target.value, 10))}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value={2}>2 Columns</option>
-                            <option value={3}>3 Columns</option>
-                            <option value={4}>4 Columns (Standard)</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Card Style</label>
-                          <select
-                            value={editingSection.data?.cardStyle || 'bordered'}
-                            onChange={(e) => updateSectionData('cardStyle', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value="bordered">Bordered Cards with Subtle Glow</option>
-                            <option value="minimal">Minimal (No Box Borders)</option>
-                            <option value="tinted">Tinted Dark Canvas</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* SPLIT EDITORIAL STORY LAYOUT */}
-                  {editingSection.type === 'image_text' && (
-                    <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                      <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                        <ImageIcon className="w-4 h-4 text-blue-400" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                          Split Story Layout Placement
-                        </h4>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Image Alignment</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {['left', 'right'].map((pos) => (
-                              <button
-                                key={pos}
-                                type="button"
-                                onClick={() => updateSectionData('imagePosition', pos)}
-                                className={`py-2 px-3 rounded-xl font-bold uppercase text-[11px] transition-all border text-center ${
-                                  (editingSection.data?.imagePosition || 'left') === pos
-                                    ? 'bg-rose-600 text-white border-rose-500'
-                                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                                }`}
-                              >
-                                Image {pos}
-                              </button>
-                            ))}
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { id: 'left', label: 'Left', icon: AlignLeft },
+                              { id: 'center', label: 'Center', icon: AlignCenter },
+                              { id: 'right', label: 'Right', icon: AlignRight },
+                            ].map((al) => {
+                              const AlIcon = al.icon;
+                              const isSel = (editingSection.data?.contentAlign || editingSection.data?.textAlignment || 'center') === al.id;
+                              return (
+                                <button
+                                  key={al.id}
+                                  type="button"
+                                  onClick={() => {
+                                    updateSectionData('contentAlign', al.id);
+                                    updateSectionData('textAlignment', al.id);
+                                  }}
+                                  className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all border ${
+                                    isSel
+                                      ? 'bg-rose-600 text-white border-rose-500'
+                                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                  }`}
+                                >
+                                  <AlIcon className="w-3.5 h-3.5" />
+                                  <span>{al.label}</span>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
-
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Image Aspect Ratio</label>
-                          <select
-                            value={editingSection.data?.aspectRatio || 'portrait'}
-                            onChange={(e) => updateSectionData('aspectRatio', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value="portrait">Portrait 3:4 (Fashion Standard)</option>
-                            <option value="square">Square 1:1</option>
-                            <option value="wide">Wide 16:9</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* PROMOTIONAL BANNER LAYOUT */}
-                  {editingSection.type === 'promotional_banner' && (
-                    <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                      <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                        <Tag className="w-4 h-4 text-rose-400" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                          Banner Height &amp; Alignment
-                        </h4>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Banner Height</label>
-                          <select
-                            value={editingSection.data?.bannerHeight || 'medium'}
-                            onChange={(e) => updateSectionData('bannerHeight', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          >
-                            <option value="compact">Compact (240px)</option>
-                            <option value="medium">Medium (340px - Standard)</option>
-                            <option value="tall">Tall (460px - Impact)</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* SPACER LAYOUT */}
-                  {editingSection.type === 'spacer' && (
-                    <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                      <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                        <Minus className="w-4 h-4 text-slate-400" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                          Whitespace Spacing Heights
-                        </h4>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Desktop Height</label>
-                          <input
-                            type="text"
-                            value={editingSection.data?.heightDesktop || '60px'}
-                            onChange={(e) => updateSectionData('heightDesktop', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                            placeholder="60px"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-medium text-slate-400 block mb-1.5">Mobile Height</label>
-                          <input
-                            type="text"
-                            value={editingSection.data?.heightMobile || '30px'}
-                            onChange={(e) => updateSectionData('heightMobile', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                            placeholder="30px"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ========================================================= */}
-              {/* TAB 2: CONTENT & MEDIA */}
-              {/* ========================================================= */}
-              {inspectorTab === 'content' && (
-                <div className="space-y-6">
-                  {/* Common Section Label */}
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                      Section Admin Display Label
-                    </label>
-                    <input
-                      type="text"
-                      value={editingSection.name}
-                      onChange={(e) => handleUpdateEditingSection({ name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-medium"
-                    />
-                  </div>
-
-                  {/* MULTI-SLIDE CAROUSEL MANAGER (WHEN IN SLIDER MODE) */}
-                  {isSliderMode ? (
-                    <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-6">
-                      {/* Playback Controls Bar */}
-                      <div className="pb-4 border-b border-slate-800 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                      {/* HERO LAYOUT CONTROLS */}
+                      {isHeroOrSlider && (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-5">
+                          <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
                             <Sparkles className="w-4 h-4 text-rose-400" />
                             <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                              Slider Playback &amp; Navigation Controls
+                              Hero Layout Engine
                             </h4>
                           </div>
 
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id="autoplayToggle"
-                                checked={editingSection.data?.autoplay !== false}
-                                onChange={(e) => updateSectionData('autoplay', e.target.checked)}
-                                className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
-                              />
-                              <label htmlFor="autoplayToggle" className="text-xs font-bold text-white cursor-pointer">
-                                Autoplay
-                              </label>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id="arrowsToggle"
-                                checked={editingSection.data?.showArrows !== false}
-                                onChange={(e) => updateSectionData('showArrows', e.target.checked)}
-                                className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
-                              />
-                              <label htmlFor="arrowsToggle" className="text-xs font-bold text-white cursor-pointer">
-                                Arrows
-                              </label>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id="dotsToggle"
-                                checked={editingSection.data?.showDots !== false}
-                                onChange={(e) => updateSectionData('showDots', e.target.checked)}
-                                className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
-                              />
-                              <label htmlFor="dotsToggle" className="text-xs font-bold text-white cursor-pointer">
-                                Dots
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                          <div>
-                            <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                              Autoplay Interval (Speed)
+                          <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                              Hero Layout Variant
                             </label>
-                            <select
-                              value={editingSection.data?.autoplayInterval || 5000}
-                              onChange={(e) => updateSectionData('autoplayInterval', parseInt(e.target.value, 10))}
-                              className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
-                            >
-                              <option value={3000}>3 Seconds (Fast)</option>
-                              <option value={5000}>5 Seconds (Balanced Luxury)</option>
-                              <option value={7000}>7 Seconds (Deliberate)</option>
-                              <option value={10000}>10 Seconds (Relaxed)</option>
-                            </select>
-                          </div>
-
-                          <div className="flex items-center gap-2 pt-5">
-                            <input
-                              type="checkbox"
-                              id="pauseOnHover"
-                              checked={editingSection.data?.pauseOnHover !== false}
-                              onChange={(e) => updateSectionData('pauseOnHover', e.target.checked)}
-                              className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
-                            />
-                            <label htmlFor="pauseOnHover" className="text-xs font-bold text-slate-300 cursor-pointer">
-                              Pause Autoplay When Patron Hovers Mouse
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Slide Tabs Navigation */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                            Hero Carousel Slides ({(editingSection.data?.slides || []).length})
-                          </label>
-
-                          <button
-                            type="button"
-                            onClick={handleAddSlide}
-                            className="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>+ Add Slide</span>
-                          </button>
-                        </div>
-
-                        {/* Slide Selector Buttons */}
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                          {((editingSection.data?.slides as HeroSlide[]) || []).map((slide, sIdx) => (
-                            <button
-                              key={slide.id || sIdx}
-                              type="button"
-                              onClick={() => setActiveSlideIdx(sIdx)}
-                              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 border flex items-center gap-2 ${
-                                activeSlideIdx === sIdx
-                                  ? 'bg-rose-600 text-white border-rose-500 shadow-md shadow-rose-950'
-                                  : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800'
-                              }`}
-                            >
-                              <span>Slide #{sIdx + 1}</span>
-                              <span className="text-[10px] opacity-75 truncate max-w-[90px]">
-                                {slide.title || 'Untitled'}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Active Slide Editor Panel */}
-                      {editingSection.data?.slides?.[activeSlideIdx] && (() => {
-                        const curSlide = editingSection.data.slides[activeSlideIdx] as HeroSlide;
-                        return (
-                          <div className="bg-slate-950/90 border border-slate-800/90 rounded-2xl p-5 space-y-5">
-                            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                              <span className="text-xs font-bold text-white flex items-center gap-2">
-                                <span className="w-6 h-6 rounded-lg bg-rose-600/20 text-rose-400 text-xs font-bold flex items-center justify-center font-mono">
-                                  {activeSlideIdx + 1}
-                                </span>
-                                Editing Slide #{activeSlideIdx + 1}: {curSlide.title || 'Untitled Slide'}
-                              </span>
-
-                              <div className="flex items-center gap-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {[
+                                { id: 'slider', label: 'Multi-Slide Slider', desc: 'Carousels with swipe & auto' },
+                                { id: 'centered', label: 'Full Bleed Centered', desc: 'Classic centered luxury' },
+                                { id: 'split_left', label: 'Split Left', desc: 'Image Left, Text Right' },
+                                { id: 'split_right', label: 'Split Right', desc: 'Text Left, Framed Image' },
+                                { id: 'editorial', label: 'Editorial Magazine', desc: 'Minimalist haute couture' },
+                              ].map((l) => (
                                 <button
+                                  key={l.id}
                                   type="button"
-                                  onClick={() => handleMoveSlide(activeSlideIdx, 'left')}
-                                  disabled={activeSlideIdx === 0}
-                                  className={`p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white ${
-                                    activeSlideIdx === 0 ? 'opacity-30 cursor-not-allowed' : ''
+                                  onClick={() => {
+                                    updateSectionData('layout', l.id);
+                                    if (l.id === 'slider' && (!editingSection.data?.slides || editingSection.data.slides.length === 0)) {
+                                      const defaultSlides: HeroSlide[] = [
+                                        {
+                                          id: 'slide-1',
+                                          tagline: editingSection.data?.tagline || 'SPRING DROP 2026',
+                                          title: editingSection.data?.heading || 'Timeless Elegance Redefined',
+                                          subtitle: editingSection.data?.subheading || 'Experience runway-inspired luxury handcrafted with ethical organic textiles.',
+                                          primaryBtnText: editingSection.data?.primaryBtnText || 'Shop Collection',
+                                          primaryBtnLink: editingSection.data?.primaryBtnLink || '/collections',
+                                          secondaryBtnText: editingSection.data?.secondaryBtnText || 'Explore Lookbook',
+                                          secondaryBtnLink: editingSection.data?.secondaryBtnLink || '/about',
+                                          desktopImage: editingSection.data?.desktopImage || editingSection.data?.bgImage || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop',
+                                          overlayOpacity: 45,
+                                          overlayColor: '#000000',
+                                          contentAlign: 'center',
+                                        },
+                                        {
+                                          id: 'slide-2',
+                                          tagline: 'SUMMER RUNWAY EDIT',
+                                          title: 'Effortless Modern Silhouettes',
+                                          subtitle: 'Breathable chanderi silk and structured linen essentials designed for seamless style.',
+                                          primaryBtnText: 'SHOP SUMMER EDIT',
+                                          primaryBtnLink: '/collections/summer',
+                                          secondaryBtnText: 'VIEW LOOKBOOK',
+                                          secondaryBtnLink: '/lookbook',
+                                          desktopImage: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1600&auto=format&fit=crop',
+                                          overlayOpacity: 40,
+                                          overlayColor: '#000000',
+                                          contentAlign: 'center',
+                                        },
+                                      ];
+                                      updateSectionData('slides', defaultSlides);
+                                    }
+                                  }}
+                                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                                    (editingSection.data?.layout || 'slider') === l.id
+                                      ? 'bg-rose-600/20 border-rose-500 text-white shadow-md'
+                                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
                                   }`}
-                                  title="Move Slide Left"
                                 >
-                                  <ChevronLeft className="w-3.5 h-3.5" />
+                                  <div className="font-bold text-xs">{l.label}</div>
+                                  <div className="text-[10px] text-slate-400 mt-0.5">{l.desc}</div>
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleMoveSlide(activeSlideIdx, 'right')}
-                                  disabled={activeSlideIdx === (editingSection.data?.slides || []).length - 1}
-                                  className={`p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white ${
-                                    activeSlideIdx === (editingSection.data?.slides || []).length - 1
-                                      ? 'opacity-30 cursor-not-allowed'
-                                      : ''
-                                  }`}
-                                  title="Move Slide Right"
-                                >
-                                  <ChevronRight className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteSlide(activeSlideIdx)}
-                                  className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 transition-colors"
-                                  title="Delete Slide"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                              ))}
                             </div>
+                          </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                                  Slide Eyebrow / Tagline
-                                </label>
-                                <input
-                                  type="text"
-                                  value={curSlide.tagline || ''}
-                                  onChange={(e) => handleUpdateSlide(activeSlideIdx, { tagline: e.target.value })}
-                                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                                  placeholder="e.g. HAUTE ATELIER DROP 2026"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                                  Slide Main Headline
-                                </label>
-                                <input
-                                  type="text"
-                                  value={curSlide.title || ''}
-                                  onChange={(e) => handleUpdateSlide(activeSlideIdx, { title: e.target.value })}
-                                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                                  placeholder="e.g. Timeless Elegance Redefined"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                                Slide Subtitle / Narrative Copy
+                          {/* Button Placement & Orientation */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            <div className="space-y-2">
+                              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                                Button Placement
                               </label>
-                              <textarea
-                                rows={2}
-                                value={curSlide.subtitle || ''}
-                                onChange={(e) => handleUpdateSlide(activeSlideIdx, { subtitle: e.target.value })}
-                                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                                placeholder="e.g. Experience runway-inspired luxury handcrafted with ethical organic textiles."
-                              />
-                            </div>
-
-                            {/* Dual Buttons for Slide */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5">
-                                <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">
-                                  Primary Button CTA
-                                </span>
-                                <div>
-                                  <label className="text-[10px] text-slate-400 block mb-0.5">Button Text</label>
-                                  <input
-                                    type="text"
-                                    value={curSlide.primaryBtnText || ''}
-                                    onChange={(e) => handleUpdateSlide(activeSlideIdx, { primaryBtnText: e.target.value })}
-                                    className="w-full px-3 py-1.5 rounded-lg bg-[#0B0D14] border border-slate-700 text-xs text-white"
-                                    placeholder="Shop The Collection"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-[10px] text-slate-400 block mb-0.5">Link Target URL</label>
-                                  <input
-                                    type="text"
-                                    value={curSlide.primaryBtnLink || ''}
-                                    onChange={(e) => handleUpdateSlide(activeSlideIdx, { primaryBtnLink: e.target.value })}
-                                    className="w-full px-3 py-1.5 rounded-lg bg-[#0B0D14] border border-slate-700 text-xs text-white font-mono"
-                                    placeholder="/collections"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5">
-                                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                                  Secondary Button CTA
-                                </span>
-                                <div>
-                                  <label className="text-[10px] text-slate-400 block mb-0.5">Button Text</label>
-                                  <input
-                                    type="text"
-                                    value={curSlide.secondaryBtnText || ''}
-                                    onChange={(e) => handleUpdateSlide(activeSlideIdx, { secondaryBtnText: e.target.value })}
-                                    className="w-full px-3 py-1.5 rounded-lg bg-[#0B0D14] border border-slate-700 text-xs text-white"
-                                    placeholder="Explore Lookbook"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-[10px] text-slate-400 block mb-0.5">Link Target URL</label>
-                                  <input
-                                    type="text"
-                                    value={curSlide.secondaryBtnLink || ''}
-                                    onChange={(e) => handleUpdateSlide(activeSlideIdx, { secondaryBtnLink: e.target.value })}
-                                    className="w-full px-3 py-1.5 rounded-lg bg-[#0B0D14] border border-slate-700 text-xs text-white font-mono"
-                                    placeholder="/about"
-                                  />
-                                </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                {['left', 'center', 'right'].map((pos) => (
+                                  <button
+                                    key={pos}
+                                    type="button"
+                                    onClick={() => updateSectionData('buttonPlacement', pos)}
+                                    className={`py-2 px-2 rounded-xl font-bold uppercase text-[11px] transition-all border text-center ${
+                                      (editingSection.data?.buttonPlacement || 'center') === pos
+                                        ? 'bg-rose-600 text-white border-rose-500'
+                                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                    }`}
+                                  >
+                                    {pos}
+                                  </button>
+                                ))}
                               </div>
                             </div>
 
-                            {/* Slide Background Image & Media */}
-                            <div className="space-y-4 pt-2 border-t border-slate-800/80">
-                              <ImageUploadInput
-                                label="Slide Desktop Background Image"
-                                description="High-resolution banner visual for this carousel slide"
-                                value={curSlide.desktopImage || ''}
-                                onChange={(url) => handleUpdateSlide(activeSlideIdx, { desktopImage: url })}
-                                aspectRatio="banner"
-                                folder="Hero"
-                              />
-
-                              <ImageUploadInput
-                                label="Slide Mobile Background Image (Optional)"
-                                description="Optional vertical 3:4 crop optimized specifically for smartphone displays"
-                                value={curSlide.mobileImage || ''}
-                                onChange={(url) => handleUpdateSlide(activeSlideIdx, { mobileImage: url })}
-                                aspectRatio="3/4"
-                                folder="Hero"
-                              />
+                            <div className="space-y-2">
+                              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                                Button Orientation
+                              </label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {[
+                                  { id: 'inline', label: 'Inline (Side by Side)' },
+                                  { id: 'stacked', label: 'Stacked (Vertical Column)' },
+                                ].map((o) => (
+                                  <button
+                                    key={o.id}
+                                    type="button"
+                                    onClick={() => updateSectionData('buttonOrientation', o.id)}
+                                    className={`py-2 px-2 rounded-xl font-bold text-[11px] transition-all border text-center ${
+                                      (editingSection.data?.buttonOrientation || 'inline') === o.id
+                                        ? 'bg-rose-600 text-white border-rose-500'
+                                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                    }`}
+                                  >
+                                    {o.label}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        );
-                      })()}
-                    </div>
-                  ) : (
-                    /* SINGLE HERO / STANDARD CONTENT FIELDS */
-                    <div className="space-y-4">
-                      {/* Eyebrow / Tagline */}
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
-                          Eyebrow / Badge Tagline
-                        </label>
-                        <input
-                          type="text"
-                          value={editingSection.data?.tagline || ''}
-                          onChange={(e) => updateSectionData('tagline', e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          placeholder="e.g. SPRING DROP 2026"
-                        />
-                      </div>
 
-                      {/* Heading */}
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
-                          Main Headline (H1 / H2)
-                        </label>
-                        <input
-                          type="text"
-                          value={editingSection.data?.heading || ''}
-                          onChange={(e) => updateSectionData('heading', e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-serif text-sm"
-                          placeholder="e.g. Elegance Designed For You"
-                        />
-                      </div>
-
-                      {/* Subheading / Description */}
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
-                          Subtitle / Narrative Description
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={editingSection.data?.subheading || editingSection.data?.description || editingSection.data?.subtitle || ''}
-                          onChange={(e) => {
-                            updateSectionMultipleData({
-                              subheading: e.target.value,
-                              description: e.target.value,
-                              subtitle: e.target.value,
-                            });
-                          }}
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                          placeholder="e.g. Discover bespoke tailoring and handcrafted essentials engineered for modern living."
-                        />
-                      </div>
-
-                      {/* Primary Button */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                        <div>
-                          <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
-                            Primary CTA Button Text
-                          </label>
-                          <input
-                            type="text"
-                            value={editingSection.data?.primaryBtnText || editingSection.data?.btnText || ''}
-                            onChange={(e) => {
-                              updateSectionMultipleData({
-                                primaryBtnText: e.target.value,
-                                btnText: e.target.value,
-                              });
-                            }}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                            placeholder="SHOP NOW"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
-                            Primary Link Target
-                          </label>
-                          <input
-                            type="text"
-                            value={editingSection.data?.primaryBtnLink || editingSection.data?.btnLink || ''}
-                            onChange={(e) => {
-                              updateSectionMultipleData({
-                                primaryBtnLink: e.target.value,
-                                btnLink: e.target.value,
-                              });
-                            }}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                            placeholder="/collections"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Secondary Button */}
-                      {(isHeroOrSlider || editingSection.data?.secondaryBtnText !== undefined) && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                          <div>
-                            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
-                              Secondary CTA Button Text
+                          {/* Hero Min Height */}
+                          <div className="space-y-2 pt-2">
+                            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                              Hero Minimum Height
                             </label>
-                            <input
-                              type="text"
-                              value={editingSection.data?.secondaryBtnText || ''}
-                              onChange={(e) => updateSectionData('secondaryBtnText', e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
-                              placeholder="EXPLORE LOOKBOOK"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
-                              Secondary Link Target
-                            </label>
-                            <input
-                              type="text"
-                              value={editingSection.data?.secondaryBtnLink || ''}
-                              onChange={(e) => updateSectionData('secondaryBtnLink', e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                              placeholder="/about"
-                            />
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                              {['500px', '600px', '650px', '750px', '850px', '100vh'].map((h) => (
+                                <button
+                                  key={h}
+                                  type="button"
+                                  onClick={() => updateSectionData('minHeight', h)}
+                                  className={`py-2 px-2 rounded-xl font-bold font-mono text-[11px] transition-all border text-center ${
+                                    (editingSection.data?.minHeight || '650px') === h
+                                      ? 'bg-rose-600 text-white border-rose-500'
+                                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                  }`}
+                                >
+                                  {h}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Main Image Asset */}
-                      <div className="space-y-4 pt-3 border-t border-slate-800/80">
-                        <ImageUploadInput
-                          label="Primary Image Asset / Banner"
-                          description="Main visual rendered for this component"
-                          value={
-                            editingSection.data?.desktopImage ||
-                            editingSection.data?.image ||
-                            editingSection.data?.bgImage ||
-                            ''
-                          }
-                          onChange={(url) => {
-                            updateSectionMultipleData({
-                              desktopImage: url,
-                              image: url,
-                              bgImage: url,
-                            });
-                          }}
-                          aspectRatio="banner"
-                          folder="Homepage"
-                        />
-
-                        {isHeroOrSlider && (
-                          <ImageUploadInput
-                            label="Mobile Background Image (Optional)"
-                            description="Portrait orientation banner for mobile smartphones"
-                            value={editingSection.data?.mobileImage || ''}
-                            onChange={(url) => updateSectionData('mobileImage', url)}
-                            aspectRatio="3/4"
-                            folder="Hero"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* PRODUCTS GRID QUERY SOURCE */}
-                  {(editingSection.type === 'products_grid' || editingSection.type === 'product_carousel') && (
-                    <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
-                      <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                        Product Catalog Query Strategy
-                      </label>
-                      <select
-                        value={editingSection.data?.querySource || 'best_sellers'}
-                        onChange={(e) => updateSectionData('querySource', e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-[#0B0D14] border border-slate-700 text-xs text-white"
-                      >
-                        <option value="best_sellers">Best Sellers (Highest Conversion)</option>
-                        <option value="new_arrivals">Newest Arrivals (Latest Releases)</option>
-                        <option value="trending">Trending Now</option>
-                        <option value="on_sale">On Sale / Promotional Markdown</option>
-                        <option value="featured">Featured Handpicked Boutique</option>
-                      </select>
-                    </div>
-                  )}
-
-                  {/* CATEGORIES LIST MANAGER */}
-                  {(editingSection.type === 'categories' || editingSection.data?.categoriesList !== undefined) && (
-                    <div className="space-y-4 pt-4 border-t border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <div>
+                      {/* PRODUCTS COLUMNS */}
+                      {(editingSection.type === 'products_grid' || editingSection.type === 'product_carousel') && (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                            Category Showcase Cards ({((editingSection.data?.categoriesList as any[]) || []).length})
+                            Product Grid Columns &amp; Limits
                           </h4>
-                          <p className="text-[11px] text-slate-400">
-                            Configure category department cards with custom images and links.
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              const tenant = PlatformService.getActiveTenant();
-                              const slug = (tenant?.slug || 'lumina').toLowerCase().trim();
-                              const cats = await CategoryService.getFlatList();
-                              if (!cats || cats.length === 0) {
-                                showToast('No custom categories found in store database.', 'info');
-                                return;
-                              }
-                              const syncedList = cats.slice(0, 8).map((c: any) => ({
-                                label: c.name || c.title || 'Department',
-                                href: `/collections/${c.slug || c.id}`,
-                                image: c.image || c.thumbnail || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
-                                count: c.productCount ? `${c.productCount} Items` : 'Explore Collection',
-                                badge: c.isFeatured ? 'Featured' : '',
-                              }));
-                              updateSectionData('categoriesList', syncedList);
-                              showToast(`✨ Synced ${syncedList.length} store categories to homepage!`, 'success');
-                            } catch (err: any) {
-                              showToast('Failed to sync categories: ' + err.message, 'error');
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-colors shrink-0"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
-                          <span>Sync from Store Categories</span>
-                        </button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {((editingSection.data?.categoriesList as any[]) || []).map((catItem, idx) => (
-                          <div key={idx} className="bg-slate-950/80 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-white flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] flex items-center justify-center font-mono">
-                                  {idx + 1}
-                                </span>
-                                {catItem.label || `Card #${idx + 1}`}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const list = [...(editingSection.data?.categoriesList || [])];
-                                  list.splice(idx, 1);
-                                  updateSectionData('categoriesList', list);
-                                }}
-                                className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                              <div>
-                                <label className="block text-[11px] text-slate-400 mb-1 font-medium">Department Label</label>
-                                <input
-                                  type="text"
-                                  value={catItem.label || ''}
-                                  onChange={(e) => {
-                                    const list = [...(editingSection.data?.categoriesList || [])];
-                                    list[idx] = { ...list[idx], label: e.target.value };
-                                    updateSectionData('categoriesList', list);
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
-                                  placeholder="e.g. Dresses, Luxury Sets"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-[11px] text-slate-400 mb-1 font-medium">Tagline / Subtext</label>
-                                <input
-                                  type="text"
-                                  value={catItem.count || catItem.tagline || ''}
-                                  onChange={(e) => {
-                                    const list = [...(editingSection.data?.categoriesList || [])];
-                                    list[idx] = { ...list[idx], count: e.target.value, tagline: e.target.value };
-                                    updateSectionData('categoriesList', list);
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
-                                  placeholder="e.g. Handcrafted couture"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-[11px] text-slate-400 mb-1 font-medium">Link URL</label>
-                                <input
-                                  type="text"
-                                  value={catItem.href || ''}
-                                  onChange={(e) => {
-                                    const list = [...(editingSection.data?.categoriesList || [])];
-                                    list[idx] = { ...list[idx], href: e.target.value };
-                                    updateSectionData('categoriesList', list);
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs font-mono"
-                                  placeholder="/dresses"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-[11px] text-slate-400 mb-1 font-medium">Badge Callout</label>
-                                <input
-                                  type="text"
-                                  value={catItem.badge || ''}
-                                  onChange={(e) => {
-                                    const list = [...(editingSection.data?.categoriesList || [])];
-                                    list[idx] = { ...list[idx], badge: e.target.value };
-                                    updateSectionData('categoriesList', list);
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
-                                  placeholder="e.g. Bestselling, New"
-                                />
-                              </div>
-                            </div>
-
+                          <div className="grid grid-cols-3 gap-3">
                             <div>
-                              <ImageUploadInput
-                                label="Card Background Image"
-                                description="High-resolution visual portrait for this category"
-                                value={catItem.image || catItem.imageUrl || ''}
-                                onChange={(url) => {
-                                  const list = [...(editingSection.data?.categoriesList || [])];
-                                  list[idx] = { ...list[idx], image: url, imageUrl: url };
-                                  updateSectionData('categoriesList', list);
-                                }}
-                                aspectRatio="3/4"
-                                folder="Categories"
-                              />
+                              <label className="text-[11px] text-slate-400 block mb-1">Desktop Columns</label>
+                              <select
+                                value={editingSection.data?.columnsDesktop || 4}
+                                onChange={(e) => updateSectionData('columnsDesktop', parseInt(e.target.value, 10))}
+                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                              >
+                                {[2, 3, 4, 5, 6].map((c) => (
+                                  <option key={c} value={c}>{c} Columns</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Tablet Columns</label>
+                              <select
+                                value={editingSection.data?.columnsTablet || 2}
+                                onChange={(e) => updateSectionData('columnsTablet', parseInt(e.target.value, 10))}
+                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                              >
+                                {[2, 3].map((c) => (
+                                  <option key={c} value={c}>{c} Columns</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Mobile Columns</label>
+                              <select
+                                value={editingSection.data?.columnsMobile || 1}
+                                onChange={(e) => updateSectionData('columnsMobile', parseInt(e.target.value, 10))}
+                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                              >
+                                {[1, 2].map((c) => (
+                                  <option key={c} value={c}>{c} Columns</option>
+                                ))}
+                              </select>
                             </div>
                           </div>
-                        ))}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const list = [...(editingSection.data?.categoriesList || [])];
-                            list.push({
-                              label: 'New Department',
-                              image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
-                              href: '/collections',
-                              count: 'Explore Collection',
-                              badge: 'Trending',
-                            });
-                            updateSectionData('categoriesList', list);
-                          }}
-                          className="w-full py-2.5 rounded-xl border border-dashed border-slate-700 hover:border-rose-500/50 bg-slate-900/40 hover:bg-rose-500/5 text-slate-300 hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
-                        >
-                          <Plus className="w-4 h-4 text-rose-400" />
-                          <span>+ Add Another Category Tile</span>
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* VALUE PROPOSITIONS LIST MANAGER */}
-                  {(editingSection.type === 'value_props' || editingSection.type === 'value-props' || Array.isArray(editingSection.data?.items)) && (
-                    <div className="space-y-4 pt-4 border-t border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                            Value Proposition Cards ({((editingSection.data?.items as any[]) || []).length})
-                          </h4>
-                          <p className="text-[11px] text-slate-400">
-                            Highlight commitments, express shipping, and luxury guarantees.
-                          </p>
-                        </div>
+                  {/* TAB 2: CONTENT & MEDIA */}
+                  {inspectorTab === 'content' && (
+                    <div className="space-y-6">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
+                          Section Display Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editingSection.name}
+                          onChange={(e) => handleUpdateEditingSection({ name: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                        />
                       </div>
 
-                      <div className="space-y-3">
-                        {((editingSection.data?.items as any[]) || []).map((vItem, idx) => (
-                          <div key={idx} className="bg-slate-950/80 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
+                      {/* MULTI-SLIDE CAROUSEL MANAGER */}
+                      {isSliderMode ? (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-5">
+                          {/* Playback Settings */}
+                          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-rose-400" />
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                                Carousel Controls
+                              </h4>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <label className="flex items-center gap-1.5 text-xs text-white cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editingSection.data?.autoplay !== false}
+                                  onChange={(e) => updateSectionData('autoplay', e.target.checked)}
+                                  className="w-4 h-4 accent-rose-600 rounded"
+                                />
+                                <span>Autoplay</span>
+                              </label>
+
+                              <label className="flex items-center gap-1.5 text-xs text-white cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editingSection.data?.showArrows !== false}
+                                  onChange={(e) => updateSectionData('showArrows', e.target.checked)}
+                                  className="w-4 h-4 accent-rose-600 rounded"
+                                />
+                                <span>Arrows</span>
+                              </label>
+
+                              <label className="flex items-center gap-1.5 text-xs text-white cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editingSection.data?.showDots !== false}
+                                  onChange={(e) => updateSectionData('showDots', e.target.checked)}
+                                  className="w-4 h-4 accent-rose-600 rounded"
+                                />
+                                <span>Dots</span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Slide Tabs */}
+                          <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-white flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] flex items-center justify-center font-mono">
-                                  {idx + 1}
-                                </span>
-                                {vItem.title || `Item #${idx + 1}`}
-                              </span>
+                              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                                Carousel Slides ({(editingSection.data?.slides || []).length})
+                              </label>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const list = [...(editingSection.data?.items || [])];
-                                  list.splice(idx, 1);
-                                  updateSectionData('items', list);
-                                }}
-                                className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors"
+                                onClick={handleAddSlide}
+                                className="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>+ Add Slide</span>
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                              <div>
-                                <label className="block text-[11px] text-slate-400 mb-1 font-medium">Card Icon Symbol</label>
-                                <select
-                                  value={vItem.icon || 'sparkles'}
-                                  onChange={(e) => {
-                                    const list = [...(editingSection.data?.items || [])];
-                                    list[idx] = { ...list[idx], icon: e.target.value };
-                                    updateSectionData('items', list);
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                              {((editingSection.data?.slides as HeroSlide[]) || []).map((slide, sIdx) => (
+                                <button
+                                  key={slide.id || sIdx}
+                                  type="button"
+                                  onClick={() => setActiveSlideIdx(sIdx)}
+                                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border flex items-center gap-2 ${
+                                    activeSlideIdx === sIdx
+                                      ? 'bg-rose-600 text-white border-rose-500 shadow-md shadow-rose-950'
+                                      : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:text-white'
+                                  }`}
                                 >
-                                  <option value="sparkles">✨ Sparkles / Trendy</option>
-                                  <option value="award">🏆 Award / Premium Quality</option>
-                                  <option value="tag">🏷️ Tag / Direct Prices</option>
-                                  <option value="truck">🚚 Truck / Express Delivery</option>
-                                  <option value="shield">🛡️ Shield / Secure Guarantee</option>
-                                  <option value="heart">❤️ Heart / Ethical Textiles</option>
-                                  <option value="refresh">🔄 Refresh / Easy Returns</option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="block text-[11px] text-slate-400 mb-1 font-medium">Card Headline</label>
-                                <input
-                                  type="text"
-                                  value={vItem.title || ''}
-                                  onChange={(e) => {
-                                    const list = [...(editingSection.data?.items || [])];
-                                    list[idx] = { ...list[idx], title: e.target.value };
-                                    updateSectionData('items', list);
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
-                                  placeholder="e.g. Trendy Collections"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] text-slate-400 mb-1 font-medium">Card Description</label>
-                              <textarea
-                                rows={2}
-                                value={vItem.description || ''}
-                                onChange={(e) => {
-                                  const list = [...(editingSection.data?.items || [])];
-                                  list[idx] = { ...list[idx], description: e.target.value };
-                                  updateSectionData('items', list);
-                                }}
-                                className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
-                                placeholder="e.g. Handpicked, fashion-forward silhouettes updated every week."
-                              />
+                                  <span>Slide #{sIdx + 1}</span>
+                                  <span className="text-[10px] opacity-75 truncate max-w-[80px]">
+                                    {slide.title || 'Untitled'}
+                                  </span>
+                                </button>
+                              ))}
                             </div>
                           </div>
-                        ))}
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const list = [...(editingSection.data?.items || [])];
-                            list.push({
-                              icon: 'sparkles',
-                              title: 'New Value Proposition',
-                              description: 'Runway-inspired luxury aesthetics crafted with utmost attention to detail.',
-                            });
-                            updateSectionData('items', list);
-                          }}
-                          className="w-full py-2.5 rounded-xl border border-dashed border-slate-700 hover:border-rose-500/50 bg-slate-900/40 hover:bg-rose-500/5 text-slate-300 hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
-                        >
-                          <Plus className="w-4 h-4 text-rose-400" />
-                          <span>+ Add Value Proposition Card</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                          {/* Active Slide Form */}
+                          {editingSection.data?.slides?.[activeSlideIdx] && (() => {
+                            const curSlide = editingSection.data.slides[activeSlideIdx] as HeroSlide;
+                            return (
+                              <div className="bg-slate-950/90 border border-slate-800/90 rounded-2xl p-4 space-y-4">
+                                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                                  <span className="text-xs font-bold text-white flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-lg bg-rose-600/20 text-rose-400 text-[11px] font-bold flex items-center justify-center font-mono">
+                                      {activeSlideIdx + 1}
+                                    </span>
+                                    Slide #{activeSlideIdx + 1} Content
+                                  </span>
 
-                  {/* TESTIMONIALS MANAGER */}
-                  {editingSection.type === 'testimonials' && (
-                    <div className="space-y-4 pt-4 border-t border-slate-800">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                        Client Testimonials &amp; Quotes
-                      </h4>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMoveSlide(activeSlideIdx, 'left')}
+                                      disabled={activeSlideIdx === 0}
+                                      className={`p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white ${
+                                        activeSlideIdx === 0 ? 'opacity-30 cursor-not-allowed' : ''
+                                      }`}
+                                    >
+                                      <ChevronLeft className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMoveSlide(activeSlideIdx, 'right')}
+                                      disabled={activeSlideIdx === (editingSection.data?.slides || []).length - 1}
+                                      className={`p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white ${
+                                        activeSlideIdx === (editingSection.data?.slides || []).length - 1 ? 'opacity-30 cursor-not-allowed' : ''
+                                      }`}
+                                    >
+                                      <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteSlide(activeSlideIdx)}
+                                      className="p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
 
-                      <div className="space-y-3">
-                        {((editingSection.data?.testimonialsList as any[]) || []).map((tItem, idx) => (
-                          <div key={idx} className="bg-slate-950/80 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-white flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] flex items-center justify-center font-mono">
-                                  {idx + 1}
-                                </span>
-                                {tItem.name || 'Patron Review'}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const list = [...(editingSection.data?.testimonialsList || [])];
-                                  list.splice(idx, 1);
-                                  updateSectionData('testimonialsList', list);
-                                }}
-                                className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="text-[11px] text-slate-400 block mb-1">Slide Eyebrow Tagline</label>
+                                    <input
+                                      type="text"
+                                      value={curSlide.tagline || ''}
+                                      onChange={(e) => handleUpdateSlide(activeSlideIdx, { tagline: e.target.value })}
+                                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                    />
+                                  </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                              <div>
-                                <label className="block text-[11px] text-slate-400 mb-1 font-medium">Author Name</label>
-                                <input
-                                  type="text"
-                                  value={tItem.name || ''}
-                                  onChange={(e) => {
-                                    const list = [...(editingSection.data?.testimonialsList || [])];
-                                    list[idx] = { ...list[idx], name: e.target.value };
-                                    updateSectionData('testimonialsList', list);
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
-                                  placeholder="e.g. Elena Rostova"
-                                />
+                                  <div>
+                                    <label className="text-[11px] text-slate-400 block mb-1">Slide Main Headline</label>
+                                    <input
+                                      type="text"
+                                      value={curSlide.title || ''}
+                                      onChange={(e) => handleUpdateSlide(activeSlideIdx, { title: e.target.value })}
+                                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-serif"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label className="text-[11px] text-slate-400 block mb-1">Slide Subtitle Copy</label>
+                                    <textarea
+                                      rows={2}
+                                      value={curSlide.subtitle || ''}
+                                      onChange={(e) => handleUpdateSlide(activeSlideIdx, { subtitle: e.target.value })}
+                                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                    />
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-3 pt-1">
+                                    <div>
+                                      <label className="text-[10px] text-slate-400 block mb-0.5">Primary CTA Button</label>
+                                      <input
+                                        type="text"
+                                        value={curSlide.primaryBtnText || ''}
+                                        onChange={(e) => handleUpdateSlide(activeSlideIdx, { primaryBtnText: e.target.value })}
+                                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                        placeholder="Shop Now"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-slate-400 block mb-0.5">Primary Link Target</label>
+                                      <input
+                                        type="text"
+                                        value={curSlide.primaryBtnLink || ''}
+                                        onChange={(e) => handleUpdateSlide(activeSlideIdx, { primaryBtnLink: e.target.value })}
+                                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                        placeholder="/collections"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="pt-2">
+                                    <ImageUploadInput
+                                      label="Slide Background Banner Image"
+                                      value={curSlide.desktopImage || ''}
+                                      onChange={(url) => handleUpdateSlide(activeSlideIdx, { desktopImage: url })}
+                                      aspectRatio="banner"
+                                      folder="Hero"
+                                    />
+                                  </div>
+                                </div>
                               </div>
-
-                              <div>
-                                <label className="block text-[11px] text-slate-400 mb-1 font-medium">Role / Location</label>
-                                <input
-                                  type="text"
-                                  value={tItem.role || ''}
-                                  onChange={(e) => {
-                                    const list = [...(editingSection.data?.testimonialsList || [])];
-                                    list[idx] = { ...list[idx], role: e.target.value };
-                                    updateSectionData('testimonialsList', list);
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
-                                  placeholder="e.g. Verified Patron"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] text-slate-400 mb-1 font-medium">Review Quote</label>
-                              <textarea
-                                rows={2}
-                                value={tItem.text || ''}
-                                onChange={(e) => {
-                                  const list = [...(editingSection.data?.testimonialsList || [])];
-                                  list[idx] = { ...list[idx], text: e.target.value };
-                                  updateSectionData('testimonialsList', list);
-                                }}
-                                className="w-full px-3 py-1.5 bg-[#0B0D14] border border-slate-800 rounded-lg text-white text-xs"
-                                placeholder="Review quote..."
-                              />
-                            </div>
-                          </div>
-                        ))}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const list = [...(editingSection.data?.testimonialsList || [])];
-                            list.push({
-                              name: 'Bespoke Client',
-                              role: 'Verified Patron',
-                              text: 'World-class craftsmanship and attentive packaging.',
-                              rating: 5,
-                            });
-                            updateSectionData('testimonialsList', list);
-                          }}
-                          className="w-full py-2.5 rounded-xl border border-dashed border-slate-700 hover:border-rose-500/50 bg-slate-900/40 hover:bg-rose-500/5 text-slate-300 hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
-                        >
-                          <Plus className="w-4 h-4 text-rose-400" />
-                          <span>+ Add Review Quote</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* COUNTDOWN TARGET TIMER */}
-                  {editingSection.type === 'countdown' && (
-                    <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
-                      <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                        Flash Sale Countdown Target Date &amp; Time
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={editingSection.data?.targetDate ? editingSection.data.targetDate.slice(0, 16) : '2026-10-31T23:59'}
-                        onChange={(e) => updateSectionData('targetDate', e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-[#0B0D14] border border-slate-700 text-xs text-white font-mono"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ========================================================= */}
-              {/* TAB 3: DESIGN & STYLING */}
-              {/* ========================================================= */}
-              {inspectorTab === 'styles' && (
-                <div className="space-y-6">
-                  {/* Background Type & Color */}
-                  <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                      Section Background &amp; Ambient Palette
-                    </h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                          Background Color
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            value={editingSection.data?.bgColor || editingSection.styles?.backgroundColor || '#0F172A'}
-                            onChange={(e) => {
-                              updateSectionData('bgColor', e.target.value);
-                              updateSectionStyles('backgroundColor', e.target.value);
-                            }}
-                            className="w-9 h-9 rounded-lg bg-transparent border border-slate-700 cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={editingSection.data?.bgColor || editingSection.styles?.backgroundColor || '#0F172A'}
-                            onChange={(e) => {
-                              updateSectionData('bgColor', e.target.value);
-                              updateSectionStyles('backgroundColor', e.target.value);
-                            }}
-                            className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                            placeholder="#0F172A"
-                          />
+                            );
+                          })()}
                         </div>
-
-                        {/* Luxury Swatches */}
-                        <div className="flex items-center gap-1.5 mt-2">
-                          {['#FAFAF9', '#0B0D14', '#0F172A', '#1E1B4B', '#111827', '#2A0815'].map((hex) => (
-                            <button
-                              key={hex}
-                              type="button"
-                              onClick={() => {
-                                updateSectionData('bgColor', hex);
-                                updateSectionStyles('backgroundColor', hex);
-                              }}
-                              className="w-6 h-6 rounded-md border border-slate-700 transition-transform hover:scale-110"
-                              style={{ backgroundColor: hex }}
-                              title={hex}
+                      ) : (
+                        /* SINGLE HERO / STANDARD CONTENT */
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
+                              Eyebrow / Tagline
+                            </label>
+                            <input
+                              type="text"
+                              value={editingSection.data?.tagline || ''}
+                              onChange={(e) => updateSectionData('tagline', e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
                             />
-                          ))}
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
+                              Main Headline
+                            </label>
+                            <input
+                              type="text"
+                              value={editingSection.data?.heading || ''}
+                              onChange={(e) => updateSectionData('heading', e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-serif"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
+                              Subtitle / Description
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={editingSection.data?.subheading || editingSection.data?.description || ''}
+                              onChange={(e) => updateSectionMultipleData({ subheading: e.target.value, description: e.target.value })}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] text-slate-400 block mb-0.5">Primary Button Text</label>
+                              <input
+                                type="text"
+                                value={editingSection.data?.primaryBtnText || editingSection.data?.btnText || ''}
+                                onChange={(e) => updateSectionMultipleData({ primaryBtnText: e.target.value, btnText: e.target.value })}
+                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400 block mb-0.5">Link Target</label>
+                              <input
+                                type="text"
+                                value={editingSection.data?.primaryBtnLink || editingSection.data?.btnLink || ''}
+                                onChange={(e) => updateSectionMultipleData({ primaryBtnLink: e.target.value, btnLink: e.target.value })}
+                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="pt-2">
+                            <ImageUploadInput
+                              label="Section Main Image"
+                              value={editingSection.data?.desktopImage || editingSection.data?.image || editingSection.data?.bgImage || ''}
+                              onChange={(url) => updateSectionMultipleData({ desktopImage: url, image: url, bgImage: url })}
+                              aspectRatio="banner"
+                              folder="Homepage"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* TAB 3: DESIGN & STYLING */}
+                  {inspectorTab === 'styles' && (
+                    <div className="space-y-6">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                          Background &amp; Overlay Darkening
+                        </h4>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Background Color</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={editingSection.data?.bgColor || '#0F172A'}
+                                onChange={(e) => updateSectionData('bgColor', e.target.value)}
+                                className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={editingSection.data?.bgColor || '#0F172A'}
+                                onChange={(e) => updateSectionData('bgColor', e.target.value)}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Overlay Opacity</label>
+                            <div className="flex items-center gap-2 pt-2">
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                step="5"
+                                value={
+                                  typeof editingSection.data?.overlayOpacity === 'number'
+                                    ? (editingSection.data.overlayOpacity <= 1
+                                        ? Math.round(editingSection.data.overlayOpacity * 100)
+                                        : Math.round(editingSection.data.overlayOpacity))
+                                    : 45
+                                }
+                                onChange={(e) => updateSectionData('overlayOpacity', parseInt(e.target.value, 10))}
+                                className="flex-1 accent-rose-500 cursor-pointer"
+                              />
+                              <span className="text-xs font-mono font-bold text-rose-400 w-10 text-right">
+                                {typeof editingSection.data?.overlayOpacity === 'number'
+                                  ? (editingSection.data.overlayOpacity <= 1
+                                      ? Math.round(editingSection.data.overlayOpacity * 100)
+                                      : Math.round(editingSection.data.overlayOpacity))
+                                  : 45}%
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                          Section Text Theme
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
+                      {/* Custom Button Styling */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                          Button Geometry &amp; Colors
+                        </h4>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Primary Button BG</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={editingSection.data?.primaryBtnColor || '#E11D48'}
+                                onChange={(e) => updateSectionData('primaryBtnColor', e.target.value)}
+                                className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={editingSection.data?.primaryBtnColor || '#E11D48'}
+                                onChange={(e) => updateSectionData('primaryBtnColor', e.target.value)}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Primary Button Text</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={editingSection.data?.primaryBtnTextColor || '#FFFFFF'}
+                                onChange={(e) => updateSectionData('primaryBtnTextColor', e.target.value)}
+                                className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={editingSection.data?.primaryBtnTextColor || '#FFFFFF'}
+                                onChange={(e) => updateSectionData('primaryBtnTextColor', e.target.value)}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] text-slate-400 block mb-1.5">Border Radius</label>
+                          <div className="grid grid-cols-5 gap-2">
+                            {['0px', '4px', '8px', '16px', '9999px'].map((r) => (
+                              <button
+                                key={r}
+                                type="button"
+                                onClick={() => updateSectionData('btnBorderRadius', r)}
+                                className={`py-1.5 rounded-lg text-xs font-bold transition-all border text-center ${
+                                  (editingSection.data?.btnBorderRadius || '8px') === r
+                                    ? 'bg-rose-600 text-white border-rose-500'
+                                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                }`}
+                              >
+                                {r === '9999px' ? 'Pill' : r}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: RESPONSIVE */}
+                  {inspectorTab === 'responsive' && (
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                          Device Viewport Toggles
+                        </h4>
+                        <div className="space-y-2">
                           {[
-                            { id: '#FFFFFF', label: 'Light on Dark (White)' },
-                            { id: '#111827', label: 'Dark on Light (Ink)' },
-                          ].map((t) => (
-                            <button
-                              key={t.id}
-                              type="button"
-                              onClick={() => {
-                                updateSectionData('textColor', t.id);
-                                updateSectionStyles('color', t.id);
-                              }}
-                              className={`py-2 px-3 rounded-xl font-bold transition-all border text-center text-xs ${
-                                (editingSection.data?.textColor || '#FFFFFF') === t.id
-                                  ? 'bg-rose-600 text-white border-rose-500'
-                                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                              }`}
-                            >
-                              {t.label}
-                            </button>
-                          ))}
+                            { id: 'desktop', label: 'Desktop (1024px+)', icon: Monitor },
+                            { id: 'tablet', label: 'Tablet (768px - 1023px)', icon: Tablet },
+                            { id: 'mobile', label: 'Mobile (< 768px)', icon: Smartphone },
+                          ].map((dev) => {
+                            const DevIcon = dev.icon;
+                            return (
+                              <div key={dev.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+                                <div className="flex items-center gap-2">
+                                  <DevIcon className="w-4 h-4 text-rose-400" />
+                                  <span className="text-xs font-bold text-white">{dev.label}</span>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={editingSection.responsive?.[dev.id as 'desktop']?.visible !== false}
+                                  onChange={(e) => updateSectionResponsive(dev.id as any, e.target.checked)}
+                                  className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
+                  )}
+                </div>
+              </div>
 
-                    {/* Media Darkening Overlay Slider */}
-                    <div className="space-y-2 pt-3 border-t border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                          Background Image Darkening Overlay
-                        </label>
-                        <span className="text-xs font-mono font-bold text-rose-400">
-                          {typeof editingSection.data?.overlayOpacity === 'number'
-                            ? (editingSection.data.overlayOpacity <= 1
-                                ? Math.round(editingSection.data.overlayOpacity * 100)
-                                : Math.round(editingSection.data.overlayOpacity))
-                            : 45}%
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="5"
-                        value={
-                          typeof editingSection.data?.overlayOpacity === 'number'
-                            ? (editingSection.data.overlayOpacity <= 1
-                                ? Math.round(editingSection.data.overlayOpacity * 100)
-                                : Math.round(editingSection.data.overlayOpacity))
-                            : 45
-                        }
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10);
-                          updateSectionData('overlayOpacity', val);
-                        }}
-                        className="w-full accent-rose-500 cursor-pointer"
-                      />
-                      <div className="flex items-center gap-2 pt-1">
-                        <span className="text-xs text-slate-400">Overlay Tint:</span>
-                        <input
-                          type="color"
-                          value={editingSection.data?.overlayColor || '#000000'}
-                          onChange={(e) => updateSectionData('overlayColor', e.target.value)}
-                          className="w-7 h-7 rounded bg-transparent border border-slate-700 cursor-pointer"
-                        />
-                        <span className="text-xs text-slate-300 font-mono">{editingSection.data?.overlayColor || '#000000'}</span>
-                      </div>
-                    </div>
+              {/* RIGHT COLUMN: LIVE REAL-TIME SECTION VISUALIZER (45% Width) */}
+              <div className="hidden lg:flex lg:w-[45%] flex-col bg-[#07090E] overflow-hidden">
+                {/* Visualizer Header */}
+                <div className="h-12 bg-slate-900/90 border-b border-slate-800 px-4 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                      Live Component Visualizer
+                    </span>
                   </div>
 
-                  {/* CUSTOM BUTTON STYLING (FOR HERO, PROMO, ETC.) */}
-                  <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                      Custom Button Styling &amp; Geometry
-                    </h4>
-
-                    {/* Primary Button Colors */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                          Primary Button BG Color
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            value={editingSection.data?.primaryBtnColor || '#E11D48'}
-                            onChange={(e) => updateSectionData('primaryBtnColor', e.target.value)}
-                            className="w-9 h-9 rounded-lg bg-transparent border border-slate-700 cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={editingSection.data?.primaryBtnColor || '#E11D48'}
-                            onChange={(e) => updateSectionData('primaryBtnColor', e.target.value)}
-                            className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                            placeholder="#E11D48"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                          Primary Button Text Color
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            value={editingSection.data?.primaryBtnTextColor || '#FFFFFF'}
-                            onChange={(e) => updateSectionData('primaryBtnTextColor', e.target.value)}
-                            className="w-9 h-9 rounded-lg bg-transparent border border-slate-700 cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={editingSection.data?.primaryBtnTextColor || '#FFFFFF'}
-                            onChange={(e) => updateSectionData('primaryBtnTextColor', e.target.value)}
-                            className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                            placeholder="#FFFFFF"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Secondary Button Colors */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                          Secondary Button BG / Border
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            value={editingSection.data?.secondaryBtnColor || '#FFFFFF'}
-                            onChange={(e) => updateSectionData('secondaryBtnColor', e.target.value)}
-                            className="w-9 h-9 rounded-lg bg-transparent border border-slate-700 cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={editingSection.data?.secondaryBtnColor || '#FFFFFF'}
-                            onChange={(e) => updateSectionData('secondaryBtnColor', e.target.value)}
-                            className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                            placeholder="#FFFFFF"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                          Secondary Button Text Color
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            value={editingSection.data?.secondaryBtnTextColor || '#111827'}
-                            onChange={(e) => updateSectionData('secondaryBtnTextColor', e.target.value)}
-                            className="w-9 h-9 rounded-lg bg-transparent border border-slate-700 cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={editingSection.data?.secondaryBtnTextColor || '#111827'}
-                            onChange={(e) => updateSectionData('secondaryBtnTextColor', e.target.value)}
-                            className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                            placeholder="#111827"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Button Corner Radius */}
-                    <div className="space-y-2 pt-2">
-                      <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                        Button Border Radius
-                      </label>
-                      <div className="grid grid-cols-5 gap-2">
-                        {[
-                          { val: '0px', label: '0px (Sharp)' },
-                          { val: '4px', label: '4px (Subtle)' },
-                          { val: '8px', label: '8px (Rounded)' },
-                          { val: '16px', label: '16px (Curved)' },
-                          { val: '9999px', label: 'Pill' },
-                        ].map((rad) => (
-                          <button
-                            key={rad.val}
-                            type="button"
-                            onClick={() => updateSectionData('btnBorderRadius', rad.val)}
-                            className={`py-2 px-2 rounded-xl text-[11px] font-bold transition-all border text-center ${
-                              (editingSection.data?.btnBorderRadius || '8px') === rad.val
-                                ? 'bg-rose-600 text-white border-rose-500 shadow-md'
-                                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                            }`}
-                          >
-                            {rad.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SECTION PADDINGS (TOP & BOTTOM) */}
-                  <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                      Section Padding &amp; Vertical Rhythm
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-[11px] font-medium text-slate-400">Padding Top</label>
-                          <span className="text-xs font-mono text-rose-400">
-                            {editingSection.data?.paddingTop || editingSection.styles?.paddingTop || '60px'}
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="160"
-                          step="10"
-                          value={parseInt(editingSection.data?.paddingTop || editingSection.styles?.paddingTop || '60', 10) || 60}
-                          onChange={(e) => {
-                            const val = `${e.target.value}px`;
-                            updateSectionMultipleData({ paddingTop: val });
-                            updateSectionStyles('paddingTop', val);
-                          }}
-                          className="w-full accent-rose-500 cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-[11px] font-medium text-slate-400">Padding Bottom</label>
-                          <span className="text-xs font-mono text-rose-400">
-                            {editingSection.data?.paddingBottom || editingSection.styles?.paddingBottom || '60px'}
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="160"
-                          step="10"
-                          value={parseInt(editingSection.data?.paddingBottom || editingSection.styles?.paddingBottom || '60', 10) || 60}
-                          onChange={(e) => {
-                            const val = `${e.target.value}px`;
-                            updateSectionMultipleData({ paddingBottom: val });
-                            updateSectionStyles('paddingBottom', val);
-                          }}
-                          className="w-full accent-rose-500 cursor-pointer"
-                        />
-                      </div>
-                    </div>
+                  {/* Device Preview Toggle */}
+                  <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-950 border border-slate-800">
+                    <button
+                      onClick={() => setDevice('desktop')}
+                      className={`p-1 rounded ${device === 'desktop' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      title="Desktop View"
+                    >
+                      <Monitor className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDevice('tablet')}
+                      className={`p-1 rounded ${device === 'tablet' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      title="Tablet View"
+                    >
+                      <Tablet className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDevice('mobile')}
+                      className={`p-1 rounded ${device === 'mobile' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      title="Mobile View"
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-              )}
 
-              {/* ========================================================= */}
-              {/* TAB 4: RESPONSIVE & VISIBILITY */}
-              {/* ========================================================= */}
-              {inspectorTab === 'responsive' && (
-                <div className="space-y-6">
-                  <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                      Device Viewport Display Toggles
-                    </h4>
-                    <p className="text-[11px] text-slate-400">
-                      Control exactly which devices render this section on the live storefront.
-                    </p>
-
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <div className="flex items-center gap-3">
-                          <Monitor className="w-5 h-5 text-rose-400" />
-                          <div>
-                            <div className="text-xs font-bold text-white">Desktop Computers &amp; Laptops</div>
-                            <div className="text-[10px] text-slate-400">Screens 1024px and wider</div>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={editingSection.responsive?.desktop?.visible !== false}
-                          onChange={(e) => updateSectionResponsive('desktop', e.target.checked)}
-                          className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <div className="flex items-center gap-3">
-                          <Tablet className="w-5 h-5 text-amber-400" />
-                          <div>
-                            <div className="text-xs font-bold text-white">iPads &amp; Tablet Displays</div>
-                            <div className="text-[10px] text-slate-400">Screens 768px to 1023px</div>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={editingSection.responsive?.tablet?.visible !== false}
-                          onChange={(e) => updateSectionResponsive('tablet', e.target.checked)}
-                          className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <div className="flex items-center gap-3">
-                          <Smartphone className="w-5 h-5 text-emerald-400" />
-                          <div>
-                            <div className="text-xs font-bold text-white">Smartphones &amp; Mobile Screens</div>
-                            <div className="text-[10px] text-slate-400">Screens less than 768px</div>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={editingSection.responsive?.mobile?.visible !== false}
-                          onChange={(e) => updateSectionResponsive('mobile', e.target.checked)}
-                          className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
-                        />
-                      </div>
-                    </div>
+                {/* Visualizer Render Window */}
+                <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-start bg-black/50">
+                  <div
+                    className={`transition-all duration-300 bg-[#FAFAF9] rounded-2xl shadow-2xl overflow-hidden border border-white/10 w-full ${
+                      device === 'mobile' ? 'max-w-[340px]' : device === 'tablet' ? 'max-w-[480px]' : 'max-w-full'
+                    }`}
+                  >
+                    <SectionVisualRenderer
+                      section={editingSection}
+                      device={device}
+                      showActions={false}
+                      activeSlideIdx={activeSlideIdx}
+                      onSlideChange={setActiveSlideIdx}
+                    />
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between">
+            <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between shrink-0">
               <span className="text-[11px] text-slate-400">
-                All changes automatically reflected in draft state.
+                Visual changes automatically synced to active draft.
               </span>
 
               <button
@@ -3448,7 +3142,7 @@ export default function HomepageBuilderStudio() {
         </div>
       )}
 
-      {/* 5. FULLSCREEN STOREFRONT LIVE SIMULATOR */}
+      {/* 5. FULLSCREEN LIVE SIMULATOR */}
       {isLivePreviewOpen && (
         <div className="fixed inset-0 z-50 bg-[#07090E]/95 backdrop-blur-md flex flex-col">
           <div className="h-14 bg-slate-900/90 border-b border-slate-800 px-6 flex items-center justify-between">
@@ -3513,251 +3207,16 @@ export default function HomepageBuilderStudio() {
             >
               {doc.sections
                 .filter((s) => s.enabled)
-                .map((sec) => {
-                  const isSecHero =
-                    sec.type === 'hero' ||
-                    sec.type === 'slider' ||
-                    sec.type === 'hero_slider' ||
-                    sec.type === 'hero-slider';
-                  const layout = sec.data?.layout || (isSecHero ? 'slider' : 'centered');
-                  const slides = (sec.data?.slides as HeroSlide[]) || [];
-                  const activeSlide = slides[simulatorSlideIdx % (slides.length || 1)] || {};
-                  const bgImg = activeSlide.desktopImage || sec.data?.desktopImage || sec.data?.bgImage || '';
-                  const overlayOp = typeof activeSlide.overlayOpacity === 'number'
-                    ? (activeSlide.overlayOpacity <= 1 ? activeSlide.overlayOpacity * 100 : activeSlide.overlayOpacity)
-                    : (typeof sec.data?.overlayOpacity === 'number'
-                      ? (sec.data.overlayOpacity <= 1 ? sec.data.overlayOpacity * 100 : sec.data.overlayOpacity)
-                      : 45);
-
-                  // Button styling
-                  const btnPlacement = sec.data?.buttonPlacement || sec.data?.contentAlign || 'center';
-                  const btnOrientation = sec.data?.buttonOrientation || 'inline';
-                  const btnRadius = sec.data?.btnBorderRadius || '8px';
-                  const primaryBg = sec.data?.primaryBtnColor || '#E11D48';
-                  const primaryText = sec.data?.primaryBtnTextColor || '#FFFFFF';
-                  const secondaryBg = sec.data?.secondaryBtnColor || '#FFFFFF';
-                  const secondaryText = sec.data?.secondaryBtnTextColor || '#111827';
-
-                  if (isSecHero) {
-                    return (
-                      <div
-                        key={sec.id}
-                        className="relative w-full overflow-hidden flex items-center justify-center text-white"
-                        style={{
-                          minHeight: device === 'mobile' ? '450px' : (sec.data?.minHeight || '600px'),
-                          backgroundImage: bgImg ? `url('${bgImg}')` : undefined,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          backgroundColor: sec.data?.bgColor || '#0F172A',
-                        }}
-                      >
-                        {/* Darkening Overlay */}
-                        <div
-                          className="absolute inset-0 z-0"
-                          style={{
-                            backgroundColor: sec.data?.overlayColor || '#000000',
-                            opacity: overlayOp / 100,
-                          }}
-                        />
-
-                        {/* Slider Prev / Next Arrows */}
-                        {layout === 'slider' && slides.length > 1 && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setSimulatorSlideIdx((prev) => (prev > 0 ? prev - 1 : slides.length - 1))}
-                              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md flex items-center justify-center text-white border border-white/20 transition-transform hover:scale-110"
-                            >
-                              <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSimulatorSlideIdx((prev) => (prev + 1) % slides.length)}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md flex items-center justify-center text-white border border-white/20 transition-transform hover:scale-110"
-                            >
-                              <ChevronRight className="w-5 h-5" />
-                            </button>
-
-                            {/* Dots */}
-                            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-                              {slides.map((_, dotIdx) => (
-                                <button
-                                  key={dotIdx}
-                                  type="button"
-                                  onClick={() => setSimulatorSlideIdx(dotIdx)}
-                                  className={`transition-all ${
-                                    simulatorSlideIdx % slides.length === dotIdx
-                                      ? 'w-7 h-2 rounded-full bg-rose-500'
-                                      : 'w-2 h-2 rounded-full bg-white/50 hover:bg-white'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </>
-                        )}
-
-                        {/* Content Container */}
-                        <div
-                          className={`relative z-10 w-full max-w-4xl px-6 py-12 ${
-                            btnPlacement === 'left' ? 'text-left' : btnPlacement === 'right' ? 'text-right' : 'text-center'
-                          }`}
-                        >
-                          {(activeSlide.tagline || sec.data?.tagline) && (
-                            <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-rose-600 text-white inline-block mb-3 shadow-lg">
-                              {activeSlide.tagline || sec.data.tagline}
-                            </span>
-                          )}
-
-                          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-serif font-black tracking-tight leading-tight mb-4 drop-shadow-md">
-                            {activeSlide.title || sec.data?.heading || sec.name}
-                          </h2>
-
-                          <p className="text-xs sm:text-sm text-slate-200 max-w-xl mx-auto mb-6 leading-relaxed drop-shadow">
-                            {activeSlide.subtitle || sec.data?.subheading || sec.data?.description}
-                          </p>
-
-                          {/* Dual Buttons */}
-                          <div
-                            className={`flex items-center gap-3 ${
-                              btnPlacement === 'left'
-                                ? 'justify-start'
-                                : btnPlacement === 'right'
-                                ? 'justify-end'
-                                : 'justify-center'
-                            } ${btnOrientation === 'stacked' ? 'flex-col' : 'flex-row flex-wrap'}`}
-                          >
-                            {(activeSlide.primaryBtnText || sec.data?.primaryBtnText) && (
-                              <button
-                                style={{
-                                  backgroundColor: primaryBg,
-                                  color: primaryText,
-                                  borderRadius: btnRadius,
-                                }}
-                                className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
-                              >
-                                {activeSlide.primaryBtnText || sec.data.primaryBtnText}
-                              </button>
-                            )}
-
-                            {(activeSlide.secondaryBtnText || sec.data?.secondaryBtnText) && (
-                              <button
-                                style={{
-                                  backgroundColor: secondaryBg,
-                                  color: secondaryText,
-                                  borderRadius: btnRadius,
-                                }}
-                                className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
-                              >
-                                {activeSlide.secondaryBtnText || sec.data.secondaryBtnText}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // CATEGORIES SHOWCASE
-                  if (sec.type === 'categories') {
-                    const catList = (sec.data?.categoriesList as any[]) || [];
-                    return (
-                      <div key={sec.id} className="py-12 px-6 sm:px-12 bg-[#FAFAF9] border-b border-black/5">
-                        <div className="text-center max-w-xl mx-auto mb-8">
-                          <h2 className="text-2xl font-serif font-black text-slate-900">{sec.data?.heading || 'Shop By Category'}</h2>
-                          <p className="text-xs text-slate-600 mt-1">{sec.data?.subtitle}</p>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                          {catList.map((cat, idx) => (
-                            <div key={idx} className="group relative rounded-2xl overflow-hidden aspect-[3/4] bg-slate-200 shadow-md">
-                              {cat.image && (
-                                <img src={cat.image} alt={cat.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
-                                {cat.badge && (
-                                  <span className="text-[9px] font-bold uppercase tracking-wider text-rose-400 mb-1">{cat.badge}</span>
-                                )}
-                                <span className="font-bold text-sm">{cat.label}</span>
-                                <span className="text-[10px] text-slate-300">{cat.count}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // VALUE PROPOSITIONS
-                  if (sec.type === 'value_props') {
-                    const vList = (sec.data?.items as any[]) || [];
-                    return (
-                      <div key={sec.id} className="py-10 px-6 sm:px-12 bg-white border-b border-black/5">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                          {vList.map((v, idx) => (
-                            <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                                <Sparkles className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-xs text-slate-900">{v.title}</h4>
-                                <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{v.description}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // PROMOTIONAL BANNER
-                  if (sec.type === 'promotional_banner') {
-                    return (
-                      <div
-                        key={sec.id}
-                        className="py-12 px-6 sm:px-12 text-center text-white relative overflow-hidden"
-                        style={{ backgroundColor: sec.data?.bgColor || '#0F172A' }}
-                      >
-                        {sec.data?.tagline && (
-                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-400 block mb-2">
-                            {sec.data.tagline}
-                          </span>
-                        )}
-                        <h2 className="text-xl sm:text-2xl font-serif font-black mb-2">{sec.data?.heading}</h2>
-                        <p className="text-xs text-slate-300 max-w-xl mx-auto mb-4">{sec.data?.description}</p>
-                        {sec.data?.btnText && (
-                          <button className="px-6 py-2.5 rounded-lg bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
-                            {sec.data.btnText}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  // DEFAULT SECTION CARD FALLBACK
-                  return (
-                    <div key={sec.id} className="py-10 px-6 sm:px-12 border-b border-black/5 last:border-0">
-                      <div className="text-center max-w-2xl mx-auto space-y-3">
-                        {sec.data?.tagline && (
-                          <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-rose-600 text-white inline-block">
-                            {sec.data.tagline}
-                          </span>
-                        )}
-                        <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
-                          {sec.data?.heading || sec.name}
-                        </h2>
-                        <p className="text-xs sm:text-sm text-slate-600">
-                          {sec.data?.subheading || sec.data?.description || sec.subtitle}
-                        </p>
-                        {sec.data?.primaryBtnText && (
-                          <div className="pt-2">
-                            <button className="px-6 py-2.5 rounded-lg bg-slate-950 text-white text-xs font-bold uppercase tracking-wider shadow-lg">
-                              {sec.data.primaryBtnText}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                .map((sec, sIdx) => (
+                  <SectionVisualRenderer
+                    key={sec.id}
+                    section={sec}
+                    device={device}
+                    canMoveUp={sIdx > 0}
+                    canMoveDown={sIdx < doc.sections.length - 1}
+                    showActions={false}
+                  />
+                ))}
             </div>
           </div>
         </div>
