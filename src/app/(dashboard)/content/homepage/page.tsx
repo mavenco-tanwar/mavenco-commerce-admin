@@ -740,7 +740,13 @@ function SectionVisualRenderer({
         : section.data.overlayOpacity
       : 45;
 
-  const btnPlacement = section.data?.buttonPlacement || section.data?.contentAlign || 'center';
+  // Exact Alignment & Width Configuration
+  const isFullWidth = (section.data?.containerWidth || 'contained') === 'full_width';
+  const containerClass = isFullWidth ? 'w-full px-4 sm:px-8' : 'max-w-6xl mx-auto px-4 sm:px-6';
+  const align = section.data?.contentAlign || section.data?.textAlignment || 'center';
+
+  // Button placements & styles
+  const btnPlacement = section.data?.buttonPlacement || align || 'center';
   const btnOrientation = section.data?.buttonOrientation || 'inline';
   const btnRadius = section.data?.btnBorderRadius || '8px';
   const primaryBg = section.data?.primaryBtnColor || '#E11D48';
@@ -748,8 +754,20 @@ function SectionVisualRenderer({
   const secondaryBg = section.data?.secondaryBtnColor || '#FFFFFF';
   const secondaryText = section.data?.secondaryBtnTextColor || '#111827';
 
+  // Spacing & background
+  const sectionBg = section.data?.bgColor || section.styles?.backgroundColor;
+  const sectionText = section.data?.textColor || section.styles?.color;
+  const padTop = section.data?.paddingTop || section.styles?.paddingTop || '48px';
+  const padBottom = section.data?.paddingBottom || section.styles?.paddingBottom || '48px';
+
   return (
-    <div className="relative group/section w-full transition-all">
+    <div
+      className="relative group/section w-full transition-all"
+      style={{
+        backgroundColor: sectionBg,
+        color: sectionText,
+      }}
+    >
       {/* Visual Hover Action Toolbar (For Canvas Mode) */}
       {showActions && (
         <div className="absolute top-3 right-3 z-30 opacity-0 group-hover/section:opacity-100 transition-all duration-200 flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-950/90 border border-slate-700 shadow-2xl backdrop-blur-md">
@@ -796,7 +814,6 @@ function SectionVisualRenderer({
         </div>
       )}
 
-      {/* RENDER BY TYPE */}
       {/* 1. HERO SECTION / SLIDER */}
       {isSecHero && (
         <div
@@ -807,8 +824,8 @@ function SectionVisualRenderer({
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundColor: section.data?.bgColor || '#0F172A',
-            paddingTop: section.data?.paddingTop || '40px',
-            paddingBottom: section.data?.paddingBottom || '40px',
+            paddingTop: padTop,
+            paddingBottom: padBottom,
           }}
         >
           {/* Darkening Overlay */}
@@ -856,20 +873,22 @@ function SectionVisualRenderer({
             </>
           )}
 
-          {/* Content Container */}
+          {/* Content Container respecting containerWidth & contentAlign */}
           {layout === 'split_left' || layout === 'split_right' ? (
             /* Split Screen Layout */
-            <div className={`relative z-10 w-full max-w-6xl px-6 sm:px-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center ${
+            <div className={`relative z-10 w-full ${containerClass} grid grid-cols-1 md:grid-cols-2 gap-8 items-center ${
               layout === 'split_left' ? '' : 'md:[&>*:first-child]:order-2'
             }`}>
-              <div className="rounded-2xl overflow-hidden shadow-2xl aspect-[4/3] relative border border-white/10">
-                <img src={bgImg || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop'} alt="Hero Frame" className="w-full h-full object-cover" />
+              <div className="rounded-2xl overflow-hidden shadow-2xl aspect-[4/3] relative border border-white/10 bg-slate-900">
+                <img src={bgImg || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop'} alt="" className="w-full h-full object-cover" />
                 <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/70 backdrop-blur-md text-rose-400 border border-white/10">
                   {curSlide.tagline || section.data?.tagline || 'ATELIER LUXURY'}
                 </div>
               </div>
 
-              <div className="space-y-4 text-left">
+              <div className={`space-y-4 ${
+                align === 'center' ? 'text-center items-center' : align === 'right' ? 'text-right items-end' : 'text-left items-start'
+              }`}>
                 {(curSlide.tagline || section.data?.tagline) && (
                   <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-rose-600 text-white inline-block shadow-md">
                     {curSlide.tagline || section.data?.tagline}
@@ -882,7 +901,9 @@ function SectionVisualRenderer({
                   {curSlide.subtitle || section.data?.subheading || section.data?.description}
                 </p>
 
-                <div className={`flex items-center gap-3 pt-2 ${btnOrientation === 'stacked' ? 'flex-col' : 'flex-row flex-wrap'}`}>
+                <div className={`flex items-center gap-3 pt-2 ${
+                  btnPlacement === 'left' ? 'justify-start' : btnPlacement === 'right' ? 'justify-end' : 'justify-center'
+                } ${btnOrientation === 'stacked' ? 'flex-col' : 'flex-row flex-wrap'}`}>
                   {(curSlide.primaryBtnText || section.data?.primaryBtnText) && (
                     <button
                       style={{ backgroundColor: primaryBg, color: primaryText, borderRadius: btnRadius }}
@@ -905,8 +926,8 @@ function SectionVisualRenderer({
           ) : (
             /* Centered / Slider / Editorial Standard */
             <div
-              className={`relative z-10 w-full max-w-4xl px-6 py-8 ${
-                btnPlacement === 'left' ? 'text-left' : btnPlacement === 'right' ? 'text-right' : 'text-center'
+              className={`relative z-10 w-full ${containerClass} ${
+                align === 'left' ? 'text-left' : align === 'right' ? 'text-right' : 'text-center'
               }`}
             >
               {(curSlide.tagline || section.data?.tagline) && (
@@ -920,7 +941,7 @@ function SectionVisualRenderer({
               </h2>
 
               <p className={`text-xs sm:text-sm text-slate-200 mb-6 leading-relaxed drop-shadow ${
-                btnPlacement === 'center' ? 'max-w-xl mx-auto' : 'max-w-xl'
+                align === 'center' ? 'max-w-xl mx-auto' : align === 'right' ? 'max-w-xl ml-auto' : 'max-w-xl'
               }`}>
                 {curSlide.subtitle || section.data?.subheading || section.data?.description}
               </p>
@@ -958,144 +979,335 @@ function SectionVisualRenderer({
         </div>
       )}
 
-      {/* 2. CATEGORIES */}
+      {/* 2. CATEGORIES SHOWCASE */}
       {section.type === 'categories' && (
-        <div className="py-12 px-6 sm:px-12 bg-[#FAFAF9] border-b border-black/5">
-          <div className="text-center max-w-xl mx-auto mb-8">
-            <h2 className="text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Shop By Category'}</h2>
-            <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>
-          </div>
-          <div className={`grid gap-4 ${device === 'mobile' ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
-            {((section.data?.categoriesList as any[]) || []).map((cat, idx) => (
-              <div
-                key={idx}
-                className="group relative rounded-2xl overflow-hidden aspect-[3/4] bg-slate-200 shadow-md cursor-pointer"
-                style={{ borderRadius: section.data?.cardBorderRadius || '16px' }}
-              >
-                {cat.image && (
-                  <img src={cat.image} alt={cat.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
-                  {cat.badge && (
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-rose-400 mb-1">{cat.badge}</span>
-                  )}
-                  <span className="font-bold text-sm">{cat.label}</span>
-                  <span className="text-[10px] text-slate-300">{cat.count}</span>
+        <div
+          className="border-b border-black/5"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+          }}
+        >
+          <div className={containerClass}>
+            {/* Header respecting contentAlign */}
+            <div className={`mb-8 space-y-1.5 ${
+              align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
+            }`}>
+              <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                {section.data?.heading || 'Shop By Category'}
+              </h2>
+              {section.data?.subtitle && (
+                <p className="text-xs text-slate-600">{section.data?.subtitle}</p>
+              )}
+            </div>
+
+            {/* Dynamic Grid with exact aspect ratio & border radius */}
+            {(() => {
+              const catList = (section.data?.categoriesList as any[]) || [];
+              const aspect = section.data?.aspectRatio || '3/4';
+              const aspectClass = aspect === '1/1' ? 'aspect-square' : aspect === '16/9' ? 'aspect-[16/9]' : 'aspect-[3/4]';
+              const radius = section.data?.cardBorderRadius || '16px';
+              const catCols = device === 'mobile' ? 2 : Math.min(Math.max(catList.length, 1), 4);
+
+              return (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${catCols}, minmax(0, 1fr))`,
+                    gap: '1rem',
+                  }}
+                >
+                  {catList.map((cat, idx) => (
+                    <div
+                      key={idx}
+                      className={`group relative overflow-hidden bg-gradient-to-tr from-slate-200 via-stone-200 to-rose-100 shadow-md cursor-pointer ${aspectClass}`}
+                      style={{ borderRadius: radius }}
+                    >
+                      {cat.image ? (
+                        <img
+                          src={cat.image}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : null}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-4 text-white">
+                        {cat.badge && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-rose-400 mb-1">
+                            {cat.badge}
+                          </span>
+                        )}
+                        <span className="font-bold text-sm leading-tight">{cat.label}</span>
+                        {cat.count && <span className="text-[10px] text-slate-300 mt-0.5">{cat.count}</span>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
+              );
+            })()}
           </div>
         </div>
       )}
 
       {/* 3. PRODUCTS GRID */}
       {(section.type === 'products_grid' || section.type === 'product_carousel') && (
-        <div className="py-12 px-6 sm:px-12 bg-white border-b border-black/5">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
-                {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
-              </span>
-              <h2 className="text-2xl font-serif font-black text-slate-900 mt-1">
-                {section.data?.heading || 'Featured Essentials'}
-              </h2>
-              <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>
-            </div>
-            {section.data?.showViewAll !== false && (
-              <span className="text-xs font-bold text-rose-600 flex items-center gap-1 cursor-pointer">
-                <span>View Full Catalog</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            )}
-          </div>
-
-          <div className={`grid gap-4 ${
-            device === 'mobile'
-              ? (section.data?.columnsMobile === 2 ? 'grid-cols-2' : 'grid-cols-1')
-              : device === 'tablet'
-              ? 'grid-cols-2'
-              : 'grid-cols-2 sm:grid-cols-4'
-          }`}>
-            {[
-              { title: 'Chanderi Silk Co-ord Set', price: '$280', tag: 'Bestseller', img: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop' },
-              { title: 'Hand-Tailored Linen Trench', price: '$420', tag: 'New Season', img: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=600&auto=format&fit=crop' },
-              { title: 'Pleated Organza Evening Gown', price: '$590', tag: 'Runway', img: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=600&auto=format&fit=crop' },
-              { title: 'Bespoke Atelier Tote Bag', price: '$340', tag: 'Limited', img: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop' },
-            ].slice(0, section.data?.limit || 4).map((prod, pIdx) => (
-              <div key={pIdx} className="group rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 shadow-sm flex flex-col">
-                <div className="aspect-[3/4] relative overflow-hidden bg-slate-200">
-                  <img src={prod.img} alt={prod.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-black/70 text-white backdrop-blur-md">
-                    {prod.tag}
-                  </span>
-                </div>
-                <div className="p-3.5 space-y-1">
-                  <h4 className="font-bold text-xs text-slate-900 truncate">{prod.title}</h4>
-                  <span className="text-xs font-mono font-bold text-rose-600">{prod.price}</span>
-                </div>
+        <div
+          className="border-b border-black/5"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+          }}
+        >
+          <div className={containerClass}>
+            {/* Header strictly following contentAlign */}
+            {align === 'center' ? (
+              <div className="text-center max-w-2xl mx-auto mb-8 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
+                  {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                  {section.data?.heading || 'Featured Essentials'}
+                </h2>
+                {section.data?.subtitle && <p className="text-xs text-slate-600">{section.data?.subtitle}</p>}
+                {section.data?.showViewAll !== false && (
+                  <div className="pt-2">
+                    <span className="text-xs font-bold text-rose-600 inline-flex items-center gap-1 cursor-pointer hover:underline">
+                      <span>View Full Catalog</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                )}
               </div>
-            ))}
+            ) : align === 'right' ? (
+              <div className="text-right max-w-2xl ml-auto mb-8 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
+                  {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                  {section.data?.heading || 'Featured Essentials'}
+                </h2>
+                {section.data?.subtitle && <p className="text-xs text-slate-600">{section.data?.subtitle}</p>}
+                {section.data?.showViewAll !== false && (
+                  <div className="pt-2">
+                    <span className="text-xs font-bold text-rose-600 inline-flex items-center gap-1 cursor-pointer hover:underline">
+                      <span>View Full Catalog</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
+                    {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900 mt-1">
+                    {section.data?.heading || 'Featured Essentials'}
+                  </h2>
+                  {section.data?.subtitle && <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>}
+                </div>
+                {section.data?.showViewAll !== false && (
+                  <span className="text-xs font-bold text-rose-600 flex items-center gap-1 cursor-pointer hover:underline">
+                    <span>View Full Catalog</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* DYNAMIC GRID strictly following columnsDesktop, columnsTablet, columnsMobile */}
+            {(() => {
+              const pCols =
+                device === 'mobile'
+                  ? (section.data?.columnsMobile || 1)
+                  : device === 'tablet'
+                  ? (section.data?.columnsTablet || 2)
+                  : (section.data?.columnsDesktop || 4);
+              const pLimit = section.data?.limit || 8;
+
+              return (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${pCols}, minmax(0, 1fr))`,
+                    gap: '1rem',
+                  }}
+                >
+                  {[
+                    { title: 'Chanderi Silk Co-ord Set', price: '$280', tag: 'Bestseller', color: '#B77A68' },
+                    { title: 'Hand-Tailored Linen Trench', price: '$420', tag: 'New Season', color: '#1E1B4B' },
+                    { title: 'Pleated Organza Evening Gown', price: '$590', tag: 'Runway', color: '#E11D48' },
+                    { title: 'Bespoke Atelier Tote Bag', price: '$340', tag: 'Limited', color: '#0F172A' },
+                    { title: 'Gold Embroidered Co-ord', price: '$310', tag: 'Exclusive', color: '#D97706' },
+                    { title: 'Bespoke Cashmere Knitwear', price: '$260', tag: 'Seasonal', color: '#475569' },
+                  ].slice(0, pLimit).map((prod, pIdx) => (
+                    <div key={pIdx} className="group rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 shadow-sm flex flex-col transition-all hover:shadow-md">
+                      <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-tr from-slate-100 via-stone-100 to-rose-50 flex items-center justify-center p-4">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-110" style={{ backgroundColor: prod.color }}>
+                          <ShoppingBag className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-black/80 text-white backdrop-blur-md">
+                          {prod.tag}
+                        </span>
+                      </div>
+                      <div className="p-3 space-y-1 bg-white">
+                        <h4 className="font-bold text-xs text-slate-900 truncate">{prod.title}</h4>
+                        <span className="text-xs font-mono font-bold text-rose-600 block">{prod.price}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
 
       {/* 4. VALUE PROPOSITIONS */}
       {section.type === 'value_props' && (
-        <div className="py-10 px-6 sm:px-12 bg-white border-b border-black/5">
-          <div className={`grid gap-6 ${device === 'mobile' ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-4'}`}>
-            {((section.data?.items as any[]) || []).map((v, idx) => (
-              <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-xs text-slate-900">{v.title}</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{v.description}</p>
-                </div>
+        <div
+          className="border-b border-black/5"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+          }}
+        >
+          <div className={containerClass}>
+            {/* Header respecting contentAlign */}
+            {section.data?.heading && (
+              <div className={`mb-8 space-y-1.5 ${
+                align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
+              }`}>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                  {section.data.heading}
+                </h2>
+                {section.data?.subheading && <p className="text-xs text-slate-600">{section.data.subheading}</p>}
               </div>
-            ))}
+            )}
+
+            {(() => {
+              const vList = (section.data?.items as any[]) || [];
+              const vCols = device === 'mobile' ? 1 : (section.data?.columns || 4);
+              const cardStyle = section.data?.cardStyle || 'bordered';
+
+              return (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${vCols}, minmax(0, 1fr))`,
+                    gap: '1.25rem',
+                  }}
+                >
+                  {vList.map((v, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-4 flex items-start gap-3.5 transition-all ${
+                        cardStyle === 'tinted'
+                          ? 'bg-slate-900 text-white rounded-xl border border-slate-800 shadow-md'
+                          : cardStyle === 'minimal'
+                          ? 'bg-transparent border-0'
+                          : 'bg-slate-50 border border-slate-200/80 rounded-xl shadow-xs'
+                      }`}
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <h4 className={`font-bold text-xs ${cardStyle === 'tinted' ? 'text-white' : 'text-slate-900'}`}>
+                          {v.title}
+                        </h4>
+                        <p className={`text-[11px] leading-relaxed ${cardStyle === 'tinted' ? 'text-slate-300' : 'text-slate-500'}`}>
+                          {v.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
 
       {/* 5. PROMOTIONAL BANNER */}
-      {section.type === 'promotional_banner' && (
-        <div
-          className="py-12 px-6 sm:px-12 text-center text-white relative overflow-hidden"
-          style={{ backgroundColor: section.data?.bgColor || '#0F172A' }}
-        >
-          {section.data?.tagline && (
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-400 block mb-2">
-              {section.data.tagline}
-            </span>
-          )}
-          <h2 className="text-xl sm:text-2xl font-serif font-black mb-2">{section.data?.heading}</h2>
-          <p className="text-xs text-slate-300 max-w-xl mx-auto mb-4">{section.data?.description}</p>
-          {section.data?.btnText && (
-            <button className="px-6 py-2.5 rounded-lg bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
-              {section.data.btnText}
-            </button>
-          )}
-        </div>
-      )}
+      {section.type === 'promotional_banner' && (() => {
+        const minH = section.data?.bannerHeight === 'compact' ? '200px' : section.data?.bannerHeight === 'tall' ? '420px' : '300px';
+
+        return (
+          <div className="py-6 sm:py-10">
+            <div
+              className={`relative overflow-hidden text-white flex flex-col justify-center ${
+                isFullWidth ? 'w-full px-6 sm:px-12' : 'max-w-5xl mx-auto px-6 sm:px-12 rounded-3xl shadow-xl'
+              } ${align === 'center' ? 'text-center items-center' : align === 'right' ? 'text-right items-end' : 'text-left items-start'}`}
+              style={{
+                backgroundColor: section.data?.bgColor || '#0F172A',
+                minHeight: minH,
+                paddingTop: padTop,
+                paddingBottom: padBottom,
+              }}
+            >
+              {section.data?.tagline && (
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-400 block mb-2">
+                  {section.data.tagline}
+                </span>
+              )}
+              <h2 className="text-xl sm:text-3xl font-serif font-black mb-2 leading-tight">
+                {section.data?.heading}
+              </h2>
+              <p className="text-xs text-slate-300 max-w-xl mb-4 leading-relaxed">
+                {section.data?.description}
+              </p>
+              {section.data?.btnText && (
+                <button className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105">
+                  {section.data.btnText}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 6. SPLIT EDITORIAL */}
       {section.type === 'image_text' && (
-        <div className="py-12 px-6 sm:px-12 bg-[#FAFAF9] border-b border-black/5">
-          <div className={`max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center ${
-            section.data?.imagePosition === 'right' ? 'md:[&>*:first-child]:order-2' : ''
-          }`}>
-            <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-lg">
-              <img src={section.data?.image || 'https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1200&auto=format&fit=crop'} alt="Story" className="w-full h-full object-cover" />
+        <div
+          className="border-b border-black/5"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+          }}
+        >
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 gap-8 items-center ${containerClass} ${
+              section.data?.imagePosition === 'right' ? 'md:[&>*:first-child]:order-2' : ''
+            }`}
+          >
+            <div className={`rounded-2xl overflow-hidden shadow-lg bg-slate-100 ${
+              section.data?.aspectRatio === 'square' ? 'aspect-square' : section.data?.aspectRatio === 'wide' ? 'aspect-[16/9]' : 'aspect-[3/4]'
+            }`}>
+              <img
+                src={section.data?.image || 'https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1200&auto=format&fit=crop'}
+                alt=""
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+              />
             </div>
-            <div className="space-y-3">
+            <div className={`space-y-3 ${align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left'}`}>
               {section.data?.tagline && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">{section.data.tagline}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
+                  {section.data.tagline}
+                </span>
               )}
-              <h3 className="text-2xl font-serif font-black text-slate-900">{section.data?.heading}</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">{section.data?.description}</p>
+              <h3 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                {section.data?.heading}
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {section.data?.description}
+              </p>
               {section.data?.btnText && (
-                <button className="px-5 py-2 rounded-lg bg-slate-900 text-white font-bold text-xs uppercase tracking-wider">
+                <button className="px-5 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs uppercase tracking-wider shadow-md">
                   {section.data.btnText}
                 </button>
               )}
@@ -1106,68 +1318,105 @@ function SectionVisualRenderer({
 
       {/* 7. COUNTDOWN */}
       {section.type === 'countdown' && (
-        <div className="py-12 px-6 sm:px-12 bg-slate-900 text-white text-center">
-          <h3 className="text-xl sm:text-2xl font-serif font-black mb-1">{section.data?.heading}</h3>
-          <p className="text-xs text-slate-300 mb-6">{section.data?.subtitle}</p>
-          <div className="flex items-center justify-center gap-3 font-mono font-bold mb-6">
-            <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
-              <span className="text-lg text-rose-400 block">03</span>
-              <span className="text-[9px] text-slate-400 uppercase">Days</span>
+        <div
+          className="text-white border-b border-black/5"
+          style={{
+            backgroundColor: section.data?.bgColor || '#0F172A',
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+          }}
+        >
+          <div className={`${containerClass} ${align === 'left' ? 'text-left' : align === 'right' ? 'text-right' : 'text-center'}`}>
+            <h3 className="text-xl sm:text-2xl font-serif font-black mb-1">{section.data?.heading}</h3>
+            {section.data?.subtitle && <p className="text-xs text-slate-300 mb-6">{section.data?.subtitle}</p>}
+            <div className={`flex items-center gap-3 font-mono font-bold mb-6 ${align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center'}`}>
+              <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
+                <span className="text-lg text-rose-400 block">03</span>
+                <span className="text-[9px] text-slate-400 uppercase">Days</span>
+              </div>
+              <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
+                <span className="text-lg text-rose-400 block">14</span>
+                <span className="text-[9px] text-slate-400 uppercase">Hours</span>
+              </div>
+              <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
+                <span className="text-lg text-rose-400 block">28</span>
+                <span className="text-[9px] text-slate-400 uppercase">Mins</span>
+              </div>
+              <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
+                <span className="text-lg text-rose-400 block">45</span>
+                <span className="text-[9px] text-slate-400 uppercase">Secs</span>
+              </div>
             </div>
-            <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
-              <span className="text-lg text-rose-400 block">14</span>
-              <span className="text-[9px] text-slate-400 uppercase">Hours</span>
-            </div>
-            <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
-              <span className="text-lg text-rose-400 block">28</span>
-              <span className="text-[9px] text-slate-400 uppercase">Mins</span>
-            </div>
-            <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
-              <span className="text-lg text-rose-400 block">45</span>
-              <span className="text-[9px] text-slate-400 uppercase">Secs</span>
-            </div>
+            {section.data?.btnText && (
+              <button className="px-6 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
+                {section.data.btnText}
+              </button>
+            )}
           </div>
-          {section.data?.btnText && (
-            <button className="px-6 py-2.5 rounded-lg bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
-              {section.data.btnText}
-            </button>
-          )}
         </div>
       )}
 
       {/* 8. TESTIMONIALS */}
       {section.type === 'testimonials' && (
-        <div className="py-12 px-6 sm:px-12 bg-[#FAFAF9] border-b border-black/5">
-          <div className="text-center max-w-xl mx-auto mb-8">
-            <h2 className="text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Patron Reflections'}</h2>
-            <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {((section.data?.testimonialsList as any[]) || []).map((t, idx) => (
-              <div key={idx} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-3">
-                <div className="flex items-center gap-1 text-amber-400">
-                  {[...Array(5)].map((_, s) => (
-                    <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+        <div
+          className="border-b border-black/5"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+          }}
+        >
+          <div className={containerClass}>
+            <div className={`mb-8 space-y-1.5 ${align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'}`}>
+              <h2 className="text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Patron Reflections'}</h2>
+              {section.data?.subtitle && <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>}
+            </div>
+
+            {(() => {
+              const tCols = device === 'mobile' ? 1 : (section.data?.columns || 2);
+              return (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${tCols}, minmax(0, 1fr))`,
+                    gap: '1.25rem',
+                  }}
+                >
+                  {((section.data?.testimonialsList as any[]) || []).map((t, idx) => (
+                    <div key={idx} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-3">
+                      {section.data?.showStars !== false && (
+                        <div className="flex items-center gap-1 text-amber-400">
+                          {[...Array(5)].map((_, s) => (
+                            <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-700 italic leading-relaxed">"{t.text}"</p>
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 block">{t.name}</span>
+                        <span className="text-[10px] text-slate-500">{t.role}</span>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                <p className="text-xs text-slate-700 italic leading-relaxed">"{t.text}"</p>
-                <div>
-                  <span className="text-xs font-bold text-slate-900 block">{t.name}</span>
-                  <span className="text-[10px] text-slate-500">{t.role}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })()}
           </div>
         </div>
       )}
 
       {/* 9. NEWSLETTER */}
       {section.type === 'newsletter' && (
-        <div className="py-12 px-6 sm:px-12 bg-white text-center border-b border-black/5">
-          <div className="max-w-xl mx-auto space-y-3">
+        <div
+          className="border-b border-black/5"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+          }}
+        >
+          <div className={`${containerClass} ${align === 'center' ? 'text-center max-w-xl mx-auto' : align === 'right' ? 'text-right max-w-xl ml-auto' : 'text-left max-w-xl'}`}>
             <h3 className="text-xl sm:text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Join The Private Circle'}</h3>
-            <p className="text-xs text-slate-600">{section.data?.description}</p>
-            <div className="flex items-center gap-2 max-w-md mx-auto pt-2">
+            <p className="text-xs text-slate-600 mt-1 mb-4">{section.data?.description}</p>
+            <div className={`flex items-center gap-2 max-w-md ${align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : ''}`}>
               <input
                 type="email"
                 placeholder={section.data?.placeholder || 'Enter your email...'}
@@ -1182,7 +1431,82 @@ function SectionVisualRenderer({
         </div>
       )}
 
-      {/* 10. SPACER */}
+            {/* 11. COLLECTIONS / LOOKBOOK */}
+      {(section.type === "collections" || section.type === "lookbook" || section.type === "collections_grid") && (
+        <div className="border-b border-black/5" style={{ paddingTop: padTop, paddingBottom: padBottom }}>
+          <div className={containerClass}>
+            <div className={`mb-8 space-y-1.5 ${align === "center" ? "text-center mx-auto max-w-xl" : align === "right" ? "text-right ml-auto max-w-xl" : "text-left max-w-xl"}`}>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
+                {section.data?.badge || "CURATED STORIES"}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                {section.data?.heading || section.data?.title || "Collections & Lookbooks"}
+              </h2>
+              {section.data?.subheading && <p className="text-xs text-slate-600">{section.data.subheading}</p>}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { title: "Festive Atelier", count: "8 Products", color: "#B77A68" },
+                { title: "Resort & Riviera Edit", count: "6 Products", color: "#1E1B4B" },
+                { title: "Midnight Noir", count: "4 Products", color: "#0F172A" },
+              ].map((col, cIdx) => (
+                <div key={cIdx} className="group rounded-2xl overflow-hidden bg-slate-900 text-white relative aspect-[4/5] p-6 flex flex-col justify-end shadow-md">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                  <div className="relative z-10 space-y-1">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-rose-300">{col.count}</span>
+                    <h3 className="text-lg font-serif font-bold text-white">{col.title}</h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 12. BRAND PARTNERS */}
+      {(section.type === "brands" || section.type === "brand-partners" || section.type === "press") && (
+        <div className="border-b border-black/5 py-8" style={{ paddingTop: padTop, paddingBottom: padBottom }}>
+          <div className={containerClass}>
+            <div className={`mb-6 ${align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left"}`}>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                {section.data?.heading || "AS FEATURED IN"}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
+              {["VOGUE", "ELLE", "HARPERS BAZAAR", "GQ", "L’OFFICIEL"].map((b, bIdx) => (
+                <span key={bIdx} className="font-serif font-black text-sm tracking-widest text-slate-700">{b}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 13. FAQ ACCORDION */}
+      {(section.type === "faq" || section.type === "faqs" || section.type === "accordion") && (
+        <div className="border-b border-black/5" style={{ paddingTop: padTop, paddingBottom: padBottom }}>
+          <div className={containerClass}>
+            <div className={`mb-8 space-y-1.5 ${align === "center" ? "text-center mx-auto max-w-xl" : align === "right" ? "text-right ml-auto max-w-xl" : "text-left max-w-xl"}`}>
+              <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                {section.data?.heading || "Frequently Asked Questions"}
+              </h2>
+            </div>
+            <div className="max-w-2xl mx-auto space-y-3">
+              {[
+                "What is your return & exchange policy?",
+                "How do I track my order shipment?",
+                "Do you offer bespoke custom tailoring?",
+              ].map((q, qIdx) => (
+                <div key={qIdx} className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-800">
+                  <span>{q}</span>
+                  <span className="text-slate-400 font-normal">+</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+{/* 10. SPACER */}
       {section.type === 'spacer' && (
         <div
           className="w-full flex items-center justify-center text-[10px] text-slate-400 font-mono select-none"
