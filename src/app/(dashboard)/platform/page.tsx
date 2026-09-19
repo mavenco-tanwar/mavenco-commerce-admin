@@ -3517,7 +3517,7 @@ function PlatformContent() {
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#161822] border border-slate-700 rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-800 shrink-0">
+            <div className="flex items-center justify-between p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-800 shrink-0">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-rose-400" />
                 <div>
@@ -3531,7 +3531,7 @@ function PlatformContent() {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-6">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6">
               {wizardStep < 5 && (
                 <form onSubmit={handleStartProvisioning} className="space-y-6">
                   {/* Step 1: Brand & Basic Identity */}
@@ -3623,7 +3623,7 @@ function PlatformContent() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-slate-300 font-bold">Store Currency</label>
                         <select
@@ -3695,7 +3695,7 @@ function PlatformContent() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-slate-300 font-bold">Primary Brand Color</label>
                         <div className="flex items-center gap-2 mt-1">
@@ -3882,17 +3882,17 @@ function PlatformContent() {
                   </div>
 
                   {/* Actions */}
-                  <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+                  <div className="pt-4 border-t border-slate-800 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5">
                     <button
                       type="button"
                       onClick={resetWizard}
-                      className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors"
+                      className="w-full sm:w-auto px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors text-center"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-6 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-950/50 transition-all flex items-center gap-1.5"
+                      className="w-full sm:w-auto px-6 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-950/50 transition-all flex items-center justify-center gap-1.5"
                     >
                       <span>Start Provisioning Pipeline</span>
                       <ArrowRight className="w-3.5 h-3.5" />

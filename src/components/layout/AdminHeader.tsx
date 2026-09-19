@@ -200,7 +200,7 @@ export function AdminHeader({
     <>
       {/* Global Superadmin Broadcast Banner */}
       {broadcast && !isBroadcastDismissed && (
-        <div className="bg-gradient-to-r from-amber-500/15 via-[#161822] to-amber-500/15 border-b border-amber-500/30 text-amber-200 px-4 py-2 text-xs flex items-center justify-between z-30 sticky top-0 shadow-sm">
+        <div className="bg-gradient-to-r from-amber-500/15 via-[#161822] to-amber-500/15 border-b border-amber-500/30 text-amber-200 px-3 sm:px-4 py-2 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 z-30 sticky top-0 shadow-sm">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
             <span className="font-medium text-[11px] sm:text-xs">{broadcast.message}</span>
@@ -217,25 +217,25 @@ export function AdminHeader({
 
       {/* Superadmin Impersonation Banner */}
       {impersonationState.isImpersonating && !isSuperadminRoute && (
-        <div className="bg-gradient-to-r from-amber-600 to-rose-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-md z-30 sticky top-0">
-          <div className="flex items-center gap-2">
+        <div className="bg-gradient-to-r from-amber-600 to-rose-600 text-white px-3 sm:px-4 py-2 text-xs font-bold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-md z-30 sticky top-0">
+          <div className="flex items-center gap-2 min-w-0">
             <Shield className="w-4 h-4 text-amber-200 animate-pulse shrink-0" />
-            <span>
-              👑 You are viewing <span className="underline">{activeTenant.name}</span> in Superadmin Impersonation Mode (Audit Active)
+            <span className="text-[11px] sm:text-xs truncate">
+              👑 Viewing <span className="underline">{activeTenant.name}</span> in Impersonation Mode <span className="hidden sm:inline">(Audit Active)</span>
             </span>
           </div>
 
           <button
             onClick={handleExitImpersonation}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-black/40 hover:bg-black/60 rounded-md text-[11px] font-bold text-white transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-black/40 hover:bg-black/60 rounded-md text-[10px] sm:text-[11px] font-bold text-white transition-all shrink-0"
           >
             <EyeOff className="w-3.5 h-3.5" />
-            <span>Exit Impersonation → Platform</span>
+            <span>Exit Mode</span>
           </button>
         </div>
       )}
 
-      <header className="sticky top-0 z-20 bg-[#12141D]/90 backdrop-blur-md border-b border-slate-800/90 h-16 flex items-center justify-between px-4 sm:px-6 select-none">
+      <header className="sticky top-0 z-20 bg-[#12141D]/90 backdrop-blur-md border-b border-slate-800/90 h-16 flex items-center justify-between px-3 sm:px-6 select-none">
         {/* Left: Mobile Hamburger, Store Switcher (superadmin only) & Lengthy Search */}
         <div className="flex items-center gap-3 flex-1 max-w-2xl mr-4">
           <button
@@ -246,11 +246,13 @@ export function AdminHeader({
           </button>
 
           {isSuperadminRoute ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#161822] border border-rose-500/30 rounded-xl text-xs shadow-sm shrink-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-bold text-white">Global Platform Control Plane</span>
-              <span className="hidden sm:inline text-slate-500">•</span>
-              <span className="hidden sm:inline text-rose-400 font-mono font-bold">{tenants.length} Tenant Partitions</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-[#161822] border border-rose-500/30 rounded-xl text-xs shadow-sm shrink-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="font-bold text-white text-[11px] sm:text-xs">
+                <span className="hidden sm:inline">Global Platform </span>Control Plane
+              </span>
+              <span className="hidden md:inline text-slate-500">•</span>
+              <span className="hidden md:inline text-rose-400 font-mono font-bold">{tenants.length} Partitions</span>
             </div>
           ) : isSuperadminUser ? (
             /* Store Switcher Dropdown (Superadmin only) */
@@ -286,7 +288,7 @@ export function AdminHeader({
                             : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
                           <div
                             className="w-5 h-5 rounded flex items-center justify-center text-[10px] text-white font-bold shrink-0"
                             style={{ backgroundColor: store.theme?.primaryColor || '#111111' }}
@@ -322,16 +324,25 @@ export function AdminHeader({
           ) : null}
 
           {!isSuperadminRoute && (
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="flex items-center gap-2.5 px-3.5 py-2 bg-[#161822] hover:bg-[#1C1F2C] border border-slate-700/80 rounded-lg text-xs text-slate-400 hover:text-slate-200 transition-all w-full max-w-lg lg:max-w-xl shadow-inner"
-            >
-              <Search className="w-4 h-4 text-slate-400 shrink-0" />
-              <span className="truncate">Search catalog, orders, customers...</span>
-              <kbd className="hidden sm:inline-block ml-auto text-[10px] font-mono bg-slate-800/90 px-2 py-0.5 rounded text-slate-400 border border-slate-700 shrink-0">
-                ⌘K
-              </kbd>
-            </button>
+            <>
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                aria-label="Search"
+                className="sm:hidden p-2 bg-[#161822] hover:bg-[#1C1F2C] border border-slate-700/80 rounded-lg text-slate-400 hover:text-slate-200 shrink-0"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="hidden sm:flex items-center gap-2.5 px-3.5 py-2 bg-[#161822] hover:bg-[#1C1F2C] border border-slate-700/80 rounded-lg text-xs text-slate-400 hover:text-slate-200 transition-all w-full max-w-lg lg:max-w-xl shadow-inner"
+              >
+                <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="truncate">Search catalog, orders, customers...</span>
+                <kbd className="hidden lg:inline-block ml-auto text-[10px] font-mono bg-slate-800/90 px-2 py-0.5 rounded text-slate-400 border border-slate-700 shrink-0">
+                  ⌘K
+                </kbd>
+              </button>
+            </>
           )}
         </div>
 

@@ -194,11 +194,11 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Bulk Actions Banner */}
       {selectedIds.length > 0 && bulkActions && (
-        <div className="p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl flex items-center justify-between text-xs animate-in fade-in">
+        <div className="p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs animate-in fade-in">
           <span className="text-rose-300 font-bold">
             {selectedIds.length} item(s) selected
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             {bulkActions.map((b) => (
               <button
                 key={b.label}
@@ -329,8 +329,8 @@ export function DataTable<T extends Record<string, any>>({
 
         {/* Pagination Footer */}
         {filtered.length > pageSize && (
-          <div className="p-3 bg-[#10121A] border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <div>
+          <div className="p-3 bg-[#10121A] border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+            <div className="text-center sm:text-left">
               Showing <strong className="text-white">{(currentPage - 1) * pageSize + 1}</strong> to{' '}
               <strong className="text-white">
                 {Math.min(currentPage * pageSize, filtered.length)}

@@ -657,6 +657,7 @@ function AdminSidebarInner({
         <div className="px-3 pt-3">
           <Link
             href="/platform?tab=overview"
+            onClick={onCloseMobile}
             className="w-full flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-rose-950/60 to-amber-950/40 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-bold transition-all shadow-sm group"
           >
             <div className="flex items-center gap-2">
@@ -959,8 +960,30 @@ function AdminSidebarInner({
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex animate-in fade-in duration-200">
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onCloseMobile} />
-          <div className="relative w-64 h-full z-10 shadow-2xl">
-            {sidebarContent}
+          <div className="relative w-72 max-w-[85vw] h-full z-10 shadow-2xl bg-[#10121A] flex flex-col">
+            {/* Mobile Drawer Header with Close Button */}
+            <div className="p-3.5 border-b border-slate-800/80 flex items-center justify-between shrink-0 bg-[#0E1017]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-rose-600 to-amber-600 flex items-center justify-center text-xs font-black text-white shadow-sm">
+                  M
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white tracking-wide">MAVENCO ADMIN</div>
+                  <div className="text-[10px] text-slate-500">Navigation Menu</div>
+                </div>
+              </div>
+              <button
+                onClick={onCloseMobile}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label="Close Sidebar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {sidebarContent}
+            </div>
           </div>
         </div>
       )}
