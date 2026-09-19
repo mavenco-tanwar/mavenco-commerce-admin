@@ -65,6 +65,8 @@ export interface TenantStore {
     customers: number;
     monthlyRevenue: number;
     storageUsedMb: number;
+    categories?: number;
+    collections?: number;
   };
   password?: string;
   temporaryPassword?: string;

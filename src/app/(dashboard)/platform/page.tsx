@@ -89,7 +89,7 @@ export interface CategoryBlueprint {
   catalogHighlights: string[];
 }
 
-export const CATEGORY_BLUEPRINTS: CategoryBlueprint[] = [
+const CATEGORY_BLUEPRINTS: CategoryBlueprint[] = [
   {
     id: 'fashion',
     name: 'Fashion & Luxury Apparel',

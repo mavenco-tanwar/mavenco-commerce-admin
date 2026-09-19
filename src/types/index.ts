@@ -106,6 +106,8 @@ export interface Product {
   categoryIds: string[];
   department?: string;
   category?: string;
+  categoryName?: string;
+  categorySlug?: string;
   collectionIds: string[];
   price: number;
   compareAtPrice?: number;
@@ -133,6 +135,10 @@ export interface Product {
     weightKg: number;
     isExpressAvailable: boolean;
   };
+  flags?: any;
+  isFeatured?: boolean;
+  isNewArrival?: boolean;
+  isBestSeller?: boolean;
   badges: {
     isFeatured: boolean;
     isNewArrival: boolean;
