@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 
 function corsHeaders() {
   return {
@@ -160,9 +160,10 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') || 'saas';
   const storeSlug = (searchParams.get('store') || searchParams.get('tenant') || '').toLowerCase().trim();
   const status = searchParams.get('status') || 'all';
+  const cleanSlug = (storeSlug || request.headers.get('x-tenant-slug') || '').replace(/^store_/, '').toLowerCase().trim();
 
   try {
-    const db = await getDatabase();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (db) {
       if (type === 'saas') {
         const collection = db.collection('saas_reviews');
@@ -211,7 +212,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const type = body.type || 'saas';
-    const db = await getDatabase();
+    const { searchParams } = new URL(request.url);
+    const cleanSlug = (body.storeSlug || body.tenantSlug || searchParams.get('tenant') || request.headers.get('x-tenant-slug') || '').replace(/^store_/, '').toLowerCase().trim();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (!db) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 500, headers: corsHeaders() });
     }
@@ -237,7 +240,9 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const type = body.type || 'saas';
-    const db = await getDatabase();
+    const { searchParams } = new URL(request.url);
+    const cleanSlug = (body.storeSlug || body.tenantSlug || searchParams.get('tenant') || request.headers.get('x-tenant-slug') || '').replace(/^store_/, '').toLowerCase().trim();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (!db || !body.id) {
       return NextResponse.json({ error: 'Review ID required' }, { status: 400, headers: corsHeaders() });
     }
@@ -265,7 +270,8 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const type = searchParams.get('type') || (id?.includes('saas') ? 'saas' : 'product');
-    const db = await getDatabase();
+    const cleanSlug = (searchParams.get('tenant') || searchParams.get('store') || request.headers.get('x-tenant-slug') || '').replace(/^store_/, '').toLowerCase().trim();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (!db || !id) {
       return NextResponse.json({ error: 'Review ID required' }, { status: 400, headers: corsHeaders() });
     }

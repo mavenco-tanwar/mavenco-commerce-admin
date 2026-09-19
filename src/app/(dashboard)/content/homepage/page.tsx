@@ -1626,6 +1626,8 @@ export default function HomepageBuilderStudio() {
     }
 
     loadData();
+    window.addEventListener("tenant_updated", loadData);
+    return () => window.removeEventListener("tenant_updated", loadData);
   }, []);
 
   // Save Draft

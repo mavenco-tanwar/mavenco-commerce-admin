@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 import { getDefaultCollectionPageConfig } from '@/lib/collection-page-presets';
 import { CollectionPageConfig } from '@/types/collection-page.types';
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   const defaultCfg = getDefaultCollectionPageConfig(tenantSlug);
 
   try {
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(tenantSlug)) || (await getDatabase());
     if (db) {
       const tenantMatchConditions = [
         { tenantId: tenantSlug },
@@ -147,7 +147,7 @@ async function handleSaveCollectionPage(request: NextRequest) {
 
   try {
     const body: CollectionPageConfig = await request.json();
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(tenantSlug)) || (await getDatabase());
 
     if (!db) {
       return NextResponse.json(

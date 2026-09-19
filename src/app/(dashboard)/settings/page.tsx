@@ -23,14 +23,21 @@ export default function GeneralSettingsPage() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
-    SettingsService.getStoreSettings().then((s) => {
-      setStoreName(s.storeName);
-      setTagline(s.tagline);
-      setContactEmail(s.contactEmail);
-      setPhone(s.phone);
-      setAddress(s.address);
-      setCurrency(s.currency);
-    });
+    const loadSettings = () => {
+      SettingsService.getStoreSettings().then((s) => {
+        setStoreName(s.storeName);
+        setTagline(s.tagline);
+        setContactEmail(s.contactEmail);
+        setPhone(s.phone);
+        setAddress(s.address);
+        setCurrency(s.currency);
+      });
+    };
+
+    loadSettings();
+
+    window.addEventListener("tenant_updated", loadSettings);
+    return () => window.removeEventListener("tenant_updated", loadSettings);
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {

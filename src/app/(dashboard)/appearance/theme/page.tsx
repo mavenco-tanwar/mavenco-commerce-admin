@@ -142,6 +142,8 @@ export default function ThemeBuilderStudio() {
     }
 
     loadTheme();
+    window.addEventListener("tenant_updated", loadTheme);
+    return () => window.removeEventListener("tenant_updated", loadTheme);
   }, []);
 
   // Save Draft

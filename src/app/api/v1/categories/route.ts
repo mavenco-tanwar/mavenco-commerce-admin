@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: [] }, { headers: corsHeaders() });
     }
 
-    const db = await getDatabase();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (db) {
       const collection = db.collection('categories');
       const docs = await collection
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       '';
 
     const cleanSlug = (tenantParam || 'jq-trends').replace(/^store_/, '').toLowerCase().trim();
-    const db = await getDatabase();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     const now = new Date().toISOString();
 
     const cleanName = body.name || 'New Category';

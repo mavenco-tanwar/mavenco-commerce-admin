@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,10 @@ export async function GET(
     const resolvedParams = await params;
     const rawId = resolvedParams?.id;
     const id = decodeURIComponent(rawId || '').trim();
-    const db = await getDatabase();
+    const { searchParams } = new URL(req.url);
+    const tenantParam = searchParams.get('tenant') || req.headers.get('x-tenant-slug') || '';
+    const cleanSlug = tenantParam.replace(/^(store_|_)/, '').toLowerCase().trim();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (!db) {
       return NextResponse.json({ success: false, error: 'Database unavailable' }, { status: 500, headers: corsHeaders() });
     }
@@ -58,7 +61,10 @@ export async function PATCH(
     const rawId = resolvedParams?.id;
     const id = decodeURIComponent(rawId || '').trim();
     const body = await req.json();
-    const db = await getDatabase();
+    const { searchParams } = new URL(req.url);
+    const tenantParam = body.tenantSlug || searchParams.get('tenant') || req.headers.get('x-tenant-slug') || '';
+    const cleanSlug = tenantParam.replace(/^(store_|_)/, '').toLowerCase().trim();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (!db) {
       return NextResponse.json({ success: false, error: 'Database unavailable' }, { status: 500, headers: corsHeaders() });
     }
@@ -106,7 +112,10 @@ export async function DELETE(
     const resolvedParams = await params;
     const rawId = resolvedParams?.id;
     const id = decodeURIComponent(rawId || '').trim();
-    const db = await getDatabase();
+    const { searchParams } = new URL(req.url);
+    const tenantParam = searchParams.get('tenant') || req.headers.get('x-tenant-slug') || '';
+    const cleanSlug = tenantParam.replace(/^(store_|_)/, '').toLowerCase().trim();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (!db) {
       return NextResponse.json({ success: false, error: 'Database unavailable' }, { status: 500, headers: corsHeaders() });
     }

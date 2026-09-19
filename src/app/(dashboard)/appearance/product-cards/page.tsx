@@ -197,6 +197,8 @@ export default function ProductCardBuilderStudio() {
     }
 
     loadData();
+    window.addEventListener("tenant_updated", loadData);
+    return () => window.removeEventListener("tenant_updated", loadData);
   }, []);
 
   // Save Draft

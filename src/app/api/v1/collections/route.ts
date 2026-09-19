@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     if (tenantSlug) tenantAliases.add(tenantSlug);
     if (cleanTenant) tenantAliases.add(cleanTenant);
 
-    const db = await getDatabase();
+    const db = cleanTenant ? ((await getTenantDatabase(cleanTenant)) || (await getDatabase())) : (await getDatabase());
     if (db) {
       const collection = db.collection('collections');
 
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
 
     const tenantSlug = rawTenant.replace(/^store_/, '').trim().toLowerCase();
 
-    const db = await getDatabase();
+    const db = tenantSlug ? ((await getTenantDatabase(tenantSlug)) || (await getDatabase())) : (await getDatabase());
     const now = new Date().toISOString();
     const cleanId = body.id || `col_${Date.now()}`;
     const cleanTitle = body.title || body.name || 'New Collection';
@@ -245,7 +245,8 @@ export async function DELETE(req: NextRequest) {
     }
 
     const cleanId = decodeURIComponent(id).trim();
-    const db = await getDatabase();
+    const delTenant = (searchParams.get('tenant') || req.headers.get('x-tenant-slug') || '').replace(/^(store_|_)/, '').trim().toLowerCase();
+    const db = delTenant ? ((await getTenantDatabase(delTenant)) || (await getDatabase())) : (await getDatabase());
     if (db) {
       const { ObjectId } = await import('mongodb');
       let objId = null;

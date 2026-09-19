@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 import { getDefaultPdpConfig, PDP_PRESET_TEMPLATES } from '@/lib/pdp-presets';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     const templateId = searchParams.get('template');
     const isPreview = searchParams.get('preview') === 'draft' || searchParams.get('status') === 'draft';
 
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(tenant)) || (await getDatabase());
     if (db) {
       const tenantMatchConditions = [
         { tenantSlug: tenant },
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanTenant = String(tenant).toLowerCase().trim();
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(tenant)) || (await getDatabase());
 
     if (!db) {
       return NextResponse.json(

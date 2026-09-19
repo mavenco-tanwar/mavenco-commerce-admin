@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 import { getDefaultTheme } from '@/lib/theme-presets';
 import { ThemeDocument } from '@/types/theme.types';
 
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   const defaultDoc = getDefaultTheme(tenantSlug);
 
   try {
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(tenantSlug)) || (await getDatabase());
     if (db) {
       const tenantMatchConditions = [
         { tenantId: tenantSlug },
@@ -104,7 +104,7 @@ async function handleSaveTheme(request: NextRequest) {
 
   try {
     const body: ThemeDocument = await request.json();
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(tenantSlug)) || (await getDatabase());
 
     if (!db) {
       return NextResponse.json(

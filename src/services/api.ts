@@ -147,20 +147,30 @@ export class ApiClient {
   ): Promise<ApiResponse<T>> {
     const baseUrl = getApiBaseUrl();
     let currentTenantSlug = "";
+    // Priority 1: Check if endpoint explicitly specifies ?tenant=
+    const endpointTenantMatch = endpoint.match(/[?&]tenant=([^&#]+)/);
+    if (endpointTenantMatch && endpointTenantMatch[1]) {
+      const parsed = decodeURIComponent(endpointTenantMatch[1]).replace(/^store_/, "").trim().toLowerCase();
+      if (parsed && parsed !== "all") {
+        currentTenantSlug = parsed;
+      }
+    }
+
     try {
       if (typeof window !== "undefined") {
-        const urlParams = new URLSearchParams(window.location.search);
-        const qTenant = urlParams.get("tenant");
-        if (qTenant && qTenant !== "all" && qTenant !== "lumina") {
-          currentTenantSlug = qTenant.replace(/^store_/, "").trim().toLowerCase();
+        if (!currentTenantSlug) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const qTenant = urlParams.get("tenant");
+          if (qTenant && qTenant !== "all") {
+            currentTenantSlug = qTenant.replace(/^store_/, "").trim().toLowerCase();
+          }
         }
         if (!currentTenantSlug) {
-          const storedTenantId = localStorage.getItem("jq_saas_active_tenant_id");
           const storedTenantSlug = localStorage.getItem("jq_saas_active_tenant_slug");
-          const effective = storedTenantId || storedTenantSlug || "";
-          if (effective && effective !== "all" && effective !== "lumina") {
+          const storedTenantId = localStorage.getItem("jq_saas_active_tenant_id");
+          const effective = storedTenantSlug || storedTenantId || "";
+          if (effective && effective !== "all") {
             currentTenantSlug = effective.replace(/^store_/, "").trim().toLowerCase();
-            localStorage.setItem("jq_saas_active_tenant_slug", currentTenantSlug);
           }
         }
         if (!currentTenantSlug) {
@@ -199,6 +209,8 @@ export class ApiClient {
         finalEndpoint.startsWith("/api/v1/collections") ||
         finalEndpoint.startsWith("/api/v1/platform") ||
         finalEndpoint.startsWith("/api/v1/marketing") ||
+        finalEndpoint.startsWith("/api/v1/settings") ||
+        finalEndpoint.startsWith("/api/v1/tenant-config") ||
         finalEndpoint.startsWith("/api/v1/reviews");
       if (isInternalRoute) {
         effectiveBaseUrl = window.location.origin;

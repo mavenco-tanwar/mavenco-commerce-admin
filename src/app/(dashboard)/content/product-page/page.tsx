@@ -76,8 +76,17 @@ export default function ProductPageBuilder() {
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
 
-  const activeTenant = PlatformService.getActiveTenant();
-  const tenantSlug = activeTenant.slug || 'lumina';
+  const [activeTenant, setActiveTenant] = useState(PlatformService.getActiveTenant());
+  const tenantSlug = activeTenant?.slug || "demo";
+
+  useEffect(() => {
+    const handleTenantUpdate = (e: any) => {
+      const updated = e?.detail || PlatformService.getActiveTenant();
+      setActiveTenant(updated);
+    };
+    window.addEventListener("tenant_updated", handleTenantUpdate);
+    return () => window.removeEventListener("tenant_updated", handleTenantUpdate);
+  }, []);
 
   // Config State with Undo/Redo History
   const [config, setConfig] = useState<ProductPageConfig>(() =>

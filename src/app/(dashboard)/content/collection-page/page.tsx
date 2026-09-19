@@ -56,7 +56,17 @@ export default function CollectionPageBuilder() {
     },
   });
 
-  const tenantSlug = PlatformService.getActiveTenant().slug || 'jqtrends';
+  const [activeTenant, setActiveTenant] = useState(PlatformService.getActiveTenant());
+  const tenantSlug = activeTenant?.slug || "demo";
+
+  useEffect(() => {
+    const handleTenantUpdate = (e: any) => {
+      const updated = e?.detail || PlatformService.getActiveTenant();
+      setActiveTenant(updated);
+    };
+    window.addEventListener("tenant_updated", handleTenantUpdate);
+    return () => window.removeEventListener("tenant_updated", handleTenantUpdate);
+  }, []);
 
   // 1. Fetch live PLP config from MongoDB Atlas
   useEffect(() => {

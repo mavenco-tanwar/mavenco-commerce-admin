@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,10 @@ export async function PATCH(
     const rawId = resolvedParams?.id;
     const id = decodeURIComponent(rawId || '').trim();
     const body = await req.json();
-    const db = await getDatabase();
+    const { searchParams } = new URL(req.url);
+    const tenantParam = body.tenantSlug || searchParams.get('tenant') || req.headers.get('x-tenant-slug') || '';
+    const cleanSlug = tenantParam.replace(/^(store_|_)/, '').toLowerCase().trim();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (db) {
       const { _id, createdAt, ...updates } = body;
       await db.collection('categories').updateOne(

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       '';
 
     const cleanSlug = tenantParam.replace(/^(store_|_)/, '').toLowerCase().trim();
-    const db = await getDatabase();
+    const db = cleanSlug ? ((await getTenantDatabase(cleanSlug)) || (await getDatabase())) : (await getDatabase());
     if (!db) {
       return NextResponse.json({ success: true, data: [] }, { headers: corsHeaders() });
     }
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       '';
 
     const cleanSlug = (tenantParam || 'jq-trends').replace(/^(store_|_)/, '').toLowerCase().trim();
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(cleanSlug)) || (await getDatabase());
     const now = new Date().toISOString();
 
     const title = body.title || body.name || 'Untitled Product';

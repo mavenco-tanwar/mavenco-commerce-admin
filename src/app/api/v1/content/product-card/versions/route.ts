@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     .trim();
 
   try {
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(tenantSlug)) || (await getDatabase());
     if (db) {
       const versions = await db
         .collection('product_card_versions')
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { version } = await request.json();
-    const db = await getDatabase();
+    const db = (await getTenantDatabase(tenantSlug)) || (await getDatabase());
 
     if (!db) {
       return NextResponse.json(
