@@ -689,6 +689,46 @@ function getDefaultHomepageDocument(tenantSlug: string = 'lumina', storeName: st
  * Faithfully renders each section with real typography, live images, slider arrows/dots,
  * button placements, orientation, colors, border-radius, and overlays.
  */
+
+const FONT_FAMILY_OPTIONS = [
+  { label: "Theme Default", value: "inherit" },
+  { label: "Playfair Display (Editorial Serif)", value: "'Playfair Display', Georgia, serif" },
+  { label: "Cinzel (Imperial Luxury Serif)", value: "'Cinzel', Georgia, serif" },
+  { label: "Cormorant Garamond (Fine Jewelry Serif)", value: "'Cormorant Garamond', Georgia, serif" },
+  { label: "Bodoni Moda (High Fashion)", value: "'Bodoni Moda', Georgia, serif" },
+  { label: "Plus Jakarta Sans (Modern Clean Sans)", value: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  { label: "Outfit (Geometric Contemporary)", value: "'Outfit', system-ui, sans-serif" },
+  { label: "Montserrat (Bold Architectural)", value: "'Montserrat', system-ui, sans-serif" },
+  { label: "Inter (Technical Neutral)", value: "'Inter', system-ui, sans-serif" },
+  { label: "Syne (Avant-Garde Pret)", value: "'Syne', system-ui, sans-serif" },
+  { label: "Space Grotesk (Neo-Brutalist)", value: "'Space Grotesk', monospace, sans-serif" },
+];
+
+const FONT_WEIGHT_OPTIONS = [
+  { label: "300 Light", value: "300" },
+  { label: "400 Normal", value: "400" },
+  { label: "500 Medium", value: "500" },
+  { label: "600 Semi-Bold", value: "600" },
+  { label: "700 Bold", value: "700" },
+  { label: "800 Extra-Bold", value: "800" },
+  { label: "900 Black", value: "900" },
+];
+
+const LETTER_SPACING_OPTIONS = [
+  { label: "Tight (-0.03em)", value: "-0.03em" },
+  { label: "Normal (0em)", value: "0em" },
+  { label: "Wide (0.05em)", value: "0.05em" },
+  { label: "Widest (0.15em)", value: "0.15em" },
+  { label: "Expanded (0.25em)", value: "0.25em" },
+];
+
+const TEXT_TRANSFORM_OPTIONS = [
+  { label: "None", value: "none" },
+  { label: "UPPERCASE", value: "uppercase" },
+  { label: "Capitalize", value: "capitalize" },
+  { label: "lowercase", value: "lowercase" },
+];
+
 function SectionVisualRenderer({
   section,
   device = 'desktop',
@@ -759,6 +799,87 @@ function SectionVisualRenderer({
   const sectionText = section.data?.textColor || section.styles?.color;
   const padTop = section.data?.paddingTop || section.styles?.paddingTop || '48px';
   const padBottom = section.data?.paddingBottom || section.styles?.paddingBottom || '48px';
+
+  // Section-level Typography Configuration
+  const headingFont = section.data?.headingFontFamily || section.data?.headingFont || section.styles?.headingFont;
+  const headingColor = section.data?.headingColor || section.data?.textColor || section.styles?.color;
+  const headingSize = section.data?.headingFontSize || section.styles?.headingFontSize;
+  const headingWeight = section.data?.headingFontWeight || section.styles?.headingFontWeight;
+  const headingTracking = section.data?.headingLetterSpacing || section.styles?.headingLetterSpacing;
+  const headingLineHeight = section.data?.headingLineHeight || section.styles?.headingLineHeight;
+  const headingTransform = section.data?.headingTextTransform || section.styles?.headingTextTransform;
+
+  const subtitleFont = section.data?.subtitleFontFamily || section.data?.subtitleFont || section.styles?.subtitleFont;
+  const subtitleColor = section.data?.subtitleColor || section.styles?.subtitleColor;
+  const subtitleSize = section.data?.subtitleFontSize || section.styles?.subtitleFontSize;
+  const subtitleWeight = section.data?.subtitleFontWeight || section.styles?.subtitleFontWeight;
+  const subtitleTracking = section.data?.subtitleLetterSpacing || section.styles?.subtitleLetterSpacing;
+  const subtitleLineHeight = section.data?.subtitleLineHeight || section.styles?.subtitleLineHeight;
+
+  const badgeFont = section.data?.badgeFontFamily;
+  const badgeColor = section.data?.badgeColor;
+  const badgeBg = section.data?.badgeBgColor;
+  const badgeSize = section.data?.badgeFontSize;
+  const badgeWeight = section.data?.badgeFontWeight;
+  const badgeTracking = section.data?.badgeLetterSpacing;
+  const badgeTransform = section.data?.badgeTextTransform;
+
+  const btnFont = section.data?.btnFontFamily;
+  const btnSize = section.data?.btnFontSize;
+  const btnWeight = section.data?.btnFontWeight;
+  const btnTracking = section.data?.btnLetterSpacing;
+  const btnTransform = section.data?.btnTextTransform;
+
+  const headingStyle: React.CSSProperties = {
+    ...(headingFont && headingFont !== 'inherit' ? { fontFamily: headingFont } : {}),
+    ...(headingColor ? { color: headingColor } : {}),
+    ...(headingSize ? { fontSize: headingSize } : {}),
+    ...(headingWeight ? { fontWeight: headingWeight } : {}),
+    ...(headingTracking ? { letterSpacing: headingTracking } : {}),
+    ...(headingLineHeight ? { lineHeight: headingLineHeight } : {}),
+    ...(headingTransform ? { textTransform: headingTransform as any } : {}),
+  };
+
+  const subtitleStyle: React.CSSProperties = {
+    ...(subtitleFont && subtitleFont !== 'inherit' ? { fontFamily: subtitleFont } : {}),
+    ...(subtitleColor ? { color: subtitleColor } : {}),
+    ...(subtitleSize ? { fontSize: subtitleSize } : {}),
+    ...(subtitleWeight ? { fontWeight: subtitleWeight } : {}),
+    ...(subtitleTracking ? { letterSpacing: subtitleTracking } : {}),
+    ...(subtitleLineHeight ? { lineHeight: subtitleLineHeight } : {}),
+  };
+
+  const badgeStyle: React.CSSProperties = {
+    ...(badgeFont && badgeFont !== 'inherit' ? { fontFamily: badgeFont } : {}),
+    ...(badgeColor ? { color: badgeColor } : {}),
+    ...(badgeBg ? { backgroundColor: badgeBg } : {}),
+    ...(badgeSize ? { fontSize: badgeSize } : {}),
+    ...(badgeWeight ? { fontWeight: badgeWeight } : {}),
+    ...(badgeTracking ? { letterSpacing: badgeTracking } : {}),
+    ...(badgeTransform ? { textTransform: badgeTransform as any } : {}),
+  };
+
+  const primaryBtnStyle: React.CSSProperties = {
+    backgroundColor: primaryBg,
+    color: primaryText,
+    borderRadius: btnRadius,
+    ...(btnFont && btnFont !== 'inherit' ? { fontFamily: btnFont } : {}),
+    ...(btnSize ? { fontSize: btnSize } : {}),
+    ...(btnWeight ? { fontWeight: btnWeight } : {}),
+    ...(btnTracking ? { letterSpacing: btnTracking } : {}),
+    ...(btnTransform ? { textTransform: btnTransform as any } : {}),
+  };
+
+  const secondaryBtnStyle: React.CSSProperties = {
+    backgroundColor: secondaryBg,
+    color: secondaryText,
+    borderRadius: btnRadius,
+    ...(btnFont && btnFont !== 'inherit' ? { fontFamily: btnFont } : {}),
+    ...(btnSize ? { fontSize: btnSize } : {}),
+    ...(btnWeight ? { fontWeight: btnWeight } : {}),
+    ...(btnTracking ? { letterSpacing: btnTracking } : {}),
+    ...(btnTransform ? { textTransform: btnTransform as any } : {}),
+  };
 
   return (
     <div
@@ -890,14 +1011,14 @@ function SectionVisualRenderer({
                 align === 'center' ? 'text-center items-center' : align === 'right' ? 'text-right items-end' : 'text-left items-start'
               }`}>
                 {(curSlide.tagline || section.data?.tagline) && (
-                  <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-rose-600 text-white inline-block shadow-md">
+                  <span style={badgeStyle} className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-rose-600 text-white inline-block shadow-md">
                     {curSlide.tagline || section.data?.tagline}
                   </span>
                 )}
-                <h2 className="text-2xl sm:text-4xl font-serif font-black tracking-tight leading-tight drop-shadow-md">
+                <h2 style={headingStyle} className="text-2xl sm:text-4xl font-serif font-black tracking-tight leading-tight drop-shadow-md">
                   {curSlide.title || section.data?.heading || section.name}
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed drop-shadow">
+                <p style={subtitleStyle} className="text-xs sm:text-sm text-slate-200 leading-relaxed drop-shadow">
                   {curSlide.subtitle || section.data?.subheading || section.data?.description}
                 </p>
 
@@ -906,16 +1027,16 @@ function SectionVisualRenderer({
                 } ${btnOrientation === 'stacked' ? 'flex-col' : 'flex-row flex-wrap'}`}>
                   {(curSlide.primaryBtnText || section.data?.primaryBtnText) && (
                     <button
-                      style={{ backgroundColor: primaryBg, color: primaryText, borderRadius: btnRadius }}
-                      className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105"
+                      style={primaryBtnStyle}
+                      className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
                     >
                       {curSlide.primaryBtnText || section.data?.primaryBtnText}
                     </button>
                   )}
                   {(curSlide.secondaryBtnText || section.data?.secondaryBtnText) && (
                     <button
-                      style={{ backgroundColor: secondaryBg, color: secondaryText, borderRadius: btnRadius }}
-                      className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105"
+                      style={secondaryBtnStyle}
+                      className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
                     >
                       {curSlide.secondaryBtnText || section.data?.secondaryBtnText}
                     </button>
@@ -931,16 +1052,16 @@ function SectionVisualRenderer({
               }`}
             >
               {(curSlide.tagline || section.data?.tagline) && (
-                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-rose-600 text-white inline-block mb-3 shadow-lg">
+                <span style={badgeStyle} className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-rose-600 text-white inline-block mb-3 shadow-lg">
                   {curSlide.tagline || section.data?.tagline}
                 </span>
               )}
 
-              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-serif font-black tracking-tight leading-tight mb-4 drop-shadow-md">
+              <h2 style={headingStyle} className="text-2xl sm:text-4xl lg:text-5xl font-serif font-black tracking-tight leading-tight mb-4 drop-shadow-md">
                 {curSlide.title || section.data?.heading || section.name}
               </h2>
 
-              <p className={`text-xs sm:text-sm text-slate-200 mb-6 leading-relaxed drop-shadow ${
+              <p style={subtitleStyle} className={`text-xs sm:text-sm text-slate-200 mb-6 leading-relaxed drop-shadow ${
                 align === 'center' ? 'max-w-xl mx-auto' : align === 'right' ? 'max-w-xl ml-auto' : 'max-w-xl'
               }`}>
                 {curSlide.subtitle || section.data?.subheading || section.data?.description}
@@ -958,7 +1079,7 @@ function SectionVisualRenderer({
               >
                 {(curSlide.primaryBtnText || section.data?.primaryBtnText) && (
                   <button
-                    style={{ backgroundColor: primaryBg, color: primaryText, borderRadius: btnRadius }}
+                    style={primaryBtnStyle}
                     className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
                   >
                     {curSlide.primaryBtnText || section.data?.primaryBtnText}
@@ -967,7 +1088,7 @@ function SectionVisualRenderer({
 
                 {(curSlide.secondaryBtnText || section.data?.secondaryBtnText) && (
                   <button
-                    style={{ backgroundColor: secondaryBg, color: secondaryText, borderRadius: btnRadius }}
+                    style={secondaryBtnStyle}
                     className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
                   >
                     {curSlide.secondaryBtnText || section.data?.secondaryBtnText}
@@ -993,11 +1114,11 @@ function SectionVisualRenderer({
             <div className={`mb-8 space-y-1.5 ${
               align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
             }`}>
-              <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
                 {section.data?.heading || 'Shop By Category'}
               </h2>
               {section.data?.subtitle && (
-                <p className="text-xs text-slate-600">{section.data?.subtitle}</p>
+                <p style={subtitleStyle} className="text-xs text-slate-600">{section.data?.subtitle}</p>
               )}
             </div>
 
@@ -1067,10 +1188,10 @@ function SectionVisualRenderer({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
                   {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
                   {section.data?.heading || 'Featured Essentials'}
                 </h2>
-                {section.data?.subtitle && <p className="text-xs text-slate-600">{section.data?.subtitle}</p>}
+                {section.data?.subtitle && <p style={subtitleStyle} className="text-xs text-slate-600">{section.data?.subtitle}</p>}
                 {section.data?.showViewAll !== false && (
                   <div className="pt-2">
                     <span className="text-xs font-bold text-rose-600 inline-flex items-center gap-1 cursor-pointer hover:underline">
@@ -1085,10 +1206,10 @@ function SectionVisualRenderer({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
                   {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+                <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
                   {section.data?.heading || 'Featured Essentials'}
                 </h2>
-                {section.data?.subtitle && <p className="text-xs text-slate-600">{section.data?.subtitle}</p>}
+                {section.data?.subtitle && <p style={subtitleStyle} className="text-xs text-slate-600">{section.data?.subtitle}</p>}
                 {section.data?.showViewAll !== false && (
                   <div className="pt-2">
                     <span className="text-xs font-bold text-rose-600 inline-flex items-center gap-1 cursor-pointer hover:underline">
@@ -1107,7 +1228,7 @@ function SectionVisualRenderer({
                   <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900 mt-1">
                     {section.data?.heading || 'Featured Essentials'}
                   </h2>
-                  {section.data?.subtitle && <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>}
+                  {section.data?.subtitle && <p style={subtitleStyle} className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>}
                 </div>
                 {section.data?.showViewAll !== false && (
                   <span className="text-xs font-bold text-rose-600 flex items-center gap-1 cursor-pointer hover:underline">
@@ -1254,7 +1375,7 @@ function SectionVisualRenderer({
                   {section.data.tagline}
                 </span>
               )}
-              <h2 className="text-xl sm:text-3xl font-serif font-black mb-2 leading-tight">
+              <h2 style={headingStyle} className="text-xl sm:text-3xl font-serif font-black mb-2 leading-tight">
                 {section.data?.heading}
               </h2>
               <p className="text-xs text-slate-300 max-w-xl mb-4 leading-relaxed">
@@ -1300,7 +1421,7 @@ function SectionVisualRenderer({
                   {section.data.tagline}
                 </span>
               )}
-              <h3 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+              <h3 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
                 {section.data?.heading}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -1367,7 +1488,7 @@ function SectionVisualRenderer({
         >
           <div className={containerClass}>
             <div className={`mb-8 space-y-1.5 ${align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'}`}>
-              <h2 className="text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Patron Reflections'}</h2>
+              <h2 style={headingStyle} className="text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Patron Reflections'}</h2>
               {section.data?.subtitle && <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>}
             </div>
 
@@ -1414,7 +1535,7 @@ function SectionVisualRenderer({
           }}
         >
           <div className={`${containerClass} ${align === 'center' ? 'text-center max-w-xl mx-auto' : align === 'right' ? 'text-right max-w-xl ml-auto' : 'text-left max-w-xl'}`}>
-            <h3 className="text-xl sm:text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Join The Private Circle'}</h3>
+            <h3 style={headingStyle} className="text-xl sm:text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Join The Private Circle'}</h3>
             <p className="text-xs text-slate-600 mt-1 mb-4">{section.data?.description}</p>
             <div className={`flex items-center gap-2 max-w-md ${align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : ''}`}>
               <input
@@ -3353,6 +3474,452 @@ export default function HomepageBuilderStudio() {
                                 {r === '9999px' ? 'Pill' : r}
                               </button>
                             ))}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Typography Panel 1: Heading & Title */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                            <Type className="w-3.5 h-3.5 text-rose-400" />
+                            <span>Heading &amp; Title Typography</span>
+                          </h4>
+                          <span className="text-[10px] font-mono text-rose-400 font-bold px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20">
+                            H1 / H2 / Title
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          {/* Font Family */}
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Font Family</label>
+                            <select
+                              value={editingSection.data?.headingFontFamily || 'inherit'}
+                              onChange={(e) => updateSectionData('headingFontFamily', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none font-sans"
+                            >
+                              {FONT_FAMILY_OPTIONS.map((f) => (
+                                <option key={f.value} value={f.value}>
+                                  {f.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Font Color & Size */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Heading Color</label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={editingSection.data?.headingColor || '#FFFFFF'}
+                                  onChange={(e) => updateSectionData('headingColor', e.target.value)}
+                                  className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingSection.data?.headingColor || '#FFFFFF'}
+                                  onChange={(e) => updateSectionData('headingColor', e.target.value)}
+                                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-[11px] text-slate-400">Font Size</label>
+                                <span className="text-xs font-mono font-bold text-rose-400">
+                                  {editingSection.data?.headingFontSize || '40px'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 pt-1">
+                                <input
+                                  type="range"
+                                  min="18"
+                                  max="80"
+                                  step="2"
+                                  value={parseInt(editingSection.data?.headingFontSize || '40', 10)}
+                                  onChange={(e) => updateSectionData('headingFontSize', `${e.target.value}px`)}
+                                  className="flex-1 accent-rose-500 cursor-pointer"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                {[
+                                  { label: 'S', val: '24px' },
+                                  { label: 'M', val: '32px' },
+                                  { label: 'L', val: '40px' },
+                                  { label: 'XL', val: '52px' },
+                                  { label: 'Display', val: '64px' },
+                                ].map((p) => (
+                                  <button
+                                    key={p.val}
+                                    type="button"
+                                    onClick={() => updateSectionData('headingFontSize', p.val)}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
+                                      editingSection.data?.headingFontSize === p.val
+                                        ? 'bg-rose-600/30 text-rose-300 border-rose-500'
+                                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                    }`}
+                                  >
+                                    {p.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Font Weight & Letter Spacing */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Font Weight</label>
+                              <select
+                                value={editingSection.data?.headingFontWeight || '700'}
+                                onChange={(e) => updateSectionData('headingFontWeight', e.target.value)}
+                                className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                              >
+                                {FONT_WEIGHT_OPTIONS.map((w) => (
+                                  <option key={w.value} value={w.value}>
+                                    {w.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Letter Spacing (Tracking)</label>
+                              <select
+                                value={editingSection.data?.headingLetterSpacing || '0em'}
+                                onChange={(e) => updateSectionData('headingLetterSpacing', e.target.value)}
+                                className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                              >
+                                {LETTER_SPACING_OPTIONS.map((ls) => (
+                                  <option key={ls.value} value={ls.value}>
+                                    {ls.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Line Height & Text Transform */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Line Height</label>
+                              <select
+                                value={editingSection.data?.headingLineHeight || '1.15'}
+                                onChange={(e) => updateSectionData('headingLineHeight', e.target.value)}
+                                className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                              >
+                                <option value="1.05">Tight (1.05)</option>
+                                <option value="1.15">Snug (1.15)</option>
+                                <option value="1.25">Normal (1.25)</option>
+                                <option value="1.4">Relaxed (1.4)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Text Transform</label>
+                              <div className="grid grid-cols-4 gap-1">
+                                {TEXT_TRANSFORM_OPTIONS.map((tt) => (
+                                  <button
+                                    key={tt.value}
+                                    type="button"
+                                    onClick={() => updateSectionData('headingTextTransform', tt.value)}
+                                    className={`py-1.5 rounded text-[10px] font-bold border transition-colors text-center ${
+                                      (editingSection.data?.headingTextTransform || 'none') === tt.value
+                                        ? 'bg-rose-600 text-white border-rose-500'
+                                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                    }`}
+                                  >
+                                    {tt.label === 'UPPERCASE' ? 'AA' : tt.label === 'Capitalize' ? 'Aa' : tt.label === 'lowercase' ? 'aa' : 'Off'}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Typography Panel 2: Subtitle & Body */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                            <Type className="w-3.5 h-3.5 text-blue-400" />
+                            <span>Subtitle &amp; Body Typography</span>
+                          </h4>
+                          <span className="text-[10px] font-mono text-blue-400 font-bold px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
+                            Subhead / Description
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          {/* Font Family */}
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Font Family</label>
+                            <select
+                              value={editingSection.data?.subtitleFontFamily || 'inherit'}
+                              onChange={(e) => updateSectionData('subtitleFontFamily', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              {FONT_FAMILY_OPTIONS.map((f) => (
+                                <option key={f.value} value={f.value}>
+                                  {f.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Font Color & Size */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Subtitle Color</label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={editingSection.data?.subtitleColor || '#CBD5E1'}
+                                  onChange={(e) => updateSectionData('subtitleColor', e.target.value)}
+                                  className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingSection.data?.subtitleColor || '#CBD5E1'}
+                                  onChange={(e) => updateSectionData('subtitleColor', e.target.value)}
+                                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-[11px] text-slate-400">Font Size</label>
+                                <span className="text-xs font-mono font-bold text-blue-400">
+                                  {editingSection.data?.subtitleFontSize || '15px'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 pt-1">
+                                <input
+                                  type="range"
+                                  min="11"
+                                  max="24"
+                                  step="1"
+                                  value={parseInt(editingSection.data?.subtitleFontSize || '15', 10)}
+                                  onChange={(e) => updateSectionData('subtitleFontSize', `${e.target.value}px`)}
+                                  className="flex-1 accent-blue-500 cursor-pointer"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Font Weight & Line Height */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Font Weight</label>
+                              <select
+                                value={editingSection.data?.subtitleFontWeight || '400'}
+                                onChange={(e) => updateSectionData('subtitleFontWeight', e.target.value)}
+                                className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                              >
+                                <option value="300">300 Light</option>
+                                <option value="400">400 Regular</option>
+                                <option value="500">500 Medium</option>
+                                <option value="600">600 Semi-Bold</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="text-[11px] text-slate-400 block mb-1">Line Height</label>
+                              <select
+                                value={editingSection.data?.subtitleLineHeight || '1.6'}
+                                onChange={(e) => updateSectionData('subtitleLineHeight', e.target.value)}
+                                className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                              >
+                                <option value="1.4">Compact (1.4)</option>
+                                <option value="1.6">Normal (1.6)</option>
+                                <option value="1.8">Relaxed (1.8)</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Typography Panel 3: Badge & Eyebrow */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                            <Tag className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Badge &amp; Eyebrow Typography</span>
+                          </h4>
+                          <span className="text-[10px] font-mono text-amber-400 font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                            Tagline / Pill
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Badge Text Color</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={editingSection.data?.badgeColor || '#FFFFFF'}
+                                onChange={(e) => updateSectionData('badgeColor', e.target.value)}
+                                className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={editingSection.data?.badgeColor || '#FFFFFF'}
+                                onChange={(e) => updateSectionData('badgeColor', e.target.value)}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Badge Background</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={editingSection.data?.badgeBgColor || '#E11D48'}
+                                onChange={(e) => updateSectionData('badgeBgColor', e.target.value)}
+                                className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={editingSection.data?.badgeBgColor || '#E11D48'}
+                                onChange={(e) => updateSectionData('badgeBgColor', e.target.value)}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Font Size</label>
+                            <select
+                              value={editingSection.data?.badgeFontSize || '10px'}
+                              onChange={(e) => updateSectionData('badgeFontSize', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              <option value="9px">9px Micro</option>
+                              <option value="10px">10px Small</option>
+                              <option value="11px">11px Medium</option>
+                              <option value="12px">12px Standard</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Font Weight</label>
+                            <select
+                              value={editingSection.data?.badgeFontWeight || '800'}
+                              onChange={(e) => updateSectionData('badgeFontWeight', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              <option value="600">600 Semi-Bold</option>
+                              <option value="700">700 Bold</option>
+                              <option value="800">800 Extra-Bold</option>
+                              <option value="900">900 Black</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Letter Spacing</label>
+                            <select
+                              value={editingSection.data?.badgeLetterSpacing || '0.15em'}
+                              onChange={(e) => updateSectionData('badgeLetterSpacing', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              <option value="0.05em">Wide (0.05em)</option>
+                              <option value="0.1em">Wider (0.1em)</option>
+                              <option value="0.15em">Widest (0.15em)</option>
+                              <option value="0.25em">Expanded (0.25em)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Typography Panel 4: Button & CTA */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                            <Type className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Button Typography &amp; Font Styling</span>
+                          </h4>
+                          <span className="text-[10px] font-mono text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                            CTA Buttons
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Button Font Family</label>
+                            <select
+                              value={editingSection.data?.btnFontFamily || 'inherit'}
+                              onChange={(e) => updateSectionData('btnFontFamily', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              {FONT_FAMILY_OPTIONS.map((f) => (
+                                <option key={f.value} value={f.value}>
+                                  {f.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Button Font Weight</label>
+                            <select
+                              value={editingSection.data?.btnFontWeight || '700'}
+                              onChange={(e) => updateSectionData('btnFontWeight', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              <option value="500">500 Medium</option>
+                              <option value="600">600 Semi-Bold</option>
+                              <option value="700">700 Bold</option>
+                              <option value="800">800 Extra-Bold</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Font Size</label>
+                            <select
+                              value={editingSection.data?.btnFontSize || '12px'}
+                              onChange={(e) => updateSectionData('btnFontSize', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              <option value="11px">11px Compact</option>
+                              <option value="12px">12px Standard</option>
+                              <option value="13px">13px Medium</option>
+                              <option value="14px">14px Large</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Letter Spacing</label>
+                            <select
+                              value={editingSection.data?.btnLetterSpacing || '0.05em'}
+                              onChange={(e) => updateSectionData('btnLetterSpacing', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              <option value="0em">Normal</option>
+                              <option value="0.05em">Wide</option>
+                              <option value="0.1em">Widest</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] text-slate-400 block mb-1">Transform</label>
+                            <select
+                              value={editingSection.data?.btnTextTransform || 'uppercase'}
+                              onChange={(e) => updateSectionData('btnTextTransform', e.target.value)}
+                              className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:border-rose-500 focus:outline-none"
+                            >
+                              <option value="uppercase">UPPERCASE</option>
+                              <option value="capitalize">Capitalize</option>
+                              <option value="none">Normal</option>
+                            </select>
                           </div>
                         </div>
                       </div>
