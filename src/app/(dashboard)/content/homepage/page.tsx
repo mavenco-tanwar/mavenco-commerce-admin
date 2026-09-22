@@ -82,6 +82,8 @@ interface HeroSlide {
   primaryBtnLink?: string;
   secondaryBtnText?: string;
   secondaryBtnLink?: string;
+  tertiaryBtnText?: string;
+  tertiaryBtnLink?: string;
   desktopImage?: string;
   mobileImage?: string;
   overlayOpacity?: number;
@@ -793,6 +795,8 @@ function SectionVisualRenderer({
   const primaryText = section.data?.primaryBtnTextColor || '#FFFFFF';
   const secondaryBg = section.data?.secondaryBtnColor || '#FFFFFF';
   const secondaryText = section.data?.secondaryBtnTextColor || '#111827';
+  const tertiaryBg = section.data?.tertiaryBtnColor || 'transparent';
+  const tertiaryText = section.data?.tertiaryBtnTextColor || '#FFFFFF';
 
   // Spacing & background
   const sectionBg = section.data?.bgColor || section.styles?.backgroundColor;
@@ -874,6 +878,18 @@ function SectionVisualRenderer({
     backgroundColor: secondaryBg,
     color: secondaryText,
     borderRadius: btnRadius,
+    ...(btnFont && btnFont !== 'inherit' ? { fontFamily: btnFont } : {}),
+    ...(btnSize ? { fontSize: btnSize } : {}),
+    ...(btnWeight ? { fontWeight: btnWeight } : {}),
+    ...(btnTracking ? { letterSpacing: btnTracking } : {}),
+    ...(btnTransform ? { textTransform: btnTransform as any } : {}),
+  };
+
+  const tertiaryBtnStyle: React.CSSProperties = {
+    backgroundColor: tertiaryBg,
+    color: tertiaryText,
+    borderRadius: btnRadius,
+    border: section.data?.tertiaryBtnColor ? 'none' : '1px solid rgba(255,255,255,0.4)',
     ...(btnFont && btnFont !== 'inherit' ? { fontFamily: btnFont } : {}),
     ...(btnSize ? { fontSize: btnSize } : {}),
     ...(btnWeight ? { fontWeight: btnWeight } : {}),
@@ -1041,6 +1057,14 @@ function SectionVisualRenderer({
                       {curSlide.secondaryBtnText || section.data?.secondaryBtnText}
                     </button>
                   )}
+                  {(curSlide.tertiaryBtnText || section.data?.tertiaryBtnText) && (
+                    <button
+                      style={tertiaryBtnStyle}
+                      className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                    >
+                      {curSlide.tertiaryBtnText || section.data?.tertiaryBtnText}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1092,6 +1116,15 @@ function SectionVisualRenderer({
                     className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
                   >
                     {curSlide.secondaryBtnText || section.data?.secondaryBtnText}
+                  </button>
+                )}
+
+                {(curSlide.tertiaryBtnText || section.data?.tertiaryBtnText) && (
+                  <button
+                    style={tertiaryBtnStyle}
+                    className="px-6 py-2.5 font-bold uppercase tracking-wider text-xs shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    {curSlide.tertiaryBtnText || section.data?.tertiaryBtnText}
                   </button>
                 )}
               </div>
@@ -1381,11 +1414,32 @@ function SectionVisualRenderer({
               <p className="text-xs text-slate-300 max-w-xl mb-4 leading-relaxed">
                 {section.data?.description}
               </p>
-              {section.data?.btnText && (
-                <button className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105">
-                  {section.data.btnText}
-                </button>
-              )}
+              <div className="flex items-center gap-3 flex-wrap">
+                {(section.data?.primaryBtnText || section.data?.btnText) && (
+                  <button
+                    style={primaryBtnStyle}
+                    className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    {section.data?.primaryBtnText || section.data?.btnText}
+                  </button>
+                )}
+                {(section.data?.secondaryBtnText || section.data?.btn2Text) && (
+                  <button
+                    style={secondaryBtnStyle}
+                    className="px-6 py-2.5 rounded-xl border border-white/40 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    {section.data?.secondaryBtnText || section.data?.btn2Text}
+                  </button>
+                )}
+                {(section.data?.tertiaryBtnText || section.data?.btn3Text) && (
+                  <button
+                    style={tertiaryBtnStyle}
+                    className="px-6 py-2.5 rounded-xl border border-white/20 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    {section.data?.tertiaryBtnText || section.data?.btn3Text}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -3321,25 +3375,207 @@ export default function HomepageBuilderStudio() {
                             />
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-[10px] text-slate-400 block mb-0.5">Primary Button Text</label>
-                              <input
-                                type="text"
-                                value={editingSection.data?.primaryBtnText || editingSection.data?.btnText || ''}
-                                onChange={(e) => updateSectionMultipleData({ primaryBtnText: e.target.value, btnText: e.target.value })}
-                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
-                              />
+                          {/* DYNAMIC ACTION BUTTONS (UP TO 3) */}
+                          <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3.5">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                                <span>Action Buttons ({
+                                  (editingSection.data?.buttonCount || (
+                                    (editingSection.data?.tertiaryBtnText || editingSection.data?.btn3Text) ? 3 :
+                                    (editingSection.data?.secondaryBtnText || editingSection.data?.btn2Text) ? 2 : 1
+                                  ))
+                                }/3)</span>
+                              </label>
+                              <span className="text-[10px] font-medium text-slate-400">Customizable up to 3 buttons</span>
                             </div>
-                            <div>
-                              <label className="text-[10px] text-slate-400 block mb-0.5">Link Target</label>
-                              <input
-                                type="text"
-                                value={editingSection.data?.primaryBtnLink || editingSection.data?.btnLink || ''}
-                                onChange={(e) => updateSectionMultipleData({ primaryBtnLink: e.target.value, btnLink: e.target.value })}
-                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
-                              />
+
+                            {/* BUTTON 1: PRIMARY */}
+                            <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                                  Button 1 (Primary)
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-[10px] text-slate-400 block mb-1">Button Text</label>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. Shop Collection"
+                                    value={editingSection.data?.primaryBtnText || editingSection.data?.btnText || ''}
+                                    onChange={(e) => updateSectionMultipleData({ primaryBtnText: e.target.value, btnText: e.target.value })}
+                                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] text-slate-400 block mb-1">Link Target</label>
+                                  <input
+                                    type="text"
+                                    placeholder="/collections"
+                                    value={editingSection.data?.primaryBtnLink || editingSection.data?.btnLink || ''}
+                                    onChange={(e) => updateSectionMultipleData({ primaryBtnLink: e.target.value, btnLink: e.target.value })}
+                                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                  />
+                                </div>
+                              </div>
                             </div>
+
+                            {/* BUTTON 2: SECONDARY */}
+                            {(
+                              (editingSection.data?.buttonCount >= 2) ||
+                              Boolean(editingSection.data?.secondaryBtnText || editingSection.data?.btn2Text)
+                            ) && (
+                              <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 space-y-2 animate-in fade-in duration-200">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                    Button 2 (Secondary)
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (editingSection.data?.tertiaryBtnText) {
+                                        updateSectionMultipleData({
+                                          secondaryBtnText: editingSection.data?.tertiaryBtnText || '',
+                                          secondaryBtnLink: editingSection.data?.tertiaryBtnLink || '',
+                                          secondaryBtnColor: editingSection.data?.tertiaryBtnColor || '',
+                                          secondaryBtnTextColor: editingSection.data?.tertiaryBtnTextColor || '',
+                                          tertiaryBtnText: '',
+                                          tertiaryBtnLink: '',
+                                          tertiaryBtnColor: '',
+                                          tertiaryBtnTextColor: '',
+                                          buttonCount: 2,
+                                        });
+                                      } else {
+                                        updateSectionMultipleData({
+                                          secondaryBtnText: '',
+                                          secondaryBtnLink: '',
+                                          btn2Text: '',
+                                          btn2Link: '',
+                                          buttonCount: 1,
+                                        });
+                                      }
+                                    }}
+                                    className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors px-2 py-0.5 rounded hover:bg-red-500/10 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    <span>Remove</span>
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="text-[10px] text-slate-400 block mb-1">Button Text</label>
+                                    <input
+                                      type="text"
+                                      placeholder="e.g. Explore Lookbook"
+                                      value={editingSection.data?.secondaryBtnText || editingSection.data?.btn2Text || ''}
+                                      onChange={(e) => updateSectionMultipleData({ secondaryBtnText: e.target.value, btn2Text: e.target.value })}
+                                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-slate-400 block mb-1">Link Target</label>
+                                    <input
+                                      type="text"
+                                      placeholder="/about"
+                                      value={editingSection.data?.secondaryBtnLink || editingSection.data?.btn2Link || ''}
+                                      onChange={(e) => updateSectionMultipleData({ secondaryBtnLink: e.target.value, btn2Link: e.target.value })}
+                                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* BUTTON 3: TERTIARY */}
+                            {(
+                              (editingSection.data?.buttonCount >= 3) ||
+                              Boolean(editingSection.data?.tertiaryBtnText || editingSection.data?.btn3Text)
+                            ) && (
+                              <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 space-y-2 animate-in fade-in duration-200">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                                    Button 3 (Tertiary)
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateSectionMultipleData({
+                                        tertiaryBtnText: '',
+                                        tertiaryBtnLink: '',
+                                        btn3Text: '',
+                                        btn3Link: '',
+                                        buttonCount: 2,
+                                      });
+                                    }}
+                                    className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors px-2 py-0.5 rounded hover:bg-red-500/10 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    <span>Remove</span>
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="text-[10px] text-slate-400 block mb-1">Button Text</label>
+                                    <input
+                                      type="text"
+                                      placeholder="e.g. Contact Concierge"
+                                      value={editingSection.data?.tertiaryBtnText || editingSection.data?.btn3Text || ''}
+                                      onChange={(e) => updateSectionMultipleData({ tertiaryBtnText: e.target.value, btn3Text: e.target.value })}
+                                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-slate-400 block mb-1">Link Target</label>
+                                    <input
+                                      type="text"
+                                      placeholder="/contact"
+                                      value={editingSection.data?.tertiaryBtnLink || editingSection.data?.btn3Link || ''}
+                                      onChange={(e) => updateSectionMultipleData({ tertiaryBtnLink: e.target.value, btn3Link: e.target.value })}
+                                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* ADD BUTTON TRIGGER (IF < 3 BUTTONS) */}
+                            {!(
+                              (editingSection.data?.buttonCount >= 3) ||
+                              Boolean(editingSection.data?.tertiaryBtnText || editingSection.data?.btn3Text)
+                            ) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const hasBtn2 = (editingSection.data?.buttonCount >= 2) || Boolean(editingSection.data?.secondaryBtnText || editingSection.data?.btn2Text);
+                                  if (!hasBtn2) {
+                                    updateSectionMultipleData({
+                                      buttonCount: 2,
+                                      secondaryBtnText: editingSection.data?.secondaryBtnText || 'Explore More',
+                                      secondaryBtnLink: editingSection.data?.secondaryBtnLink || '/about',
+                                      secondaryBtnColor: editingSection.data?.secondaryBtnColor || '#141414',
+                                      secondaryBtnTextColor: editingSection.data?.secondaryBtnTextColor || '#D4AF37',
+                                    });
+                                  } else {
+                                    updateSectionMultipleData({
+                                      buttonCount: 3,
+                                      tertiaryBtnText: editingSection.data?.tertiaryBtnText || 'Book Salon',
+                                      tertiaryBtnLink: editingSection.data?.tertiaryBtnLink || '/contact',
+                                      tertiaryBtnColor: editingSection.data?.tertiaryBtnColor || 'transparent',
+                                      tertiaryBtnTextColor: editingSection.data?.tertiaryBtnTextColor || '#FFFFFF',
+                                    });
+                                  }
+                                }}
+                                className="w-full py-2.5 px-3 rounded-lg border border-dashed border-slate-700 hover:border-rose-500/60 bg-slate-950/40 hover:bg-rose-500/5 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+                              >
+                                <Plus className="w-3.5 h-3.5 text-rose-400" />
+                                <span>
+                                  {!(editingSection.data?.buttonCount >= 2 || Boolean(editingSection.data?.secondaryBtnText || editingSection.data?.btn2Text))
+                                    ? '+ Add Second Button (2/3)'
+                                    : '+ Add Third Button (3/3)'}
+                                </span>
+                              </button>
+                            )}
                           </div>
 
                           <div className="pt-2">
@@ -3456,6 +3692,100 @@ export default function HomepageBuilderStudio() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Secondary Button Colors (Button 2) */}
+                        {((editingSection.data?.buttonCount >= 2) || Boolean(editingSection.data?.secondaryBtnText || editingSection.data?.btn2Text)) && (
+                          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-800 animate-in fade-in duration-200">
+                            <div>
+                              <label className="text-[11px] text-amber-400/90 font-semibold block mb-1 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                Secondary Button BG
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={editingSection.data?.secondaryBtnColor || '#141414'}
+                                  onChange={(e) => updateSectionData('secondaryBtnColor', e.target.value)}
+                                  className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingSection.data?.secondaryBtnColor || '#141414'}
+                                  onChange={(e) => updateSectionData('secondaryBtnColor', e.target.value)}
+                                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[11px] text-amber-400/90 font-semibold block mb-1 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                Secondary Button Text
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={editingSection.data?.secondaryBtnTextColor || '#D4AF37'}
+                                  onChange={(e) => updateSectionData('secondaryBtnTextColor', e.target.value)}
+                                  className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingSection.data?.secondaryBtnTextColor || '#D4AF37'}
+                                  onChange={(e) => updateSectionData('secondaryBtnTextColor', e.target.value)}
+                                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Tertiary Button Colors (Button 3) */}
+                        {((editingSection.data?.buttonCount >= 3) || Boolean(editingSection.data?.tertiaryBtnText || editingSection.data?.btn3Text)) && (
+                          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-800 animate-in fade-in duration-200">
+                            <div>
+                              <label className="text-[11px] text-cyan-400/90 font-semibold block mb-1 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                Tertiary Button BG
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={editingSection.data?.tertiaryBtnColor || '#000000'}
+                                  onChange={(e) => updateSectionData('tertiaryBtnColor', e.target.value)}
+                                  className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingSection.data?.tertiaryBtnColor || '#000000'}
+                                  onChange={(e) => updateSectionData('tertiaryBtnColor', e.target.value)}
+                                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[11px] text-cyan-400/90 font-semibold block mb-1 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                Tertiary Button Text
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={editingSection.data?.tertiaryBtnTextColor || '#FFFFFF'}
+                                  onChange={(e) => updateSectionData('tertiaryBtnTextColor', e.target.value)}
+                                  className="w-8 h-8 rounded bg-transparent border border-slate-700 cursor-pointer"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingSection.data?.tertiaryBtnTextColor || '#FFFFFF'}
+                                  onChange={(e) => updateSectionData('tertiaryBtnTextColor', e.target.value)}
+                                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         <div>
                           <label className="text-[11px] text-slate-400 block mb-1.5">Border Radius</label>
