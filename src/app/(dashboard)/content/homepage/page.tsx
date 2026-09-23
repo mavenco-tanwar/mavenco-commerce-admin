@@ -1140,6 +1140,8 @@ function SectionVisualRenderer({
           style={{
             paddingTop: padTop,
             paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
           }}
         >
           <div className={containerClass}>
@@ -1147,11 +1149,16 @@ function SectionVisualRenderer({
             <div className={`mb-8 space-y-1.5 ${
               align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
             }`}>
-              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+              {section.data?.tagline && (
+                <span style={badgeStyle} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-1 shadow-xs">
+                  {section.data.tagline}
+                </span>
+              )}
+              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
                 {section.data?.heading || 'Shop By Category'}
               </h2>
               {section.data?.subtitle && (
-                <p style={subtitleStyle} className="text-xs text-slate-600">{section.data?.subtitle}</p>
+                <p style={subtitleStyle} className="text-xs">{section.data?.subtitle}</p>
               )}
             </div>
 
@@ -1212,75 +1219,36 @@ function SectionVisualRenderer({
           style={{
             paddingTop: padTop,
             paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
           }}
         >
           <div className={containerClass}>
             {/* Header strictly following contentAlign */}
-            {align === 'center' ? (
-              <div className="text-center max-w-2xl mx-auto mb-8 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
-                  {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
-                </span>
-                <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
-                  {section.data?.heading || 'Featured Essentials'}
-                </h2>
-                {section.data?.subtitle && <p style={subtitleStyle} className="text-xs text-slate-600">{section.data?.subtitle}</p>}
-                {section.data?.showViewAll !== false && (
-                  <div className="pt-2">
-                    <span className="text-xs font-bold text-rose-600 inline-flex items-center gap-1 cursor-pointer hover:underline">
-                      <span>View Full Catalog</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                )}
-              </div>
-            ) : align === 'right' ? (
-              <div className="text-right max-w-2xl ml-auto mb-8 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
-                  {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
-                </span>
-                <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
-                  {section.data?.heading || 'Featured Essentials'}
-                </h2>
-                {section.data?.subtitle && <p style={subtitleStyle} className="text-xs text-slate-600">{section.data?.subtitle}</p>}
-                {section.data?.showViewAll !== false && (
-                  <div className="pt-2">
-                    <span className="text-xs font-bold text-rose-600 inline-flex items-center gap-1 cursor-pointer hover:underline">
-                      <span>View Full Catalog</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
-                    {section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900 mt-1">
-                    {section.data?.heading || 'Featured Essentials'}
-                  </h2>
-                  {section.data?.subtitle && <p style={subtitleStyle} className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>}
-                </div>
-                {section.data?.showViewAll !== false && (
-                  <span className="text-xs font-bold text-rose-600 flex items-center gap-1 cursor-pointer hover:underline">
-                    <span>View Full Catalog</span>
+            <div className={`mb-8 space-y-2 ${
+              align === 'center' ? 'text-center max-w-2xl mx-auto' : align === 'right' ? 'text-right max-w-2xl ml-auto' : 'text-left max-w-2xl'
+            }`}>
+              <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider block">
+                {section.data?.tagline || section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
+              </span>
+              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
+                {section.data?.heading || 'Featured Essentials'}
+              </h2>
+              {section.data?.subtitle && <p style={subtitleStyle} className="text-xs">{section.data?.subtitle}</p>}
+              {section.data?.showViewAll !== false && (
+                <div className="pt-2">
+                  <span style={primaryBtnStyle} className="px-4 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer hover:opacity-90">
+                    <span>{section.data?.viewAllText || 'View All Collection'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
 
-            {/* DYNAMIC GRID strictly following columnsDesktop, columnsTablet, columnsMobile */}
+            {/* Dynamic Grid mapping columns */}
             {(() => {
-              const pCols =
-                device === 'mobile'
-                  ? (section.data?.columnsMobile || 1)
-                  : device === 'tablet'
-                  ? (section.data?.columnsTablet || 2)
-                  : (section.data?.columnsDesktop || 4);
-              const pLimit = section.data?.limit || 8;
+              const pCols = device === 'mobile' ? 2 : (section.data?.columns || 4);
+              const count = section.data?.count || 4;
 
               return (
                 <div
@@ -1290,26 +1258,42 @@ function SectionVisualRenderer({
                     gap: '1rem',
                   }}
                 >
-                  {[
-                    { title: 'Chanderi Silk Co-ord Set', price: '$280', tag: 'Bestseller', color: '#B77A68' },
-                    { title: 'Hand-Tailored Linen Trench', price: '$420', tag: 'New Season', color: '#1E1B4B' },
-                    { title: 'Pleated Organza Evening Gown', price: '$590', tag: 'Runway', color: '#E11D48' },
-                    { title: 'Bespoke Atelier Tote Bag', price: '$340', tag: 'Limited', color: '#0F172A' },
-                    { title: 'Gold Embroidered Co-ord', price: '$310', tag: 'Exclusive', color: '#D97706' },
-                    { title: 'Bespoke Cashmere Knitwear', price: '$260', tag: 'Seasonal', color: '#475569' },
-                  ].slice(0, pLimit).map((prod, pIdx) => (
-                    <div key={pIdx} className="group rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 shadow-sm flex flex-col transition-all hover:shadow-md">
-                      <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-tr from-slate-100 via-stone-100 to-rose-50 flex items-center justify-center p-4">
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-110" style={{ backgroundColor: prod.color }}>
-                          <ShoppingBag className="w-6 h-6 text-white" />
+                  {[...Array(count)].map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="group rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+                      style={{
+                        backgroundColor: sectionBg ? 'rgba(255,255,255,0.06)' : undefined,
+                        borderColor: sectionBg ? 'rgba(255,255,255,0.12)' : undefined,
+                      }}
+                    >
+                      <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
+                        <img
+                          src={`https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=600&auto=format&fit=crop`}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-slate-700 shadow-sm">
+                          <Heart className="w-3.5 h-3.5" />
                         </div>
-                        <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-black/80 text-white backdrop-blur-md">
-                          {prod.tag}
-                        </span>
                       </div>
-                      <div className="p-3 space-y-1 bg-white">
-                        <h4 className="font-bold text-xs text-slate-900 truncate">{prod.title}</h4>
-                        <span className="text-xs font-mono font-bold text-rose-600 block">{prod.price}</span>
+                      <div className="p-3.5 space-y-1.5 flex-1 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold text-rose-600 uppercase tracking-widest block mb-0.5">
+                            ATELIER
+                          </span>
+                          <h4 style={headingStyle} className="font-bold text-xs line-clamp-1">
+                            Fine Solitaire Piece #{idx + 1}
+                          </h4>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                          <span style={headingStyle} className="font-bold text-xs font-mono">
+                            ₹{(18999 + idx * 4500).toLocaleString('en-IN')}
+                          </span>
+                          <span className="text-[10px] font-bold text-amber-500 flex items-center gap-0.5">
+                            ★ 4.9
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1327,18 +1311,27 @@ function SectionVisualRenderer({
           style={{
             paddingTop: padTop,
             paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
           }}
         >
           <div className={containerClass}>
             {/* Header respecting contentAlign */}
-            {section.data?.heading && (
+            {(section.data?.heading || section.data?.tagline) && (
               <div className={`mb-8 space-y-1.5 ${
                 align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
               }`}>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
-                  {section.data.heading}
-                </h2>
-                {section.data?.subheading && <p className="text-xs text-slate-600">{section.data.subheading}</p>}
+                {section.data?.tagline && (
+                  <span style={badgeStyle} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-1 shadow-xs">
+                    {section.data.tagline}
+                  </span>
+                )}
+                {section.data?.heading && (
+                  <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
+                    {section.data.heading}
+                  </h2>
+                )}
+                {section.data?.subheading && <p style={subtitleStyle} className="text-xs">{section.data.subheading}</p>}
               </div>
             )}
 
@@ -1363,17 +1356,33 @@ function SectionVisualRenderer({
                           ? 'bg-slate-900 text-white rounded-xl border border-slate-800 shadow-md'
                           : cardStyle === 'minimal'
                           ? 'bg-transparent border-0'
+                          : sectionBg
+                          ? 'bg-white/5 border border-white/10 rounded-xl shadow-xs'
                           : 'bg-slate-50 border border-slate-200/80 rounded-xl shadow-xs'
                       }`}
                     >
-                      <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0">
                         <Sparkles className="w-4 h-4" />
                       </div>
                       <div className="space-y-0.5">
-                        <h4 className={`font-bold text-xs ${cardStyle === 'tinted' ? 'text-white' : 'text-slate-900'}`}>
+                        <h4
+                          style={{
+                            fontFamily: headingFont && headingFont !== 'inherit' ? headingFont : undefined,
+                            color: section.data?.textColor || (cardStyle === 'tinted' ? '#FFFFFF' : (sectionBg ? '#FFFFFF' : '#0F172A')),
+                          }}
+                          className="font-bold text-xs"
+                        >
                           {v.title}
                         </h4>
-                        <p className={`text-[11px] leading-relaxed ${cardStyle === 'tinted' ? 'text-slate-300' : 'text-slate-500'}`}>
+                        <p
+                          style={{
+                            fontFamily: subtitleFont && subtitleFont !== 'inherit' ? subtitleFont : undefined,
+                            color: subtitleColor || (cardStyle === 'tinted' ? '#94A3B8' : (sectionBg ? '#CBD5E1' : '#64748B')),
+                            fontSize: subtitleSize || undefined,
+                            lineHeight: subtitleLineHeight || undefined,
+                          }}
+                          className="text-[11px] leading-relaxed"
+                        >
                           {v.description}
                         </p>
                       </div>
@@ -1401,24 +1410,25 @@ function SectionVisualRenderer({
                 minHeight: minH,
                 paddingTop: padTop,
                 paddingBottom: padBottom,
+                color: sectionText || undefined,
               }}
             >
               {section.data?.tagline && (
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-400 block mb-2">
+                <span style={badgeStyle} className="text-[10px] font-extrabold uppercase tracking-widest block mb-2 px-3 py-1 rounded-full">
                   {section.data.tagline}
                 </span>
               )}
               <h2 style={headingStyle} className="text-xl sm:text-3xl font-serif font-black mb-2 leading-tight">
                 {section.data?.heading}
               </h2>
-              <p className="text-xs text-slate-300 max-w-xl mb-4 leading-relaxed">
+              <p style={subtitleStyle} className="text-xs max-w-xl mb-4 leading-relaxed">
                 {section.data?.description}
               </p>
               <div className="flex items-center gap-3 flex-wrap">
                 {(section.data?.primaryBtnText || section.data?.btnText) && (
                   <button
                     style={primaryBtnStyle}
-                    className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                    className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
                   >
                     {section.data?.primaryBtnText || section.data?.btnText}
                   </button>
@@ -1426,7 +1436,7 @@ function SectionVisualRenderer({
                 {(section.data?.secondaryBtnText || section.data?.btn2Text) && (
                   <button
                     style={secondaryBtnStyle}
-                    className="px-6 py-2.5 rounded-xl border border-white/40 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                    className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
                   >
                     {section.data?.secondaryBtnText || section.data?.btn2Text}
                   </button>
@@ -1434,7 +1444,7 @@ function SectionVisualRenderer({
                 {(section.data?.tertiaryBtnText || section.data?.btn3Text) && (
                   <button
                     style={tertiaryBtnStyle}
-                    className="px-6 py-2.5 rounded-xl border border-white/20 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                    className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-105 cursor-pointer"
                   >
                     {section.data?.tertiaryBtnText || section.data?.btn3Text}
                   </button>
@@ -1452,6 +1462,8 @@ function SectionVisualRenderer({
           style={{
             paddingTop: padTop,
             paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
           }}
         >
           <div
@@ -1471,18 +1483,18 @@ function SectionVisualRenderer({
             </div>
             <div className={`space-y-3 ${align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left'}`}>
               {section.data?.tagline && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
+                <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider block">
                   {section.data.tagline}
                 </span>
               )}
-              <h3 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+              <h3 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
                 {section.data?.heading}
               </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p style={subtitleStyle} className="text-xs leading-relaxed">
                 {section.data?.description}
               </p>
               {section.data?.btnText && (
-                <button className="px-5 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs uppercase tracking-wider shadow-md">
+                <button style={primaryBtnStyle} className="px-5 py-2 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md cursor-pointer">
                   {section.data.btnText}
                 </button>
               )}
@@ -1499,11 +1511,17 @@ function SectionVisualRenderer({
             backgroundColor: section.data?.bgColor || '#0F172A',
             paddingTop: padTop,
             paddingBottom: padBottom,
+            color: sectionText || undefined,
           }}
         >
           <div className={`${containerClass} ${align === 'left' ? 'text-left' : align === 'right' ? 'text-right' : 'text-center'}`}>
-            <h3 className="text-xl sm:text-2xl font-serif font-black mb-1">{section.data?.heading}</h3>
-            {section.data?.subtitle && <p className="text-xs text-slate-300 mb-6">{section.data?.subtitle}</p>}
+            {section.data?.tagline && (
+              <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider inline-block mb-2">
+                {section.data.tagline}
+              </span>
+            )}
+            <h3 style={headingStyle} className="text-xl sm:text-2xl font-serif font-black mb-1">{section.data?.heading}</h3>
+            {section.data?.subtitle && <p style={subtitleStyle} className="text-xs mb-6">{section.data?.subtitle}</p>}
             <div className={`flex items-center gap-3 font-mono font-bold mb-6 ${align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center'}`}>
               <div className="bg-white/10 px-4 py-2.5 rounded-xl text-center min-w-[64px]">
                 <span className="text-lg text-rose-400 block">03</span>
@@ -1523,7 +1541,7 @@ function SectionVisualRenderer({
               </div>
             </div>
             {section.data?.btnText && (
-              <button className="px-6 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
+              <button style={primaryBtnStyle} className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg cursor-pointer">
                 {section.data.btnText}
               </button>
             )}
@@ -1538,12 +1556,25 @@ function SectionVisualRenderer({
           style={{
             paddingTop: padTop,
             paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
           }}
         >
           <div className={containerClass}>
-            <div className={`mb-8 space-y-1.5 ${align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'}`}>
-              <h2 style={headingStyle} className="text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Patron Reflections'}</h2>
-              {section.data?.subtitle && <p className="text-xs text-slate-600 mt-1">{section.data?.subtitle}</p>}
+            <div className={`mb-8 space-y-1.5 ${
+              align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
+            }`}>
+              {section.data?.tagline && (
+                <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider block mb-1">
+                  {section.data.tagline}
+                </span>
+              )}
+              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
+                {section.data?.heading || 'Voices of Excellence'}
+              </h2>
+              {section.data?.subheading && (
+                <p style={subtitleStyle} className="text-xs">{section.data.subheading}</p>
+              )}
             </div>
 
             {(() => {
@@ -1557,7 +1588,14 @@ function SectionVisualRenderer({
                   }}
                 >
                   {((section.data?.testimonialsList as any[]) || []).map((t, idx) => (
-                    <div key={idx} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-3">
+                    <div
+                      key={idx}
+                      className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-3"
+                      style={{
+                        backgroundColor: sectionBg ? 'rgba(255,255,255,0.06)' : undefined,
+                        borderColor: sectionBg ? 'rgba(255,255,255,0.12)' : undefined,
+                      }}
+                    >
                       {section.data?.showStars !== false && (
                         <div className="flex items-center gap-1 text-amber-400">
                           {[...Array(5)].map((_, s) => (
@@ -1565,10 +1603,10 @@ function SectionVisualRenderer({
                           ))}
                         </div>
                       )}
-                      <p className="text-xs text-slate-700 italic leading-relaxed">"{t.text}"</p>
+                      <p style={subtitleStyle} className="text-xs italic leading-relaxed">"{t.text}"</p>
                       <div>
-                        <span className="text-xs font-bold text-slate-900 block">{t.name}</span>
-                        <span className="text-[10px] text-slate-500">{t.role}</span>
+                        <span style={headingStyle} className="text-xs font-bold block">{t.name}</span>
+                        <span className="text-[10px] opacity-75">{t.role}</span>
                       </div>
                     </div>
                   ))}
@@ -1586,11 +1624,18 @@ function SectionVisualRenderer({
           style={{
             paddingTop: padTop,
             paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
           }}
         >
           <div className={`${containerClass} ${align === 'center' ? 'text-center max-w-xl mx-auto' : align === 'right' ? 'text-right max-w-xl ml-auto' : 'text-left max-w-xl'}`}>
-            <h3 style={headingStyle} className="text-xl sm:text-2xl font-serif font-black text-slate-900">{section.data?.heading || 'Join The Private Circle'}</h3>
-            <p className="text-xs text-slate-600 mt-1 mb-4">{section.data?.description}</p>
+            {section.data?.tagline && (
+              <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider block mb-1">
+                {section.data.tagline}
+              </span>
+            )}
+            <h3 style={headingStyle} className="text-xl sm:text-2xl font-serif font-black">{section.data?.heading || 'Join The Private Circle'}</h3>
+            <p style={subtitleStyle} className="text-xs mt-1 mb-4">{section.data?.description}</p>
             <div className={`flex items-center gap-2 max-w-md ${align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : ''}`}>
               <input
                 type="email"
@@ -1598,7 +1643,7 @@ function SectionVisualRenderer({
                 className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white"
                 readOnly
               />
-              <button className="px-5 py-2.5 rounded-xl bg-slate-950 text-white font-bold text-xs uppercase tracking-wider shrink-0">
+              <button style={primaryBtnStyle} className="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 cursor-pointer">
                 {section.data?.btnText || 'Subscribe'}
               </button>
             </div>
@@ -1606,18 +1651,28 @@ function SectionVisualRenderer({
         </div>
       )}
 
-            {/* 11. COLLECTIONS / LOOKBOOK */}
+      {/* 11. COLLECTIONS / LOOKBOOK */}
       {(section.type === "collections" || section.type === "lookbook" || section.type === "collections_grid") && (
-        <div className="border-b border-black/5" style={{ paddingTop: padTop, paddingBottom: padBottom }}>
+        <div
+          className="border-b border-black/5"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
+          }}
+        >
           <div className={containerClass}>
             <div className={`mb-8 space-y-1.5 ${align === "center" ? "text-center mx-auto max-w-xl" : align === "right" ? "text-right ml-auto max-w-xl" : "text-left max-w-xl"}`}>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
-                {section.data?.badge || "CURATED STORIES"}
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+              {(section.data?.badge || section.data?.tagline) && (
+                <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider block">
+                  {section.data.badge || section.data.tagline}
+                </span>
+              )}
+              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
                 {section.data?.heading || section.data?.title || "Collections & Lookbooks"}
               </h2>
-              {section.data?.subheading && <p className="text-xs text-slate-600">{section.data.subheading}</p>}
+              {section.data?.subheading && <p style={subtitleStyle} className="text-xs">{section.data.subheading}</p>}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
@@ -1640,16 +1695,24 @@ function SectionVisualRenderer({
 
       {/* 12. BRAND PARTNERS */}
       {(section.type === "brands" || section.type === "brand-partners" || section.type === "press") && (
-        <div className="border-b border-black/5 py-8" style={{ paddingTop: padTop, paddingBottom: padBottom }}>
+        <div
+          className="border-b border-black/5 py-8"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
+          }}
+        >
           <div className={containerClass}>
             <div className={`mb-6 ${align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left"}`}>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <span style={headingStyle} className="text-[10px] font-bold uppercase tracking-widest block">
                 {section.data?.heading || "AS FEATURED IN"}
               </span>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
               {["VOGUE", "ELLE", "HARPERS BAZAAR", "GQ", "L’OFFICIEL"].map((b, bIdx) => (
-                <span key={bIdx} className="font-serif font-black text-sm tracking-widest text-slate-700">{b}</span>
+                <span key={bIdx} style={headingStyle} className="font-serif font-black text-sm tracking-widest">{b}</span>
               ))}
             </div>
           </div>
@@ -1658,12 +1721,26 @@ function SectionVisualRenderer({
 
       {/* 13. FAQ ACCORDION */}
       {(section.type === "faq" || section.type === "faqs" || section.type === "accordion") && (
-        <div className="border-b border-black/5" style={{ paddingTop: padTop, paddingBottom: padBottom }}>
+        <div
+          className="border-b border-black/5"
+          style={{
+            paddingTop: padTop,
+            paddingBottom: padBottom,
+            backgroundColor: sectionBg || undefined,
+            color: sectionText || undefined,
+          }}
+        >
           <div className={containerClass}>
             <div className={`mb-8 space-y-1.5 ${align === "center" ? "text-center mx-auto max-w-xl" : align === "right" ? "text-right ml-auto max-w-xl" : "text-left max-w-xl"}`}>
-              <h2 className="text-2xl sm:text-3xl font-serif font-black text-slate-900">
+              {section.data?.tagline && (
+                <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider block">
+                  {section.data.tagline}
+                </span>
+              )}
+              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
                 {section.data?.heading || "Frequently Asked Questions"}
               </h2>
+              {section.data?.subheading && <p style={subtitleStyle} className="text-xs">{section.data.subheading}</p>}
             </div>
             <div className="max-w-2xl mx-auto space-y-3">
               {[
@@ -1671,9 +1748,17 @@ function SectionVisualRenderer({
                 "How do I track my order shipment?",
                 "Do you offer bespoke custom tailoring?",
               ].map((q, qIdx) => (
-                <div key={qIdx} className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-800">
-                  <span>{q}</span>
-                  <span className="text-slate-400 font-normal">+</span>
+                <div
+                  key={qIdx}
+                  className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-800"
+                  style={{
+                    backgroundColor: sectionBg ? 'rgba(255,255,255,0.06)' : undefined,
+                    borderColor: sectionBg ? 'rgba(255,255,255,0.12)' : undefined,
+                    color: section.data?.textColor || undefined,
+                  }}
+                >
+                  <span style={subtitleStyle}>{q}</span>
+                  <span className="opacity-60 font-normal">+</span>
                 </div>
               ))}
             </div>
