@@ -803,7 +803,12 @@ function SectionVisualRenderer({
   const tertiaryText = section.data?.tertiaryBtnTextColor || '#FFFFFF';
 
   // Spacing & background
-  const sectionBg = section.data?.bgColor || section.styles?.backgroundColor;
+  const sectionBg =
+    section.data?.bgColor ||
+    section.styles?.backgroundColor ||
+    (section.data?.headingColor?.toLowerCase().startsWith('#f') || section.data?.textColor?.toLowerCase().startsWith('#f')
+      ? '#0B0C0F'
+      : undefined);
   const sectionText = section.data?.textColor || section.styles?.color;
   const padTop = section.data?.paddingTop || section.styles?.paddingTop || '48px';
   const padBottom = section.data?.paddingBottom || section.styles?.paddingBottom || '48px';
@@ -1150,66 +1155,124 @@ function SectionVisualRenderer({
         >
           <div className={containerClass}>
             {/* Header respecting contentAlign */}
-            <div className={`mb-8 space-y-1.5 ${
-              align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
-            }`}>
-              {section.data?.tagline && (
-                <span style={badgeStyle} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-1 shadow-xs">
-                  {section.data.tagline}
-                </span>
-              )}
-              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
-                {section.data?.heading || 'Shop By Category'}
-              </h2>
-              {section.data?.subtitle && (
-                <p style={subtitleStyle} className="text-xs">{section.data?.subtitle}</p>
-              )}
-            </div>
-
-            {/* Dynamic Grid with exact aspect ratio & border radius */}
             {(() => {
-              const catList = (section.data?.categoriesList as any[]) || [];
-              const aspect = section.data?.aspectRatio || '3/4';
-              const aspectClass = aspect === '1/1' ? 'aspect-square' : aspect === '16/9' ? 'aspect-[16/9]' : 'aspect-[3/4]';
-              const radius = section.data?.cardBorderRadius || '16px';
-              const catCols = device === 'mobile' ? 2 : Math.min(Math.max(catList.length, 1), 4);
+              const badgeText = section.data?.tagline || section.data?.badgeText || (section.data?.badge && isNaN(Number(section.data?.badge)) ? section.data?.badge : '') || (section.badge && isNaN(Number(section.badge)) ? section.badge : '');
+              const subText = section.data?.subtitle || section.data?.subheading || section.data?.description;
+
+              const btn1Text = section.data?.primaryBtnText || section.data?.btnText;
+              const btn2Text = section.data?.secondaryBtnText || section.data?.btn2Text;
+              const btn3Text = section.data?.tertiaryBtnText || section.data?.btn3Text;
+              const hasButtons = Boolean(btn1Text || btn2Text || btn3Text);
 
               return (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${catCols}, minmax(0, 1fr))`,
-                    gap: '1rem',
-                  }}
-                >
-                  {catList.map((cat, idx) => (
-                    <div
-                      key={idx}
-                      className={`group relative overflow-hidden bg-gradient-to-tr from-slate-200 via-stone-200 to-rose-100 shadow-md cursor-pointer ${aspectClass}`}
-                      style={{ borderRadius: radius }}
-                    >
-                      {cat.image ? (
-                        <img
-                          src={cat.image}
-                          alt=""
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                      ) : null}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-4 text-white">
-                        {cat.badge && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-rose-400 mb-1">
-                            {cat.badge}
-                          </span>
-                        )}
-                        <span className="font-bold text-sm leading-tight">{cat.label}</span>
-                        {cat.count && <span className="text-[10px] text-slate-300 mt-0.5">{cat.count}</span>}
+                <>
+                  <div className={`mb-8 space-y-1.5 ${
+                    align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
+                  }`}>
+                    {badgeText && (
+                      <span style={badgeStyle} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-1 shadow-xs">
+                        {badgeText}
+                      </span>
+                    )}
+                    <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
+                      {section.data?.heading || 'Shop By Category'}
+                    </h2>
+                    {subText && (
+                      <p style={subtitleStyle} className="text-xs">{subText}</p>
+                    )}
+                  </div>
+
+                  {/* Dynamic Grid with exact aspect ratio & border radius */}
+                  {(() => {
+                    const catList = (section.data?.categoriesList || section.data?.items as any[]) || [];
+                    const aspect = section.data?.aspectRatio || '3/4';
+                    const aspectClass = aspect === '1/1' ? 'aspect-square' : aspect === '16/9' ? 'aspect-[16/9]' : 'aspect-[3/4]';
+                    const radius = section.data?.cardBorderRadius || '16px';
+                    const catCols = device === 'mobile' ? 2 : Math.min(Math.max(catList.length, 1), section.data?.columnsDesktop || 4);
+
+                    return (
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: `repeat(${catCols}, minmax(0, 1fr))`,
+                          gap: '1rem',
+                        }}
+                      >
+                        {catList.map((cat: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className={`group relative overflow-hidden bg-gradient-to-tr from-slate-200 via-stone-200 to-rose-100 shadow-md cursor-pointer ${aspectClass}`}
+                            style={{
+                              borderRadius: radius,
+                              backgroundColor: cat.cardBgColor || undefined,
+                            }}
+                          >
+                            {cat.image || cat.imageUrl ? (
+                              <img
+                                src={cat.image || cat.imageUrl}
+                                alt=""
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            ) : null}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-4 text-white">
+                              {cat.badge && (
+                                <span
+                                  style={badgeStyle}
+                                  className="text-[9px] font-bold uppercase tracking-wider text-rose-400 mb-1 inline-block"
+                                >
+                                  {cat.badge}
+                                </span>
+                              )}
+                              <span className="font-bold text-sm leading-tight">{cat.label || cat.title || cat.name}</span>
+                              {(cat.count || cat.tagline) && (
+                                <span className="text-[10px] text-slate-300 mt-0.5">{cat.count || cat.tagline}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
+                    );
+                  })()}
+
+                  {/* ACTION BUTTONS (UP TO 3) */}
+                  {hasButtons && (
+                    <div className={`mt-8 flex flex-wrap items-center gap-3 ${
+                      align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'
+                    }`}>
+                      {btn1Text && (
+                        <button
+                          type="button"
+                          style={primaryBtnStyle}
+                          className="px-5 py-2.5 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span>{btn1Text}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {btn2Text && (
+                        <button
+                          type="button"
+                          style={secondaryBtnStyle}
+                          className="px-5 py-2.5 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                        >
+                          {btn2Text}
+                        </button>
+                      )}
+                      {btn3Text && (
+                        <button
+                          type="button"
+                          style={tertiaryBtnStyle}
+                          className="px-5 py-2.5 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                        >
+                          {btn3Text}
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               );
             })()}
           </div>
@@ -1229,30 +1292,72 @@ function SectionVisualRenderer({
         >
           <div className={containerClass}>
             {/* Header strictly following contentAlign */}
-            <div className={`mb-8 space-y-2 ${
-              align === 'center' ? 'text-center max-w-2xl mx-auto' : align === 'right' ? 'text-right max-w-2xl ml-auto' : 'text-left max-w-2xl'
-            }`}>
-              <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider block">
-                {section.data?.tagline || section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION'}
-              </span>
-              <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
-                {section.data?.heading || 'Featured Essentials'}
-              </h2>
-              {section.data?.subtitle && <p style={subtitleStyle} className="text-xs">{section.data?.subtitle}</p>}
-              {section.data?.showViewAll !== false && (
-                <div className="pt-2">
-                  <span style={primaryBtnStyle} className="px-4 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer hover:opacity-90">
-                    <span>{section.data?.viewAllText || 'View All Collection'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
+            {(() => {
+              const badgeText = section.data?.tagline || section.data?.badgeText || (section.data?.badge && isNaN(Number(section.data?.badge)) ? section.data?.badge : '') || (section.badge && isNaN(Number(section.badge)) ? section.badge : '') || section.data?.querySource?.replace(/_/g, ' ')?.toUpperCase() || 'COLLECTION';
+              const subText = section.data?.subtitle || section.data?.subheading || section.data?.description;
+
+              const btn1Text = section.data?.primaryBtnText || section.data?.btnText || (section.data?.showViewAll !== false ? (section.data?.viewAllText || 'View All Collection') : '');
+              const btn2Text = section.data?.secondaryBtnText || section.data?.btn2Text;
+              const btn3Text = section.data?.tertiaryBtnText || section.data?.btn3Text;
+              const hasButtons = Boolean(btn1Text || btn2Text || btn3Text);
+
+              return (
+                <div className={`mb-8 space-y-2 ${
+                  align === 'center' ? 'text-center max-w-2xl mx-auto' : align === 'right' ? 'text-right max-w-2xl ml-auto' : 'text-left max-w-2xl'
+                }`}>
+                  {badgeText && (
+                    <span style={badgeStyle} className="text-[10px] font-bold uppercase tracking-wider block">
+                      {badgeText}
+                    </span>
+                  )}
+                  <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
+                    {section.data?.heading || 'Featured Essentials'}
+                  </h2>
+                  {subText && <p style={subtitleStyle} className="text-xs">{subText}</p>}
+
+                  {/* Header Action Buttons */}
+                  {hasButtons && (
+                    <div className={`pt-2 flex flex-wrap items-center gap-3 ${
+                      align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'
+                    }`}>
+                      {btn1Text && (
+                        <button
+                          type="button"
+                          style={primaryBtnStyle}
+                          className="px-5 py-2 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                        >
+                          <span>{btn1Text}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {btn2Text && (
+                        <button
+                          type="button"
+                          style={secondaryBtnStyle}
+                          className="px-5 py-2 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                        >
+                          {btn2Text}
+                        </button>
+                      )}
+                      {btn3Text && (
+                        <button
+                          type="button"
+                          style={tertiaryBtnStyle}
+                          className="px-5 py-2 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                        >
+                          {btn3Text}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
 
             {/* Dynamic Grid mapping columns */}
             {(() => {
-              const pCols = device === 'mobile' ? 2 : (section.data?.columns || 4);
-              const count = section.data?.count || 4;
+              const pCols = device === 'mobile' ? 2 : (section.data?.columns || section.data?.columnsDesktop || 4);
+              const count = section.data?.count || section.data?.limit || 4;
 
               return (
                 <div
@@ -1262,7 +1367,7 @@ function SectionVisualRenderer({
                     gap: '1rem',
                   }}
                 >
-                  {[...Array(count)].map((_, idx) => (
+                  {[...Array(Math.min(count, 8))].map((_, idx) => (
                     <div
                       key={idx}
                       className="group rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
@@ -1273,7 +1378,7 @@ function SectionVisualRenderer({
                     >
                       <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
                         <img
-                          src={`https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=600&auto=format&fit=crop`}
+                          src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=600&auto=format&fit=crop"
                           alt=""
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
@@ -2283,6 +2388,56 @@ export default function HomepageBuilderStudio() {
     if (!currentItems[idx]) return;
     currentItems[idx] = { ...currentItems[idx], ...patch };
     updateSectionData('items', currentItems);
+  };
+
+  // Category Department Card Handlers
+  const handleAddCategoryItem = () => {
+    if (!editingSection) return;
+    const currentItems = (editingSection.data?.categoriesList || editingSection.data?.items as any[]) || [];
+    const newItem = {
+      label: 'New Department',
+      title: 'New Department',
+      name: 'New Department',
+      count: '10 Creations',
+      badge: 'NEW ARRIVAL',
+      href: '/collections',
+      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800&auto=format&fit=crop',
+      cardBgColor: '',
+    };
+    const nextItems = [...currentItems, newItem];
+    updateSectionMultipleData({ categoriesList: nextItems, items: nextItems });
+    showToast('New department added', 'success');
+  };
+
+  const handleUpdateCategoryItem = (idx: number, patch: Record<string, any>) => {
+    if (!editingSection) return;
+    const currentItems = [...((editingSection.data?.categoriesList || editingSection.data?.items as any[]) || [])];
+    if (!currentItems[idx]) return;
+    currentItems[idx] = { ...currentItems[idx], ...patch };
+    updateSectionMultipleData({ categoriesList: currentItems, items: currentItems });
+  };
+
+  const handleDeleteCategoryItem = (idx: number) => {
+    if (!editingSection) return;
+    const currentItems = [...((editingSection.data?.categoriesList || editingSection.data?.items as any[]) || [])];
+    if (currentItems.length <= 1) {
+      showToast('At least one department card is required', 'info');
+      return;
+    }
+    currentItems.splice(idx, 1);
+    updateSectionMultipleData({ categoriesList: currentItems, items: currentItems });
+    showToast('Department removed', 'info');
+  };
+
+  const handleMoveCategoryItem = (idx: number, dir: 'up' | 'down') => {
+    if (!editingSection) return;
+    const currentItems = [...((editingSection.data?.categoriesList || editingSection.data?.items as any[]) || [])];
+    const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= currentItems.length) return;
+    const temp = currentItems[idx];
+    currentItems[idx] = currentItems[targetIdx];
+    currentItems[targetIdx] = temp;
+    updateSectionMultipleData({ categoriesList: currentItems, items: currentItems });
   };
 
   const handleDeleteValuePropItem = (idx: number) => {
@@ -4033,6 +4188,171 @@ export default function HomepageBuilderStudio() {
                             </div>
                           )}
 
+                          {/* CATEGORIES / DEPARTMENT CARDS MANAGER */}
+                          {(editingSection.type === 'categories' || editingSection.type === 'category-grid' || editingSection.type === 'category_showcase') && (
+                            <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                                    <FolderTree className="w-3.5 h-3.5 text-rose-400" />
+                                    Category Department Cards ({(((editingSection.data?.categoriesList || editingSection.data?.items || []) as any[])).length})
+                                  </h4>
+                                  <p className="text-[11px] text-slate-400 mt-0.5">
+                                    Customize individual department cards, images, badges, item count labels, and links.
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={handleAddCategoryItem}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>+ Add Department</span>
+                                </button>
+                              </div>
+
+                              {/* Category Items List */}
+                              <div className="space-y-3">
+                                {(((editingSection.data?.categoriesList || editingSection.data?.items || []) as any[])).map((cat: any, cIdx: number) => (
+                                  <div
+                                    key={cIdx}
+                                    className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/90 space-y-3"
+                                  >
+                                    <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
+                                      <span className="text-xs font-bold text-white flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded-lg bg-rose-600/20 text-rose-400 text-[11px] font-bold flex items-center justify-center font-mono">
+                                          {cIdx + 1}
+                                        </span>
+                                        Department #{cIdx + 1}: {cat.label || cat.title || cat.name || 'Untitled'}
+                                      </span>
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleMoveCategoryItem(cIdx, 'up')}
+                                          disabled={cIdx === 0}
+                                          className={`p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white ${
+                                            cIdx === 0 ? 'opacity-30 cursor-not-allowed' : ''
+                                          }`}
+                                          title="Move Up"
+                                        >
+                                          <MoveUp className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleMoveCategoryItem(cIdx, 'down')}
+                                          disabled={cIdx === (((editingSection.data?.categoriesList || editingSection.data?.items || []) as any[]).length - 1)}
+                                          className={`p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white ${
+                                            cIdx === (((editingSection.data?.categoriesList || editingSection.data?.items || []) as any[]).length - 1) ? 'opacity-30 cursor-not-allowed' : ''
+                                          }`}
+                                          title="Move Down"
+                                        >
+                                          <MoveDown className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteCategoryItem(cIdx)}
+                                          className="p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
+                                          title="Delete Department"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Department Name & Tag/Badge */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Department Name / Title</label>
+                                        <input
+                                          type="text"
+                                          value={cat.label || cat.title || cat.name || ''}
+                                          onChange={(e) => handleUpdateCategoryItem(cIdx, { label: e.target.value, title: e.target.value, name: e.target.value })}
+                                          className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                          placeholder="e.g. Solitaire Diamond Rings"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Card Eyebrow / Tag</label>
+                                        <input
+                                          type="text"
+                                          value={cat.badge || ''}
+                                          onChange={(e) => handleUpdateCategoryItem(cIdx, { badge: e.target.value })}
+                                          className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                          placeholder="e.g. GIA CERTIFIED"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Count / Subtitle & Link Target */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Item Count / Subtitle</label>
+                                        <input
+                                          type="text"
+                                          value={cat.count || cat.tagline || ''}
+                                          onChange={(e) => handleUpdateCategoryItem(cIdx, { count: e.target.value, tagline: e.target.value })}
+                                          className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                          placeholder="e.g. 24 Creations"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Link Target</label>
+                                        <input
+                                          type="text"
+                                          value={cat.href || cat.link || ''}
+                                          onChange={(e) => handleUpdateCategoryItem(cIdx, { href: e.target.value, link: e.target.value })}
+                                          className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                          placeholder="/collections or /rings"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Card Image & Background */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-800/40">
+                                      <div>
+                                        <ImageUploadInput
+                                          label="Department Image"
+                                          value={cat.image || cat.imageUrl || ''}
+                                          onChange={(url) => handleUpdateCategoryItem(cIdx, { image: url, imageUrl: url })}
+                                          aspectRatio="square"
+                                          folder="Categories"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Card Background Tint (Optional)</label>
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="color"
+                                            value={cat.cardBgColor?.startsWith('#') ? cat.cardBgColor : '#1e1b4b'}
+                                            onChange={(e) => handleUpdateCategoryItem(cIdx, { cardBgColor: e.target.value })}
+                                            className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={cat.cardBgColor || ''}
+                                            placeholder="e.g. #0B0C0F or rgba(...)"
+                                            onChange={(e) => handleUpdateCategoryItem(cIdx, { cardBgColor: e.target.value })}
+                                            className="flex-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                          />
+                                          {cat.cardBgColor && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleUpdateCategoryItem(cIdx, { cardBgColor: '' })}
+                                              className="text-[10px] text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 shrink-0"
+                                              title="Reset BG"
+                                            >
+                                              Reset
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           <div className="pt-2">
                             <ImageUploadInput
                               label="Section Main Image"
@@ -4787,9 +5107,19 @@ export default function HomepageBuilderStudio() {
                 {/* Visualizer Render Window */}
                 <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-start bg-black/50">
                   <div
-                    className={`transition-all duration-300 bg-[#FAFAF9] rounded-2xl shadow-2xl overflow-hidden border border-white/10 w-full ${
+                    className={`transition-all duration-300 rounded-2xl shadow-2xl overflow-hidden border border-white/10 w-full ${
                       device === 'mobile' ? 'max-w-[340px]' : device === 'tablet' ? 'max-w-[480px]' : 'max-w-full'
                     }`}
+                    style={{
+                      backgroundColor:
+                        editingSection?.data?.bgColor ||
+                        (activeTenant?.slug === 'silvora' ||
+                        (activeTenant as any)?.category?.toLowerCase().includes('jewelry') ||
+                        editingSection?.data?.headingColor?.toLowerCase().startsWith('#f') ||
+                        doc.sections?.some((s: any) => s.data?.bgColor && (s.data.bgColor.startsWith('#0') || s.data.bgColor === 'black'))
+                          ? '#0B0C0F'
+                          : '#FAFAF9'),
+                    }}
                   >
                     <SectionVisualRenderer
                       section={editingSection}
