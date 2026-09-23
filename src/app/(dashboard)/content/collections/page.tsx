@@ -27,16 +27,18 @@ import {
   ChevronRight,
   Plus,
   Trash2,
+  Palette,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
 import { PlatformService } from '@/services/platform';
 import { CollectionPageConfig } from '@/types/collection-page.types';
-import { getDefaultCollectionPageConfig, COLLECTION_PAGE_PRESETS } from '@/lib/collection-page-presets';
+import { getDefaultCollectionPageConfig, getCategorySampleProducts, COLLECTION_PAGE_PRESETS } from '@/lib/collection-page-presets';
 import { ImageUploadInput } from '@/components/ui/ImageUploadInput';
 
 type ActiveTab =
   | 'hero'
+  | 'styles'
   | 'header'
   | 'toolbar'
   | 'filters'
@@ -141,15 +143,59 @@ export default function CollectionPageBuilderStudio() {
         setActiveTenant(tenant);
         const slug = (tenant?.slug || 'lumina').toLowerCase().trim();
 
+        const fallback = getDefaultCollectionPageConfig(slug);
         const res = await ApiClient.get<CollectionPageConfig>(
-          `/api/v1/content/collection-page?tenant=${slug}&template=default_fashion&preview=draft&_t=${Date.now()}`
+          `/api/v1/content/collection-page?tenant=${slug}&preview=draft&_t=${Date.now()}`
         );
         if (res.data) {
-          setConfig(res.data);
-          setHistory([JSON.parse(JSON.stringify(res.data))]);
+          const merged: CollectionPageConfig = {
+            ...fallback,
+            ...res.data,
+            styles: {
+              ...(fallback.styles || {}),
+              ...(res.data.styles || {}),
+            },
+            hero: {
+              ...(fallback.hero || {}),
+              ...(res.data.hero || {}),
+            },
+            header: {
+              ...(fallback.header || {}),
+              ...(res.data.header || {}),
+            },
+            toolbar: {
+              ...(fallback.toolbar || {}),
+              ...(res.data.toolbar || {}),
+            },
+            filters: {
+              ...(fallback.filters || {}),
+              ...(res.data.filters || {}),
+            },
+            sorting: {
+              ...(fallback.sorting || {}),
+              ...(res.data.sorting || {}),
+            },
+            grid: {
+              ...(fallback.grid || {}),
+              ...(res.data.grid || {}),
+            },
+            pagination: {
+              ...(fallback.pagination || {}),
+              ...(res.data.pagination || {}),
+            },
+            promo: {
+              ...(fallback.promo || {}),
+              ...(res.data.promo || {}),
+            },
+            seo: {
+              ...(fallback.seo || {}),
+              ...(res.data.seo || {}),
+            },
+          };
+          setConfig(merged);
+          setHistory([JSON.parse(JSON.stringify(merged))]);
           setHistoryIdx(0);
         } else {
-          const fallback = getDefaultCollectionPageConfig(slug);
           setConfig(fallback);
           setHistory([JSON.parse(JSON.stringify(fallback))]);
           setHistoryIdx(0);
@@ -409,6 +455,18 @@ export default function CollectionPageBuilderStudio() {
         </button>
 
         <button
+          onClick={() => setActiveTab('styles')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+            activeTab === 'styles'
+              ? 'bg-rose-600 text-white shadow-lg shadow-rose-950'
+              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+          }`}
+        >
+          <Palette className="w-4 h-4" />
+          <span>Style &amp; Colors</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('header')}
           className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
             activeTab === 'header'
@@ -572,6 +630,26 @@ export default function CollectionPageBuilderStudio() {
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Top Pill Badge Text (e.g. CERTIFIED ATELIER VAULT)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. CERTIFIED ATELIER VAULT"
+                  value={config.hero.badgeText || ''}
+                  onChange={(e) => {
+                    const updated = {
+                      ...config,
+                      hero: { ...config.hero, badgeText: e.target.value },
+                    };
+                    setConfig(updated);
+                    pushHistory(updated);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                   Hero Headline Title
                 </label>
                 <input
@@ -587,6 +665,47 @@ export default function CollectionPageBuilderStudio() {
                   }}
                   className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Hero CTA Button Text
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. EXPLORE ATELIER"
+                    value={config.hero.ctaText || ''}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        hero: { ...config.hero, ctaText: e.target.value },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Hero CTA Button Link
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. #products"
+                    value={config.hero.ctaLink || ''}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        hero: { ...config.hero, ctaLink: e.target.value },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -623,6 +742,455 @@ export default function CollectionPageBuilderStudio() {
                 aspectRatio="banner"
                 folder="Collections"
               />
+            </div>
+          )}
+
+          {/* TAB 1.5: STYLE & COLORS */}
+          {activeTab === 'styles' && (
+            <div className="p-6 rounded-2xl bg-[#0D111A] border border-slate-800/90 shadow-xl space-y-6">
+              <div className="flex items-center gap-3 border-b border-slate-800/60 pb-4">
+                <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-amber-400">
+                  <Palette className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white tracking-wide">Universal Page Styling &amp; Colors</h3>
+                  <p className="text-xs text-slate-400">Manage page backgrounds, typography, cards, filter sidebars, and button colors.</p>
+                </div>
+              </div>
+
+              {/* Quick Palettes */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                  One-Click Theme Palettes
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    {
+                      label: 'Haute Joaillerie & Gold',
+                      bg: '#FFFDFC',
+                      card: '#FFFFFF',
+                      btn: '#111111',
+                      btnText: '#FFFFFF',
+                      text: '#111827',
+                      heading: '#111111',
+                      filter: '#FAF6F2',
+                      font: 'Playfair Display',
+                    },
+                    {
+                      label: 'Dark Atelier Vault',
+                      bg: '#0A0D14',
+                      card: '#0F1420',
+                      btn: '#D4AF37',
+                      btnText: '#111111',
+                      text: '#94A3B8',
+                      heading: '#FFFFFF',
+                      filter: '#0F1420',
+                      font: 'Cormorant Garamond',
+                    },
+                    {
+                      label: 'Organic Botanical',
+                      bg: '#FAF9F5',
+                      card: '#FFFFFF',
+                      btn: '#166534',
+                      btnText: '#FFFFFF',
+                      text: '#374151',
+                      heading: '#14532D',
+                      filter: '#F0FDF4',
+                      font: 'Plus Jakarta Sans',
+                    },
+                    {
+                      label: 'Modern Tech Electric',
+                      bg: '#0B0F19',
+                      card: '#111827',
+                      btn: '#2563EB',
+                      btnText: '#FFFFFF',
+                      text: '#9CA3AF',
+                      heading: '#F9FAFB',
+                      filter: '#111827',
+                      font: 'Inter',
+                    },
+                    {
+                      label: 'Clean Minimalist',
+                      bg: '#FFFFFF',
+                      card: '#FFFFFF',
+                      btn: '#000000',
+                      btnText: '#FFFFFF',
+                      text: '#525252',
+                      heading: '#000000',
+                      filter: '#F5F5F5',
+                      font: 'Outfit',
+                    },
+                  ].map((theme, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        const updated = {
+                          ...config,
+                          styles: {
+                            ...(config.styles || {}),
+                            backgroundColor: theme.bg,
+                            cardBackgroundColor: theme.card,
+                            filterBackgroundColor: theme.filter,
+                            toolbarBackgroundColor: theme.filter,
+                            buttonBackgroundColor: theme.btn,
+                            buttonTextColor: theme.btnText,
+                            textColor: theme.text,
+                            headingColor: theme.heading,
+                            headingFont: theme.font,
+                          },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="p-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 text-left transition-all group"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: theme.bg }} />
+                        <span className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: theme.btn }} />
+                        <span className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: theme.card }} />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-300 block truncate group-hover:text-amber-400">
+                        {theme.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color Controls Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Page Background */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Page Background
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.styles?.backgroundColor || '#FFFDFC'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), backgroundColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0 p-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.styles?.backgroundColor || '#FFFDFC'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), backgroundColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Card Background */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Product Card Background
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.styles?.cardBackgroundColor || '#FFFFFF'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), cardBackgroundColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0 p-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.styles?.cardBackgroundColor || '#FFFFFF'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), cardBackgroundColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Filter & Toolbar Background */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Filter &amp; Toolbar Background
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.styles?.filterBackgroundColor || '#FAF6F2'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: {
+                            ...(config.styles || {}),
+                            filterBackgroundColor: e.target.value,
+                            toolbarBackgroundColor: e.target.value,
+                          },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0 p-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.styles?.filterBackgroundColor || '#FAF6F2'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: {
+                            ...(config.styles || {}),
+                            filterBackgroundColor: e.target.value,
+                            toolbarBackgroundColor: e.target.value,
+                          },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Heading Color */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Headings &amp; Titles Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.styles?.headingColor || '#111111'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), headingColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0 p-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.styles?.headingColor || '#111111'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), headingColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Body Text Color */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Body &amp; Secondary Text Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.styles?.textColor || '#4B5563'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), textColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0 p-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.styles?.textColor || '#4B5563'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), textColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Button / Accent Color */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Button &amp; Accent Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.styles?.buttonBackgroundColor || '#111111'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), buttonBackgroundColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0 p-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.styles?.buttonBackgroundColor || '#111111'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), buttonBackgroundColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Button Text Color */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Button Text Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.styles?.buttonTextColor || '#FFFFFF'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), buttonTextColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0 p-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.styles?.buttonTextColor || '#FFFFFF'}
+                      onChange={(e) => {
+                        const updated = {
+                          ...config,
+                          styles: { ...(config.styles || {}), buttonTextColor: e.target.value },
+                        };
+                        setConfig(updated);
+                        pushHistory(updated);
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Card Border Radius */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Card Border Radius
+                  </label>
+                  <select
+                    value={config.styles?.borderRadius || '16px'}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        styles: { ...(config.styles || {}), borderRadius: e.target.value },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  >
+                    <option value="0px">0px (Sharp &amp; Architectural)</option>
+                    <option value="8px">8px (Subtle Rounded)</option>
+                    <option value="12px">12px (Modern Classic)</option>
+                    <option value="16px">16px (Soft Luxury Rounded)</option>
+                    <option value="24px">24px (Pill Soft Contemporary)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Typography Settings */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-800/60 pt-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Headline Font Family
+                  </label>
+                  <select
+                    value={config.styles?.headingFont || 'Playfair Display'}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        styles: { ...(config.styles || {}), headingFont: e.target.value },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  >
+                    <option value="Playfair Display">Playfair Display (Haute Elegance)</option>
+                    <option value="Cormorant Garamond">Cormorant Garamond (Fine Jewelry &amp; Luxury)</option>
+                    <option value="Cinzel">Cinzel (Atelier Imperial)</option>
+                    <option value="Plus Jakarta Sans">Plus Jakarta Sans (Modern Editorial)</option>
+                    <option value="Inter">Inter (Clean High-Tech)</option>
+                    <option value="Outfit">Outfit (Minimalist Geometric)</option>
+                    <option value="Montserrat">Montserrat (Bold Fashion)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Body Font Family
+                  </label>
+                  <select
+                    value={config.styles?.bodyFont || 'Plus Jakarta Sans'}
+                    onChange={(e) => {
+                      const updated = {
+                        ...config,
+                        styles: { ...(config.styles || {}), bodyFont: e.target.value },
+                      };
+                      setConfig(updated);
+                      pushHistory(updated);
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  >
+                    <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+                    <option value="Inter">Inter</option>
+                    <option value="Outfit">Outfit</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="DM Sans">DM Sans</option>
+                  </select>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1171,19 +1739,48 @@ export default function CollectionPageBuilderStudio() {
           <div className="p-5 rounded-3xl bg-[#05070B] border border-slate-800/80 shadow-2xl space-y-4">
             {/* 1. Hero Preview */}
             {config.hero.enabled && (
-              <div className="relative rounded-2xl overflow-hidden aspect-16/9 bg-slate-900 flex flex-col justify-end p-5">
+              <div className="relative rounded-2xl overflow-hidden aspect-16/9 bg-slate-900 flex flex-col justify-end p-5 shadow-lg">
                 <img
                   src={config.hero.bgImage}
                   alt={config.hero.title}
-                  className="absolute inset-0 w-full h-full object-cover opacity-60"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ opacity: 1 - (config.hero.overlayOpacity || 40) / 100 }}
                 />
-                <div className="relative z-10 space-y-1">
-                  <h4 className="text-base font-serif font-bold text-white drop-shadow-md">
+                <div className="relative z-10 space-y-1.5">
+                  {config.hero.badgeText && (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-black/50 backdrop-blur-md border border-white/20 text-white">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: config.styles?.buttonBackgroundColor || '#D4AF37' }}
+                      />
+                      {config.hero.badgeText}
+                    </div>
+                  )}
+                  <h4
+                    className="text-base font-bold drop-shadow-md"
+                    style={{
+                      color: config.styles?.headingColor || '#FFFFFF',
+                      fontFamily: config.styles?.headingFont || 'inherit',
+                    }}
+                  >
                     {config.hero.title}
                   </h4>
                   <p className="text-[11px] text-slate-200 line-clamp-2 drop-shadow">
                     {config.hero.description}
                   </p>
+                  {config.hero.ctaText && (
+                    <div>
+                      <span
+                        className="inline-block px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm"
+                        style={{
+                          backgroundColor: config.styles?.buttonBackgroundColor || '#FFFFFF',
+                          color: config.styles?.buttonTextColor || '#111111',
+                        }}
+                      >
+                        {config.hero.ctaText}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1205,17 +1802,50 @@ export default function CollectionPageBuilderStudio() {
             </div>
 
             {/* 3. Product Grid Sandbox */}
+            {/* 3. Product Grid Sandbox */}
             <div className="grid grid-cols-2 gap-3">
-              {SAMPLE_PRODUCTS.map((p) => (
-                <div key={p.id} className="p-2.5 rounded-xl bg-[#090D15] border border-slate-800 space-y-1.5">
+              {getCategorySampleProducts(activeTenant?.slug || config.tenantId || 'silvora').slice(0, 4).map((p) => (
+                <div
+                  key={p.id}
+                  className="p-2.5 space-y-1.5 border transition-all"
+                  style={{
+                    backgroundColor: config.styles?.cardBackgroundColor || '#090D15',
+                    borderRadius: config.styles?.borderRadius || '12px',
+                    borderColor: 'rgba(255,255,255,0.08)',
+                  }}
+                >
                   <div className="aspect-3/4 rounded-lg overflow-hidden bg-slate-800 relative">
                     <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-bold">
+                    <span
+                      className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-xs"
+                      style={{
+                        backgroundColor: config.styles?.buttonBackgroundColor || '#E11D48',
+                        color: config.styles?.buttonTextColor || '#FFFFFF',
+                      }}
+                    >
                       {p.badge}
                     </span>
                   </div>
-                  <h5 className="text-[11px] font-bold text-white truncate">{p.name}</h5>
-                  <span className="text-xs font-black text-rose-400">${p.price}</span>
+                  <h5
+                    className="text-[11px] font-bold truncate"
+                    style={{
+                      color: config.styles?.headingColor || '#FFFFFF',
+                      fontFamily: config.styles?.headingFont || 'inherit',
+                    }}
+                  >
+                    {p.name}
+                  </h5>
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="text-xs font-black"
+                      style={{ color: config.styles?.buttonBackgroundColor || '#D4AF37' }}
+                    >
+                      ${p.price}
+                    </span>
+                    {(p.compareAtPrice || 0) > p.price && (
+                      <span className="text-[10px] line-through opacity-50">${p.compareAtPrice}</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1227,7 +1857,13 @@ export default function CollectionPageBuilderStudio() {
                   <h6 className="text-xs font-bold text-white">{config.promo.title}</h6>
                   <p className="text-[10px] text-slate-400">{config.promo.subtitle}</p>
                 </div>
-                <button className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[10px] font-bold shrink-0">
+                <button
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 shadow-sm"
+                  style={{
+                    backgroundColor: config.styles?.buttonBackgroundColor || '#E11D48',
+                    color: config.styles?.buttonTextColor || '#FFFFFF',
+                  }}
+                >
                   {config.promo.ctaText}
                 </button>
               </div>
