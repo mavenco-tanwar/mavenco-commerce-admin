@@ -48,49 +48,48 @@ export const CATEGORY_BLUEPRINTS: Record<string, CategoryBlueprintData> = {
       badgeText: 'CERTIFIED ATELIER VAULT',
     },
     defaultCategories: [
-      { slug: 'all', name: 'All Collections' },
+      { slug: 'all', name: 'All Categories' },
       { slug: 'diamonds', name: 'Diamond Rings' },
-      { slug: 'gold', name: '18K Solid Gold Chains' },
+      { slug: 'necklaces', name: 'Fine Necklaces' },
       { slug: 'watches', name: 'Luxury Timepieces' },
       { slug: 'pearls', name: 'Baroque Pearls' },
-      { slug: 'tennis', name: 'Diamond Tennis Suites' },
     ],
     sampleProducts: [
       {
         id: 'sample_jewel_1',
-        name: '2.50ct Oval Solitaire Diamond Ring (GIA)',
-        price: 8900,
-        compareAtPrice: 11000,
+        name: '18K Yellow Gold Floating Diamond Pendant',
+        price: 28500,
+        compareAtPrice: 38000,
         rating: 5.0,
-        badge: 'GIA CERTIFIED',
-        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=800&auto=format&fit=crop',
+        badge: '-25%',
+        image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1000&auto=format&fit=crop',
       },
       {
         id: 'sample_jewel_2',
-        name: '18K Solid Yellow Gold 8mm Cuban Link',
-        price: 6400,
-        compareAtPrice: 0,
-        rating: 4.9,
-        badge: '18K SOLID GOLD',
-        image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800&auto=format&fit=crop',
+        name: 'Baguette & Emerald-Cut Diamond Eternity Band',
+        price: 42000,
+        compareAtPrice: 56000,
+        rating: 5.0,
+        badge: '-25%',
+        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=1000&auto=format&fit=crop',
       },
       {
         id: 'sample_jewel_3',
-        name: 'Swiss Automatic Sapphire Tourbillon Watch',
-        price: 4800,
-        compareAtPrice: 5600,
+        name: 'Swiss Automatic Sapphire Crystal Dress Watch',
+        price: 89000,
+        compareAtPrice: 115000,
         rating: 5.0,
-        badge: 'SWISS CALIBER',
-        image: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=800&auto=format&fit=crop',
+        badge: '-23%',
+        image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1000&auto=format&fit=crop',
       },
       {
         id: 'sample_jewel_4',
         name: 'Freshwater Baroque Pearl Choker with 18K Clasp',
-        price: 1650,
-        compareAtPrice: 2200,
+        price: 16500,
+        compareAtPrice: 22000,
         rating: 4.8,
-        badge: 'EXCLUSIVE',
-        image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=800&auto=format&fit=crop',
+        badge: '-25%',
+        image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=1000&auto=format&fit=crop',
       },
     ],
     promo: {
@@ -885,9 +884,20 @@ export function inferCategoryFromTenant(tenantSlug?: string): string {
   return 'fashion';
 }
 
-export function getCategorySampleProducts(categoryKey: string) {
-  const blueprint = CATEGORY_BLUEPRINTS[categoryKey] || CATEGORY_BLUEPRINTS.fashion;
+export function getCategorySampleProducts(categoryKeyOrTenantSlug: string) {
+  const catKey = CATEGORY_BLUEPRINTS[categoryKeyOrTenantSlug]
+    ? categoryKeyOrTenantSlug
+    : inferCategoryFromTenant(categoryKeyOrTenantSlug);
+  const blueprint = CATEGORY_BLUEPRINTS[catKey] || CATEGORY_BLUEPRINTS.fashion;
   return blueprint.sampleProducts || [];
+}
+
+export function getCategoryDefaultCategories(categoryKeyOrTenantSlug: string) {
+  const catKey = CATEGORY_BLUEPRINTS[categoryKeyOrTenantSlug]
+    ? categoryKeyOrTenantSlug
+    : inferCategoryFromTenant(categoryKeyOrTenantSlug);
+  const blueprint = CATEGORY_BLUEPRINTS[catKey] || CATEGORY_BLUEPRINTS.fashion;
+  return blueprint.defaultCategories || [];
 }
 
 export function getDefaultCollectionPageConfig(

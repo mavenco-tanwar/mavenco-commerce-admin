@@ -28,12 +28,15 @@ import {
   Plus,
   Trash2,
   Palette,
+  Heart,
+  ShoppingBag,
+  Star,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
 import { PlatformService } from '@/services/platform';
 import { CollectionPageConfig } from '@/types/collection-page.types';
-import { getDefaultCollectionPageConfig, getCategorySampleProducts, COLLECTION_PAGE_PRESETS } from '@/lib/collection-page-presets';
+import { getDefaultCollectionPageConfig, getCategorySampleProducts, getCategoryDefaultCategories, COLLECTION_PAGE_PRESETS } from '@/lib/collection-page-presets';
 import { ImageUploadInput } from '@/components/ui/ImageUploadInput';
 
 type ActiveTab =
@@ -101,6 +104,8 @@ export default function CollectionPageBuilderStudio() {
   const [isPresetsModalOpen, setIsPresetsModalOpen] = useState(false);
   const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
   const [versionHistory, setVersionHistory] = useState<any[]>([]);
+  const [liveProducts, setLiveProducts] = useState<any[]>([]);
+  const [liveCategories, setLiveCategories] = useState<any[]>([]);
 
   // Core Configuration State
   const [config, setConfig] = useState<CollectionPageConfig>(getDefaultCollectionPageConfig('lumina'));
@@ -199,6 +204,27 @@ export default function CollectionPageBuilderStudio() {
           setConfig(fallback);
           setHistory([JSON.parse(JSON.stringify(fallback))]);
           setHistoryIdx(0);
+        }
+
+        // Fetch live catalog products & categories for high-fidelity sandbox alignment
+        try {
+          const prodRes = await ApiClient.get<any>(`/api/v1/products?tenant=${slug}&limit=8`);
+          const pList = prodRes?.data || prodRes;
+          if (Array.isArray(pList) && pList.length > 0) {
+            setLiveProducts(pList);
+          }
+        } catch (e) {
+          console.warn('Could not fetch live products:', e);
+        }
+
+        try {
+          const catRes = await ApiClient.get<any>(`/api/v1/categories?tenant=${slug}`);
+          const cList = catRes?.data || catRes;
+          if (Array.isArray(cList) && cList.length > 0) {
+            setLiveCategories(cList);
+          }
+        } catch (e) {
+          console.warn('Could not fetch live categories:', e);
         }
       } catch (err) {
         console.warn('Failed to load collection page config, using preset:', err);
@@ -1377,6 +1403,38 @@ export default function CollectionPageBuilderStudio() {
                   </button>
                 </div>
               </div>
+
+              {/* Active Categories Alignment Inspector */}
+              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300 block">
+                    Active Catalog Categories (Synchronized)
+                  </label>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/60 font-semibold">
+                    Live Catalog Aligned
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {((liveCategories.length > 0
+                    ? [{ slug: 'all', name: 'All Categories' }, ...liveCategories.map((c) => ({ slug: c.slug || c.id || 'cat', name: c.name || c.title || 'Category' }))]
+                    : getCategoryDefaultCategories(activeTenant?.slug || config.tenantId || 'silvora'))
+                  ).map((cat: any, idx: number) => (
+                    <div
+                      key={cat.slug || idx}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="font-semibold text-slate-200">{cat.name}</span>
+                        {idx === 0 && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Default Selected</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">/{cat.slug}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -1732,143 +1790,325 @@ export default function CollectionPageBuilderStudio() {
               Live PLP Sandbox Canvas
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded bg-rose-950 text-rose-400 font-mono font-bold border border-rose-800">
-              {config.grid.desktopColumns} Cols &bull; {config.pagination.type}
+              {config.filters.position === 'none' ? 'No Sidebar' : 'Sidebar Active'} &bull; {config.pagination.type}
             </span>
           </div>
 
-          <div className="p-5 rounded-3xl bg-[#05070B] border border-slate-800/80 shadow-2xl space-y-4">
-            {/* 1. Hero Preview */}
-            {config.hero.enabled && (
-              <div className="relative rounded-2xl overflow-hidden aspect-16/9 bg-slate-900 flex flex-col justify-end p-5 shadow-lg">
-                <img
-                  src={config.hero.bgImage}
-                  alt={config.hero.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ opacity: 1 - (config.hero.overlayOpacity || 40) / 100 }}
-                />
-                <div className="relative z-10 space-y-1.5">
-                  {config.hero.badgeText && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-black/50 backdrop-blur-md border border-white/20 text-white">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: config.styles?.buttonBackgroundColor || '#D4AF37' }}
-                      />
-                      {config.hero.badgeText}
-                    </div>
-                  )}
-                  <h4
-                    className="text-base font-bold drop-shadow-md"
-                    style={{
-                      color: config.styles?.headingColor || '#FFFFFF',
-                      fontFamily: config.styles?.headingFont || 'inherit',
-                    }}
-                  >
-                    {config.hero.title}
-                  </h4>
-                  <p className="text-[11px] text-slate-200 line-clamp-2 drop-shadow">
-                    {config.hero.description}
-                  </p>
-                  {config.hero.ctaText && (
-                    <div>
-                      <span
-                        className="inline-block px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm"
+          {(() => {
+            const categoriesList: Array<{ slug: string; name: string }> =
+              liveCategories.length > 0
+                ? [
+                    { slug: 'all', name: 'All Categories' },
+                    ...liveCategories.map((c) => ({
+                      slug: c.slug || c.id || 'cat',
+                      name: c.name || c.title || 'Category',
+                    })),
+                  ]
+                : getCategoryDefaultCategories(activeTenant?.slug || config.tenantId || 'silvora');
+
+            const productsList: any[] =
+              liveProducts.length > 0
+                ? liveProducts.slice(0, 4)
+                : getCategorySampleProducts(activeTenant?.slug || config.tenantId || 'silvora').slice(0, 4);
+
+            return (
+              <div
+                className="p-4 sm:p-5 rounded-3xl border shadow-2xl space-y-4 transition-all"
+                style={{
+                  backgroundColor: config.styles?.backgroundColor || '#FFFDFC',
+                  borderColor: '#E8DED8',
+                  color: config.styles?.textColor || '#111827',
+                  fontFamily: config.styles?.bodyFont || 'inherit',
+                }}
+              >
+                {/* 1. Hero Banner */}
+                {config.hero.enabled && (
+                  <div className="relative rounded-2xl overflow-hidden aspect-16/9 bg-slate-900 flex flex-col justify-end p-5 shadow-lg">
+                    <img
+                      src={config.hero.bgImage}
+                      alt={config.hero.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ opacity: 1 - (config.hero.overlayOpacity || 40) / 100 }}
+                    />
+                    <div className="relative z-10 space-y-1.5">
+                      {config.hero.badgeText && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-black/50 backdrop-blur-md border border-white/20 text-white">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: config.styles?.buttonBackgroundColor || '#D4AF37' }}
+                          />
+                          {config.hero.badgeText}
+                        </div>
+                      )}
+                      <h4
+                        className="text-base font-bold drop-shadow-md"
                         style={{
-                          backgroundColor: config.styles?.buttonBackgroundColor || '#FFFFFF',
-                          color: config.styles?.buttonTextColor || '#111111',
+                          color: config.styles?.headingColor || '#FFFFFF',
+                          fontFamily: config.styles?.headingFont || 'inherit',
                         }}
                       >
-                        {config.hero.ctaText}
-                      </span>
+                        {config.hero.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-200 line-clamp-2 drop-shadow">
+                        {config.hero.description}
+                      </p>
+                      {config.hero.ctaText && (
+                        <div>
+                          <span
+                            className="inline-block px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm"
+                            style={{
+                              backgroundColor: config.styles?.buttonBackgroundColor || '#FFFFFF',
+                              color: config.styles?.buttonTextColor || '#111111',
+                            }}
+                          >
+                            {config.hero.ctaText}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
+                  </div>
+                )}
 
-            {/* 2. Breadcrumbs & Toolbar */}
-            <div className="space-y-2 border-b border-slate-800 pb-3">
-              {config.breadcrumbs.enabled && (
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <span>Home</span>
-                  <span>/</span>
-                  <span className="text-white font-bold">Collections</span>
-                </div>
-              )}
+                {/* 2. Breadcrumbs Intro */}
+                {config.breadcrumbs.enabled && (
+                  <div className="flex items-center gap-1.5 text-[10px] opacity-75 border-b pb-2" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+                    <span>Home</span>
+                    <span>/</span>
+                    <span className="font-bold">Collections</span>
+                  </div>
+                )}
 
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">124 Creations</span>
-                <span className="text-[10px] text-slate-400 font-mono">Sort: {config.sorting.defaultSort}</span>
-              </div>
-            </div>
-
-            {/* 3. Product Grid Sandbox */}
-            {/* 3. Product Grid Sandbox */}
-            <div className="grid grid-cols-2 gap-3">
-              {getCategorySampleProducts(activeTenant?.slug || config.tenantId || 'silvora').slice(0, 4).map((p) => (
-                <div
-                  key={p.id}
-                  className="p-2.5 space-y-1.5 border transition-all"
-                  style={{
-                    backgroundColor: config.styles?.cardBackgroundColor || '#090D15',
-                    borderRadius: config.styles?.borderRadius || '12px',
-                    borderColor: 'rgba(255,255,255,0.08)',
-                  }}
-                >
-                  <div className="aspect-3/4 rounded-lg overflow-hidden bg-slate-800 relative">
-                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                    <span
-                      className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-xs"
+                {/* 3. Main Workspace Grid: Sidebar + Products */}
+                <div className={config.filters.position === 'left' ? 'grid grid-cols-12 gap-3 items-start' : 'space-y-3'}>
+                  {/* SIMULATED FILTER SIDEBAR (When left position is selected) */}
+                  {config.filters.position === 'left' && (
+                    <div
+                      className="col-span-5 p-3 rounded-2xl border space-y-3 shadow-xs"
                       style={{
-                        backgroundColor: config.styles?.buttonBackgroundColor || '#E11D48',
-                        color: config.styles?.buttonTextColor || '#FFFFFF',
+                        backgroundColor: config.styles?.filterBackgroundColor || '#FAF6F2',
+                        borderColor: '#E8DED8',
+                        color: config.styles?.textColor || '#111827',
                       }}
                     >
-                      {p.badge}
-                    </span>
-                  </div>
-                  <h5
-                    className="text-[11px] font-bold truncate"
-                    style={{
-                      color: config.styles?.headingColor || '#FFFFFF',
-                      fontFamily: config.styles?.headingFont || 'inherit',
-                    }}
-                  >
-                    {p.name}
-                  </h5>
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="text-xs font-black"
-                      style={{ color: config.styles?.buttonBackgroundColor || '#D4AF37' }}
-                    >
-                      ${p.price}
-                    </span>
-                    {(p.compareAtPrice || 0) > p.price && (
-                      <span className="text-[10px] line-through opacity-50">${p.compareAtPrice}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                      <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+                        <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: config.styles?.headingColor || '#111111' }}>
+                          Filters
+                        </span>
+                        <span
+                          className="text-[9px] font-bold flex items-center gap-1 cursor-pointer"
+                          style={{ color: config.styles?.accentColor || '#B77A68' }}
+                        >
+                          <RotateCcw className="w-2.5 h-2.5" />
+                          Reset All
+                        </span>
+                      </div>
 
-            {/* 4. Promo Tile Sandbox */}
-            {config.promo.enabled && (
-              <div className="p-3 rounded-xl bg-gradient-to-r from-rose-950/60 to-slate-900 border border-rose-800/50 flex items-center justify-between gap-2">
-                <div>
-                  <h6 className="text-xs font-bold text-white">{config.promo.title}</h6>
-                  <p className="text-[10px] text-slate-400">{config.promo.subtitle}</p>
+                      {/* Category Navigation */}
+                      <div className="space-y-1.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider block opacity-75">
+                          Category
+                        </span>
+                        <div className="space-y-1">
+                          {categoriesList.slice(0, 5).map((cat, idx) => (
+                            <div
+                              key={cat.slug || idx}
+                              className={`px-2 py-1 rounded-lg text-[9px] font-semibold flex items-center justify-between transition-all ${
+                                idx === 0
+                                  ? 'border border-amber-600/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold'
+                                  : 'hover:bg-black/5 opacity-80'
+                              }`}
+                            >
+                              <span className="truncate">{cat.name}</span>
+                              {idx === 0 && <Check className="w-2.5 h-2.5 text-amber-600" />}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Color Palette */}
+                      <div className="space-y-1 pt-1.5 border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+                        <span className="text-[9px] font-bold uppercase tracking-wider block opacity-75">
+                          Color Palette
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 rounded bg-black/10 text-[8px] font-bold">All</span>
+                          <span className="w-3 h-3 rounded-full bg-[#E5C158] border border-black/10 inline-block" />
+                          <span className="w-3 h-3 rounded-full bg-[#E8927C] border border-black/10 inline-block" />
+                          <span className="w-3 h-3 rounded-full bg-[#8E5B4C] border border-black/10 inline-block" />
+                        </div>
+                      </div>
+
+                      {/* Size */}
+                      <div className="space-y-1 pt-1.5 border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+                        <span className="text-[9px] font-bold uppercase tracking-wider block opacity-75">
+                          Size
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {['XS', 'S', 'M', 'L', 'XL'].map((s) => (
+                            <span key={s} className="px-1 py-0.5 rounded text-[8px] border border-black/15 font-mono">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Max Price */}
+                      <div className="space-y-1 pt-1.5 border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+                        <div className="flex items-center justify-between text-[8px] font-bold">
+                          <span className="opacity-75">Max Price</span>
+                          <span style={{ color: config.styles?.accentColor || '#B77A68' }}>₹1,11,250</span>
+                        </div>
+                        <div className="h-1 rounded-full bg-black/10 relative overflow-hidden">
+                          <div className="h-full w-3/4 rounded-full" style={{ backgroundColor: config.styles?.accentColor || '#B77A68' }} />
+                        </div>
+                      </div>
+
+                      {/* In Stock Only */}
+                      <div className="flex items-center gap-1.5 pt-1 border-t text-[8px] font-semibold" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+                        <input type="checkbox" className="w-2.5 h-2.5 rounded" defaultChecked readOnly />
+                        <span className="opacity-75">In Stock Only</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PRODUCTS COLUMN */}
+                  <div className={config.filters.position === 'left' ? 'col-span-7 space-y-2.5' : 'space-y-3'}>
+                    {/* Toolbar */}
+                    <div
+                      className="p-2 rounded-xl flex items-center justify-between text-[9px] border shadow-xs"
+                      style={{
+                        backgroundColor: config.styles?.toolbarBackgroundColor || config.styles?.filterBackgroundColor || '#FAF6F2',
+                        borderColor: '#E8DED8',
+                        color: config.styles?.textColor || '#111827',
+                      }}
+                    >
+                      <span className="font-bold">Showing {productsList.length} of {productsList.length} Creations</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-0.5 p-0.5 rounded bg-black/5">
+                          <LayoutGrid className="w-3 h-3 text-slate-700 dark:text-slate-200" />
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded bg-black/5 font-semibold text-[8px] truncate max-w-[110px]">
+                          Featured &amp; Best Selling ▾
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Products Grid */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {productsList.map((p: any, idx: number) => {
+                        const imgUrl = p.images?.[0]?.url || p.images?.[0] || p.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800&auto=format&fit=crop';
+                        const displayPrice = typeof p.price === 'number' ? `₹${p.price.toLocaleString()}` : `₹${p.price}`;
+                        const displayCompare = p.compareAtPrice && p.compareAtPrice > p.price ? `₹${p.compareAtPrice.toLocaleString()}` : null;
+
+                        return (
+                          <div
+                            key={p.id || idx}
+                            className="p-2 space-y-1.5 border shadow-xs transition-all flex flex-col justify-between"
+                            style={{
+                              backgroundColor: config.styles?.cardBackgroundColor || '#FFFFFF',
+                              borderRadius: config.styles?.borderRadius || '16px',
+                              borderColor: '#E8DED8',
+                              color: config.styles?.textColor || '#111827',
+                            }}
+                          >
+                            <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 relative group">
+                              <img src={imgUrl} alt={p.name} className="w-full h-full object-cover" />
+                              <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[8px] font-bold shadow-xs">
+                                {p.badge || '-25%'}
+                              </span>
+                              <div className="absolute top-1 right-1 w-4.5 h-4.5 rounded-full bg-white/90 shadow-xs flex items-center justify-center text-slate-700">
+                                <Heart className="w-2.5 h-2.5" />
+                              </div>
+                            </div>
+
+                            <div className="space-y-0.5">
+                              <h5
+                                className="text-[10px] font-bold truncate"
+                                style={{
+                                  color: config.styles?.headingColor || '#111111',
+                                  fontFamily: config.styles?.headingFont || 'inherit',
+                                }}
+                              >
+                                {p.name || 'Product'}
+                              </h5>
+
+                              {/* Star rating */}
+                              <div className="flex items-center gap-0.5 text-[8px] text-amber-500 font-bold">
+                                <span>★★★★★</span>
+                                <span className="text-slate-400 font-normal text-[7px]">(24)</span>
+                              </div>
+
+                              {/* Price */}
+                              <div className="flex items-center gap-1">
+                                <span
+                                  className="text-[10px] font-black"
+                                  style={{ color: config.styles?.headingColor || '#111111' }}
+                                >
+                                  {displayPrice}
+                                </span>
+                                {displayCompare && (
+                                  <span className="text-[8px] line-through opacity-50">
+                                    {displayCompare}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Swatches */}
+                              <div className="flex items-center gap-1 pt-0.5">
+                                <span className="w-2 h-2 rounded-full border border-black/20 bg-[#C5A880]" />
+                                <span className="w-2 h-2 rounded-full border border-black/20 bg-[#E8927C]" />
+                                <span className="w-2 h-2 rounded-full border border-black/20 bg-[#8E5B4C]" />
+                              </div>
+                            </div>
+
+                            {/* ADD TO BAG button */}
+                            <button
+                              type="button"
+                              className="w-full py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-opacity shadow-xs mt-1"
+                              style={{
+                                backgroundColor: config.styles?.buttonBackgroundColor || '#111111',
+                                color: config.styles?.buttonTextColor || '#FFFFFF',
+                              }}
+                            >
+                              <ShoppingBag className="w-2.5 h-2.5" />
+                              <span>Add to Bag</span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-                <button
-                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 shadow-sm"
-                  style={{
-                    backgroundColor: config.styles?.buttonBackgroundColor || '#E11D48',
-                    color: config.styles?.buttonTextColor || '#FFFFFF',
-                  }}
-                >
-                  {config.promo.ctaText}
-                </button>
+
+                {/* 4. Promo Tile Sandbox */}
+                {config.promo.enabled && (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-[#1A1625] text-white border border-slate-800 flex items-center justify-between gap-3 shadow-lg">
+                    <div className="space-y-0.5 max-w-[200px]">
+                      <span className="text-[8px] font-bold uppercase tracking-widest text-amber-400 block">
+                        Atelier Exclusives
+                      </span>
+                      <h6 className="text-[11px] font-serif font-bold text-white truncate">
+                        {config.promo.title}
+                      </h6>
+                      <p className="text-[9px] text-slate-300 line-clamp-1">
+                        {config.promo.subtitle}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-xl font-bold text-[9px] uppercase tracking-wider shrink-0 shadow-md transition-all hover:opacity-95"
+                      style={{
+                        backgroundColor: config.styles?.buttonBackgroundColor || '#C5A880',
+                        color: config.styles?.buttonTextColor || '#111111',
+                      }}
+                    >
+                      {config.promo.ctaText}
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
         </div>
       </div>
 
