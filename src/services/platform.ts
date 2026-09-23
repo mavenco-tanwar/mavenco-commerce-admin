@@ -314,13 +314,31 @@ const IMPERSONATION_KEY = 'jq_saas_impersonation_state';
 
 export class PlatformService {
   public static async seedTenant(tenantSlug: string, preset: string = 'apparel'): Promise<any> {
+    const seedPayload = { tenantSlug, preset };
+
+    // 1. Trigger Storefront seed API if reachable
     try {
-      const res = await ApiClient.post('/api/v1/platform/tenants/seed', { tenantSlug, preset });
+      const storefrontUrl =
+        (typeof window !== 'undefined' && (window as any).NEXT_PUBLIC_STOREFRONT_URL) ||
+        process.env.NEXT_PUBLIC_STOREFRONT_URL ||
+        'http://localhost:3000';
+      await fetch(`${storefrontUrl}/api/v1/platform/tenants/seed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(seedPayload),
+      }).catch(() => {});
+    } catch (sfErr) {
+      console.warn('[PlatformService.seedTenant] Storefront seed notice:', sfErr);
+    }
+
+    // 2. Trigger Admin API seed route for direct database synchronization
+    try {
+      const res = await ApiClient.post('/api/v1/platform/tenants/seed', seedPayload);
       if (res && res.success) return res;
     } catch (err) {
       console.warn('Primary platform seed failed, using products/seed fallback:', err);
     }
-    return await ApiClient.post('/api/v1/products/seed', { tenantSlug, preset });
+    return await ApiClient.post('/api/v1/products/seed', seedPayload);
   }
 
   public static getPlatformModules(): PlatformModuleMeta[] {
@@ -830,6 +848,10 @@ export class PlatformService {
     customDomain?: string;
     temporaryPassword?: string;
     features?: Record<string, boolean>;
+    category?: string;
+    preset?: string;
+    categoryLabel?: string;
+    theme?: any;
   }): Promise<TenantStore> {
     const tenantId = `store_${payload.slug.replace(/[^a-z0-9]/g, '_')}_${Date.now().toString().slice(-4)}`;
     const plan = this.plans.find((p) => p.id === payload.planId) || this.plans[1];
@@ -879,18 +901,22 @@ export class PlatformService {
       isTemporaryPassword: true,
       primaryDomain: payload.customDomain || `${payload.slug}.ourplatform.com`,
       domains,
+      category: payload.category || payload.preset,
+      preset: payload.preset || payload.category,
+      categoryLabel: payload.categoryLabel,
       theme: {
         logoUrl: '',
-        primaryColor: payload.primaryColor || '#0F172A',
+        primaryColor: payload.primaryColor || payload.theme?.primaryColor || '#0F172A',
         secondaryColor: '#FFFFFF',
-        accentColor: payload.accentColor || '#E11D48',
-        headingFont: 'Playfair Display',
-        bodyFont: 'Plus Jakarta Sans',
-        borderRadius: 'md',
-        layoutPreset: 'flagship_luxury',
-        headerLayout: 'glassmorphism_mega',
-        footerLayout: 'editorial_4_column',
-        productCardStyle: 'minimal_hover_zoom',
+        accentColor: payload.accentColor || payload.theme?.accentColor || '#E11D48',
+        headingFont: payload.theme?.headingFont || (payload.category === 'jewelry' ? 'Playfair Display' : 'Plus Jakarta Sans'),
+        bodyFont: payload.theme?.bodyFont || 'Plus Jakarta Sans',
+        borderRadius: payload.theme?.borderRadius || 'md',
+        layoutPreset: payload.theme?.layoutPreset || 'flagship_luxury',
+        headerLayout: payload.theme?.headerLayout || 'glassmorphism_mega',
+        footerLayout: payload.theme?.footerLayout || 'editorial_4_column',
+        productCardStyle: payload.theme?.productCardStyle || 'minimal_hover_zoom',
+        ...(payload.theme || {}),
       },
       metrics: {
         products: 4,

@@ -505,11 +505,23 @@ function PlatformContent() {
 
   // Catalog Seeder Modal State
   const [seederTenant, setSeederTenant] = useState<TenantStore | null>(null);
-  const [seederPreset, setSeederPreset] = useState<'apparel' | 'home' | 'activewear'>('apparel');
+  const [seederPreset, setSeederPreset] = useState<string>('apparel');
   const [isSeeding, setIsSeeding] = useState<boolean>(false);
   const [seedingProgress, setSeedingProgress] = useState<number>(0);
   const [seedingStatusText, setSeedingStatusText] = useState<string>('');
   const [seedComplete, setSeedComplete] = useState<boolean>(false);
+
+  const ALL_SEEDER_PRESETS = [
+    { id: 'grocery', label: 'Gourmet Grocery & Organics', icon: '🌿', desc: 'Specialty Coffee, Cold-Pressed Oils & Matcha' },
+    { id: 'jewelry', label: 'Luxury Jewelry & Watches', icon: '💎', desc: '18K Solid Gold, Solitaire Rings & Watches' },
+    { id: 'fashion', label: 'Haute Fashion & Apparel', icon: '👗', desc: 'Designer Pret, Silk Sarees & Evening Wear' },
+    { id: 'electronics', label: 'Electronics & Audio', icon: '🎧', desc: 'Noise-Canceling Audio, Smart Watches & Tech' },
+    { id: 'footwear', label: 'Footwear & Streetwear', icon: '👟', desc: 'Hype High-Tops, Boots & Cloud Runners' },
+    { id: 'beauty', label: 'Luxury Cosmetics & Skincare', icon: '💄', desc: 'Botanical Serums, Retinol & Creams' },
+    { id: 'fitness', label: 'Athletics & Activewear', icon: '⚡', desc: 'Gym Tights, Performance Jackets & Trainers' },
+    { id: 'home', label: 'Nordic Home Living & Decor', icon: '🛋️', desc: 'Ceramics, Stoneware & Minimal Furniture' },
+    { id: 'multipurpose', label: 'Universal Megastore', icon: '🛍️', desc: 'All-in-One Multi-Department Catalog' },
+  ];
 
   const handleOpenSeederModal = (tenant: TenantStore) => {
     setSeederTenant(tenant);
@@ -517,6 +529,17 @@ function PlatformContent() {
     setSeedingProgress(0);
     setSeedComplete(false);
     setSeedingStatusText('');
+
+    const matched = ((tenant as any).preset || (tenant as any).category || '').toLowerCase();
+    if (matched && ALL_SEEDER_PRESETS.some((p) => p.id === matched)) {
+      setSeederPreset(matched);
+    } else if (tenant.name?.toLowerCase().includes('veg') || tenant.name?.toLowerCase().includes('grocery')) {
+      setSeederPreset('grocery');
+    } else if (tenant.name?.toLowerCase().includes('jewel') || tenant.slug === 'silvora') {
+      setSeederPreset('jewelry');
+    } else {
+      setSeederPreset('fashion');
+    }
   };
 
   const handleExecuteSeeder = async () => {
@@ -1181,24 +1204,33 @@ function PlatformContent() {
     }, 1700);
 
     setTimeout(async () => {
+      const chosenBlueprint = CATEGORY_BLUEPRINTS.find((b) => b.id === blueprintSource);
+
       const newTenant = await PlatformService.provisionStore({
         name: storeName,
         slug: storeSlug,
-        tagline,
+        tagline: tagline || chosenBlueprint?.tagline || 'Modern Commerce Store',
         ownerName,
         ownerEmail,
         currency,
         planId: selectedPlanId,
         status: storeStatus,
         customDomain: customDomain || undefined,
-        primaryColor,
-        accentColor,
+        primaryColor: primaryColor || chosenBlueprint?.primaryColor,
+        accentColor: accentColor || chosenBlueprint?.accentColor,
         temporaryPassword: tempPassword,
         features: customFeatures,
+        category: chosenBlueprint?.id,
+        preset: chosenBlueprint?.preset,
+        categoryLabel: chosenBlueprint?.label,
+        theme: {
+          primaryColor: primaryColor || chosenBlueprint?.primaryColor,
+          accentColor: accentColor || chosenBlueprint?.accentColor,
+          headingFont: chosenBlueprint?.id === 'jewelry' ? 'Playfair Display' : 'Plus Jakarta Sans',
+        },
       });
 
       // Automatically seed the new tenant with the chosen category catalog!
-      const chosenBlueprint = CATEGORY_BLUEPRINTS.find((b) => b.id === blueprintSource);
       if (chosenBlueprint && blueprintSource !== 'none') {
         try {
           await PlatformService.seedTenant(newTenant.slug, chosenBlueprint.preset);
@@ -4852,25 +4884,21 @@ function PlatformContent() {
               <span className="text-[11px] uppercase font-bold text-amber-400 tracking-wider">
                 1. Select Store Industry Preset:
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { id: 'apparel', label: 'Luxury Apparel & Pret', icon: '👗', desc: '12 Ethnic & Western Pret SKUs' },
-                  { id: 'home', label: 'Nordic Home Living', icon: '🌿', desc: '12 Ceramic & Decor SKUs' },
-                  { id: 'activewear', label: 'Performance Active', icon: '⚡', desc: '12 Gym & Training SKUs' },
-                ].map((preset) => (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-h-[280px] overflow-y-auto pr-1">
+                {ALL_SEEDER_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
-                    onClick={() => setSeederPreset(preset.id as any)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all ${
+                    onClick={() => setSeederPreset(preset.id)}
+                    className={`p-3 rounded-xl border text-left transition-all ${
                       seederPreset === preset.id
-                        ? 'bg-amber-500/15 border-amber-500 text-white shadow-lg'
+                        ? 'bg-amber-500/20 border-amber-500 text-white shadow-md'
                         : 'bg-[#0A0C10] border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}
                   >
-                    <div className="text-xl mb-1">{preset.icon}</div>
+                    <div className="text-lg mb-1">{preset.icon}</div>
                     <div className="text-xs font-bold text-white">{preset.label}</div>
-                    <div className="text-[10px] text-slate-400">{preset.desc}</div>
+                    <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
                   </button>
                 ))}
               </div>

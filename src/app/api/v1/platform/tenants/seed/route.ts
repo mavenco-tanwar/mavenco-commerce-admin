@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase, getMongoClient } from '@/lib/mongodb';
+import { getDatabase, getTenantDatabase } from '@/lib/mongodb';
+import { DEMO_PRESETS } from '@/app/api/v1/platform/tenants/publish-demo-presets/presets-data';
+
+export const dynamic = 'force-dynamic';
 
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-slug, X-Store-ID, X-API-Key',
   };
 }
 
@@ -13,537 +16,273 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders() });
 }
 
+function resolveBlueprintPreset(presetKey: string) {
+  const key = (presetKey || 'apparel').toLowerCase().trim();
+  const slugMap: Record<string, string> = {
+    jewelry: 'demo-jewelry',
+    'demo-jewelry': 'demo-jewelry',
+    jewels: 'demo-jewelry',
+    watches: 'demo-jewelry',
+    diamonds: 'demo-jewelry',
+    fashion: 'demo-fashion',
+    'demo-fashion': 'demo-fashion',
+    apparel: 'demo-fashion',
+    clothing: 'demo-fashion',
+    pret: 'demo-fashion',
+    electronics: 'demo-electronics',
+    'demo-electronics': 'demo-electronics',
+    tech: 'demo-electronics',
+    gadgets: 'demo-electronics',
+    audio: 'demo-electronics',
+    home: 'demo-home',
+    'demo-home': 'demo-home',
+    decor: 'demo-home',
+    furniture: 'demo-home',
+    living: 'demo-home',
+    nordic: 'demo-home',
+    beauty: 'demo-beauty',
+    'demo-beauty': 'demo-beauty',
+    cosmetics: 'demo-beauty',
+    skincare: 'demo-beauty',
+    botanicals: 'demo-beauty',
+    activewear: 'demo-fitness',
+    'demo-fitness': 'demo-fitness',
+    fitness: 'demo-fitness',
+    sports: 'demo-fitness',
+    athletics: 'demo-fitness',
+    gym: 'demo-fitness',
+    grocery: 'demo-grocery',
+    'demo-grocery': 'demo-grocery',
+    organics: 'demo-grocery',
+    food: 'demo-grocery',
+    footwear: 'demo-footwear',
+    'demo-footwear': 'demo-footwear',
+    shoes: 'demo-footwear',
+    sneakers: 'demo-footwear',
+    eyewear: 'demo-eyewear',
+    'demo-eyewear': 'demo-eyewear',
+    glasses: 'demo-eyewear',
+    optics: 'demo-eyewear',
+    multipurpose: 'demo',
+    universal: 'demo',
+    megastore: 'demo',
+    demo: 'demo',
+  };
+
+  const targetSlug = slugMap[key] || (key.startsWith('demo-') ? key : 'demo-fashion');
+  return DEMO_PRESETS.find((p) => p.slug === targetSlug) || DEMO_PRESETS[0];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const tenantSlug = (body.tenantSlug || body.slug || 'demo').toLowerCase().trim();
-    const preset = (body.preset || 'apparel').toLowerCase().trim();
+    const tenantSlug = (body.tenantSlug || body.slug || 'clothing').toLowerCase().trim();
+    const rawPreset = (body.preset || 'apparel').toLowerCase().trim();
 
-    const platformDb = await getDatabase();
-    const mongoClient = await getMongoClient();
-
-    if (!platformDb || !mongoClient) {
+    const db = await getDatabase();
+    if (!db) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 500, headers: corsHeaders() });
     }
 
-    const tenantDb = mongoClient.db(`tenant_${tenantSlug}`);
+    const now = new Date().toISOString();
+    const blueprint = resolveBlueprintPreset(rawPreset);
 
-    const sampleProductsMap: Record<string, any[]> = {
-      apparel: [
-        {
-          name: 'Pure Mulberry Silk Banarasi Saree',
-          slug: `pure-mulberry-silk-banarasi-saree-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-FSH-001`,
-          department: 'women',
-          category: 'sarees',
-          categoryName: 'Royal Sarees',
-          price: 14999,
-          compareAtPrice: 19999,
-          discountPercent: 25,
-          shortDescription: 'Heirloom handwoven pure Katan silk saree with real gold zari kadwa motifs.',
-          description: 'A masterpiece of Banarasi handloom artistry. Woven over 45 days by generational weavers using certified pure mulberry silk and antique gold zari borders.',
-          features: ['100% Pure Katan Silk certified SilkMark', 'Intricate floral kadwa zari jaal throughout body', 'Includes unstitched running silk blouse piece (80cm)'],
-          fabric: 'Pure Mulberry Silk & Gold Zari',
-          careInstructions: ['Strictly Dry Clean Only'],
-          images: [{ url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1000&auto=format&fit=crop', alt: 'Silk Saree Front', isPrimary: true }],
-          colors: [{ name: 'Imperial Crimson', hex: '#8B0000' }, { name: 'Royal Emerald', hex: '#004B23' }],
-          sizes: [{ size: 'Free Size', inStock: true, stockCount: 15 }],
-          rating: 5.0,
-          reviewCount: 48,
-          isFeatured: true,
-          isNewArrival: true,
-          isBestSeller: true,
-          badge: 'Heirloom Heritage',
-        },
-        {
-          name: 'Artisanal Embroidered Velvet Tuxedo Blazer',
-          slug: `artisanal-embroidered-velvet-tuxedo-blazer-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-FSH-002`,
-          department: 'women',
-          category: 'blazers',
-          categoryName: 'Atelier Tailoring',
-          price: 8999,
-          compareAtPrice: 12499,
-          discountPercent: 28,
-          shortDescription: 'Midnight sapphire plush micro-velvet blazer with hand-zardozi peak lapels.',
-          description: 'Statement evening tailoring at its finest. Cut from Italian micro-velvet with a sharp structured shoulder line and opulent metallic thread work.',
-          features: ['Plush Italian cotton micro-velvet', 'Hand-stitched metallic zardozi lapel embroidery'],
-          fabric: 'Italian Velvet & Silk Satin Lining',
-          careInstructions: ['Specialist Dry Clean Only'],
-          images: [{ url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop', alt: 'Velvet Tuxedo Blazer', isPrimary: true }],
-          colors: [{ name: 'Midnight Sapphire', hex: '#0F1E36' }, { name: 'Wine Velvet', hex: '#4A0E17' }],
-          sizes: [{ size: 'S', inStock: true, stockCount: 8 }, { size: 'M', inStock: true, stockCount: 12 }, { size: 'L', inStock: true, stockCount: 6 }],
-          rating: 4.9,
-          reviewCount: 38,
-          isFeatured: true,
-          isNewArrival: false,
-          isBestSeller: true,
-          badge: 'Atelier Drop',
-        },
-        {
-          name: 'French Chiffon Pleated Evening Gown',
-          slug: `french-chiffon-pleated-evening-gown-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-FSH-003`,
-          department: 'women',
-          category: 'dresses',
-          categoryName: 'Evening Gowns',
-          price: 7499,
-          compareAtPrice: 10200,
-          discountPercent: 26,
-          shortDescription: 'Airy pleated silk chiffon gown with a defined waistline and flowing train.',
-          description: 'Effortless red-carpet glamour. Crafted with micro-accordion pleating and an inner corset support structure for flawless silhouette sculpting.',
-          features: ['Air-weight French Chiffon', 'Concealed internal corsetry and padded cups'],
-          fabric: '100% Silk Chiffon',
-          careInstructions: ['Dry Clean Only'],
-          images: [{ url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?q=80&w=1000&auto=format&fit=crop', alt: 'Chiffon Evening Gown', isPrimary: true }],
-          colors: [{ name: 'Champagne Blush', hex: '#F7E7CE' }, { name: 'Noir Onyx', hex: '#111111' }],
-          sizes: [{ size: 'XS', inStock: true, stockCount: 4 }, { size: 'S', inStock: true, stockCount: 10 }, { size: 'M', inStock: true, stockCount: 8 }],
-          rating: 4.8,
-          reviewCount: 29,
-          isFeatured: true,
-          isNewArrival: true,
-          badge: 'New Season',
-        },
-      ],
-      electronics: [
-        {
-          name: 'Volt Pro Wireless ANC Studio Headphones',
-          slug: `volt-pro-wireless-anc-studio-headphones-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-ELC-001`,
-          department: 'electronics',
-          category: 'audio',
-          categoryName: 'Studio Audio',
-          price: 18999,
-          compareAtPrice: 24999,
-          discountPercent: 24,
-          shortDescription: 'Hybrid Active Noise Cancellation with custom 45mm beryllium drivers and 65hr battery.',
-          description: 'Engineered for audiophiles and music producers. Features lossless LDAC audio streaming, dual transparency mode, and ultra-plush memory foam earcups.',
-          features: ['45mm custom Beryllium acoustic drivers', '-42dB Hybrid Active Noise Cancellation', '65-Hour battery playback with fast charge'],
-          fabric: 'Aerospace Aluminium & Protein Leather',
-          careInstructions: ['Store in included hard shell travel case'],
-          images: [{ url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1000&auto=format&fit=crop', alt: 'Volt Pro Headphones', isPrimary: true }],
-          colors: [{ name: 'Midnight Space Gray', hex: '#2A2E39' }, { name: 'Polar Silver', hex: '#D8D9DD' }],
-          sizes: [{ size: 'Over-Ear', inStock: true, stockCount: 25 }],
-          rating: 4.9,
-          reviewCount: 94,
-          isFeatured: true,
-          isBestSeller: true,
-          badge: 'Flagship Audio',
-        },
-        {
-          name: 'Apex Ultra Titanium GPS Smartwatch',
-          slug: `apex-ultra-titanium-gps-smartwatch-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-ELC-002`,
-          department: 'electronics',
-          category: 'wearables',
-          categoryName: 'Smart Wearables',
-          price: 14499,
-          compareAtPrice: 18999,
-          discountPercent: 23,
-          shortDescription: 'Aerospace grade Grade 5 titanium chassis, sapphire crystal display, dual-frequency GPS.',
-          description: 'Rugged outdoor smartwatch with ECG heart rate tracking, blood oxygen analytics, 100m water resistance, and up to 14 days standby battery.',
-          features: ['Grade 5 Titanium bezel & sapphire crystal', 'Dual-frequency multi-satellite GPS navigation', '100m water-resistant with diving mode'],
-          fabric: 'Titanium & Fluoroelastomer Sport Strap',
-          careInstructions: ['Rinse with fresh water after ocean swimming'],
-          images: [{ url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000&auto=format&fit=crop', alt: 'Apex Titanium Smartwatch', isPrimary: true }],
-          colors: [{ name: 'Titanium Slate', hex: '#4A5568' }, { name: 'Carbon Black', hex: '#1A202C' }],
-          sizes: [{ size: '49mm Bezel', inStock: true, stockCount: 18 }],
-          rating: 4.9,
-          reviewCount: 76,
-          isFeatured: true,
-          isNewArrival: true,
-          badge: 'Titanium Build',
-        },
-        {
-          name: '140W 4-Port GaN Fast Charger & MagSafe Dock',
-          slug: `140w-4-port-gan-fast-charger-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-ELC-003`,
-          department: 'electronics',
-          category: 'power',
-          categoryName: 'GaN Chargers & Docks',
-          price: 4299,
-          compareAtPrice: 5999,
-          discountPercent: 28,
-          shortDescription: 'Next-gen Gallium Nitride 140W PD 3.1 charging station for laptops, phones and watches.',
-          description: 'Power up to 4 high-demand devices simultaneously at maximum speed without thermal throttling.',
-          features: ['GaN III Semiconductor architecture', '140W USB-C Power Delivery 3.1 output', 'Active temperature monitoring 80,000 times/hr'],
-          fabric: 'Fireproof Polycarbonate Case',
-          careInstructions: ['Keep away from liquids and moisture'],
-          images: [{ url: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?q=80&w=1000&auto=format&fit=crop', alt: 'GaN Fast Charger', isPrimary: true }],
-          colors: [{ name: 'Matte Stealth', hex: '#212529' }],
-          sizes: [{ size: 'Universal Desktop', inStock: true, stockCount: 40 }],
-          rating: 4.8,
-          reviewCount: 61,
-          isFeatured: true,
-          badge: 'GaN III Tech',
-        },
-      ],
-      home: [
-        {
-          name: 'Handcrafted Fluted Ceramic Vase',
-          slug: `handcrafted-fluted-ceramic-vase-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-HOM-001`,
-          department: 'home',
-          category: 'decor',
-          categoryName: 'Artisanal Decor',
-          price: 2499,
-          compareAtPrice: 3499,
-          discountPercent: 28,
-          shortDescription: 'Minimalist Scandinavian ceramic vase with matte chalk glaze finish.',
-          description: 'Elevate your living space with this sculptural fluted ceramic vase.',
-          features: ['100% High-fire stoneware clay', 'Waterproof interior glaze', 'Hand-grooved vertical fluting'],
-          fabric: 'Matte Glazed Stoneware',
-          careInstructions: ['Wipe with damp microfiber cloth'],
-          images: [{ url: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?q=80&w=1000&auto=format&fit=crop', alt: 'Ceramic Vase', isPrimary: true }],
-          colors: [{ name: 'Chalk White', hex: '#F5F5F3' }, { name: 'Earthy Terracotta', hex: '#C86D51' }],
-          sizes: [{ size: 'Medium (30cm)', inStock: true, stockCount: 22 }],
-          rating: 4.9,
-          reviewCount: 68,
-          isFeatured: true,
-          isBestSeller: true,
-          badge: 'Best Seller',
-        },
-        {
-          name: 'Mid-Century Modern Teakwood Lounge Armchair',
-          slug: `mid-century-teakwood-lounge-armchair-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-HOM-002`,
-          department: 'home',
-          category: 'furniture',
-          categoryName: 'Designer Furniture',
-          price: 19500,
-          compareAtPrice: 26000,
-          discountPercent: 25,
-          shortDescription: 'Solid kiln-dried Indonesian teakwood frame with natural oatmeal boucle upholstery.',
-          description: 'Timeless ergonomic silhouette designed for hours of comfortable reading and conversation.',
-          features: ['Sustainably sourced Grade-A Teakwood', 'High-resilience foam core with textured boucle wrap'],
-          fabric: 'Solid Teak & Boucle Fabric',
-          careInstructions: ['Professional upholstery cleaner only'],
-          images: [{ url: 'https://images.unsplash.com/photo-1580481077197-0ec997bca314?q=80&w=1000&auto=format&fit=crop', alt: 'Teakwood Armchair', isPrimary: true }],
-          colors: [{ name: 'Natural Oatmeal', hex: '#EAE6DF' }],
-          sizes: [{ size: 'Standard Lounge', inStock: true, stockCount: 7 }],
-          rating: 5.0,
-          reviewCount: 34,
-          isFeatured: true,
-          badge: 'Solid Wood',
-        },
-      ],
-      beauty: [
-        {
-          name: 'Botanical Radiance C-Elixir Face Serum',
-          slug: `botanical-radiance-c-elixir-face-serum-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-BTY-001`,
-          department: 'beauty',
-          category: 'serums',
-          categoryName: 'Active Serums',
-          price: 3299,
-          compareAtPrice: 4500,
-          discountPercent: 26,
-          shortDescription: '15% Stabilized Vitamin C, Ferulic Acid and Botanical Kakadu Plum extract.',
-          description: 'Clinically proven to boost skin luminescence, fade dark spots, and defend against environmental stressors.',
-          features: ['15% Potent active Vitamin C', 'Wild-harvested Australian Kakadu Plum', '100% Vegan & Cruelty Free'],
-          fabric: 'Glass Dropper Vial (30ml)',
-          careInstructions: ['Store in a cool dark place'],
-          images: [{ url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1000&auto=format&fit=crop', alt: 'Radiance Serum Bottle', isPrimary: true }],
-          colors: [{ name: 'Amber Gold', hex: '#FFBF00' }],
-          sizes: [{ size: '30ml / 1.0 fl. oz', inStock: true, stockCount: 35 }],
-          rating: 4.9,
-          reviewCount: 112,
-          isFeatured: true,
-          isBestSeller: true,
-          badge: 'Award Winner',
-        },
-        {
-          name: 'Santal & Cardamom Artisanal Eau De Parfum',
-          slug: `santal-cardamom-artisanal-eau-de-parfum-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-BTY-002`,
-          department: 'beauty',
-          category: 'fragrances',
-          categoryName: 'Artisanal Perfumes',
-          price: 5800,
-          compareAtPrice: 7500,
-          discountPercent: 22,
-          shortDescription: 'Creamy Australian sandalwood, crushed cardamom pods, and smoky ambergris.',
-          description: 'An alluring genderless fragrance with extraordinary 14-hour longevity.',
-          features: ['22% Extrait de Parfum concentration', 'Organic sugarcane alcohol base', 'Magnetic heavy zamac cap'],
-          fabric: 'Heavy Flacon (100ml)',
-          careInstructions: ['Keep cap closed securely'],
-          images: [{ url: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1000&auto=format&fit=crop', alt: 'Eau de Parfum Flacon', isPrimary: true }],
-          colors: [{ name: 'Smoky Amber', hex: '#FF7E00' }],
-          sizes: [{ size: '100ml / 3.4 oz', inStock: true, stockCount: 19 }],
-          rating: 4.9,
-          reviewCount: 65,
-          isFeatured: true,
-          badge: 'Niche Scent',
-        },
-      ],
-      activewear: [
-        {
-          name: 'Apex Pro Seamless High-Waist Leggings',
-          slug: `apex-pro-seamless-high-waist-leggings-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-ACT-001`,
-          department: 'fitness',
-          category: 'bottoms',
-          categoryName: 'Tights & Leggings',
-          price: 2899,
-          compareAtPrice: 3999,
-          discountPercent: 27,
-          shortDescription: 'Squat-proof 4-way stretch compressive tights with ribbed tummy control.',
-          description: 'Engineered for intense weightlifting, HIIT, and sprint sessions.',
-          features: ['100% Squat-proof ultra-high density knit', 'Core-sculpting ribbed compression waistband'],
-          fabric: '78% Recycled Nylon, 22% Elastane',
-          careInstructions: ['Machine wash cold inside out'],
-          images: [{ url: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1000&auto=format&fit=crop', alt: 'Apex Seamless Leggings', isPrimary: true }],
-          colors: [{ name: 'Obsidian Black', hex: '#1A1A1A' }],
-          sizes: [{ size: 'S', inStock: true, stockCount: 24 }, { size: 'M', inStock: true, stockCount: 30 }],
-          rating: 4.9,
-          reviewCount: 124,
-          isFeatured: true,
-          isBestSeller: true,
-          badge: 'Pro Tier',
-        },
-        {
-          name: 'Carbon-Plate Dynamic Long-Distance Trainers',
-          slug: `carbon-plate-dynamic-distance-trainers-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-ACT-002`,
-          department: 'fitness',
-          category: 'footwear',
-          categoryName: 'Running Footwear',
-          price: 9999,
-          compareAtPrice: 13500,
-          discountPercent: 26,
-          shortDescription: 'Full-length curved carbon plate with supercritical nitrogen-infused foam midsole.',
-          description: 'Propels you forward on race day with unmatched 85% energy return.',
-          features: ['Full curved 3K Carbon Fiber plate', 'Supercritical NitroFoam with 85% energy return'],
-          fabric: 'Engineered Monomesh & Carbon Plate',
-          careInstructions: ['Air dry only, do not tumble dry'],
-          images: [{ url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000&auto=format&fit=crop', alt: 'Carbon Running Shoes', isPrimary: true }],
-          colors: [{ name: 'Apex Crimson', hex: '#DC2626' }],
-          sizes: [{ size: 'UK 8', inStock: true, stockCount: 8 }, { size: 'UK 9', inStock: true, stockCount: 15 }],
-          rating: 5.0,
-          reviewCount: 89,
-          isFeatured: true,
-          badge: 'Race Day Pro',
-        },
-      ],
-      jewelry: [
-        {
-          name: '18K Yellow Gold Floating Diamond Pendant',
-          slug: `18k-gold-floating-diamond-pendant-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-JWL-001`,
-          department: 'jewelry',
-          category: 'necklaces',
-          categoryName: 'Fine Necklaces',
-          price: 28500,
-          compareAtPrice: 38000,
-          discountPercent: 25,
-          shortDescription: '0.75 Carat VVS1 round brilliant certified lab diamond set in 18K solid yellow gold.',
-          description: 'Minimalist illusion setting allows the diamond to float effortlessly along the collarbone.',
-          features: ['0.75 ct VVS1 Clarity, E Color Certified Diamond', 'Hallmarked 18K Solid Yellow Gold', 'IGI certificate included'],
-          fabric: '18K Solid Gold & VVS1 Diamond',
-          careInstructions: ['Clean gently with included polishing cloth'],
-          images: [{ url: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1000&auto=format&fit=crop', alt: 'Diamond Pendant', isPrimary: true }],
-          colors: [{ name: '18K Yellow Gold', hex: '#FFD700' }],
-          sizes: [{ size: '45cm Chain (0.75ct)', inStock: true, stockCount: 9 }],
-          rating: 5.0,
-          reviewCount: 47,
-          isFeatured: true,
-          isBestSeller: true,
-          badge: 'Certified IGI',
-        },
-        {
-          name: 'Swiss Automatic Sapphire Crystal Dress Watch',
-          slug: `swiss-automatic-sapphire-crystal-watch-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-JWL-002`,
-          department: 'jewelry',
-          category: 'watches',
-          categoryName: 'Luxury Timepieces',
-          price: 54000,
-          compareAtPrice: 72000,
-          discountPercent: 25,
-          shortDescription: 'Calibre 2824-2 Swiss mechanical automatic movement with exhibition open caseback.',
-          description: 'Classical dress watch perfection with fluted 316L stainless steel case and guilloche dial.',
-          features: ['Swiss ETA 2824-2 Automatic Movement', 'Double-domed anti-reflective Sapphire Crystal', '50m water resistance'],
-          fabric: '316L Steel & Sapphire Glass',
-          careInstructions: ['Service recommended every 4-5 years'],
-          images: [{ url: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1000&auto=format&fit=crop', alt: 'Swiss Watch', isPrimary: true }],
-          colors: [{ name: 'Sunburst Silver', hex: '#C0C0C0' }],
-          sizes: [{ size: '39mm Case', inStock: true, stockCount: 8 }],
-          rating: 4.9,
-          reviewCount: 31,
-          isFeatured: true,
-          badge: 'Swiss Made',
-        },
-      ],
-      grocery: [
-        {
-          name: 'Ethiopian Yirgacheffe Single-Estate Whole Beans',
-          slug: `ethiopian-yirgacheffe-whole-beans-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-GRO-001`,
-          department: 'grocery',
-          category: 'coffee',
-          categoryName: 'Specialty Coffee',
-          price: 1299,
-          compareAtPrice: 1699,
-          discountPercent: 23,
-          shortDescription: 'Washed process Arabica with delicate jasmine aroma, bergamot and peach notes.',
-          description: 'Grown at 2,100m elevation in volcanic soils. Light-medium roast profile meticulously calibrated for pour-over.',
-          features: ['100% Specialty Grade Arabica (88 SCA score)', 'Direct-trade sustainably sourced from Gedeb micro-lot'],
-          fabric: 'Degassing Valve Foil Bag (350g)',
-          careInstructions: ['Store beans in airtight container at room temperature'],
-          images: [{ url: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=1000&auto=format&fit=crop', alt: 'Coffee Beans Bag', isPrimary: true }],
-          colors: [{ name: 'Whole Bean', hex: '#6F4E37' }],
-          sizes: [{ size: '350g Bag', inStock: true, stockCount: 50 }],
-          rating: 4.9,
-          reviewCount: 88,
-          isFeatured: true,
-          isBestSeller: true,
-          badge: '88 SCA Score',
-        },
-        {
-          name: 'Cold-Pressed Extra Virgin Avocado Oil (500ml)',
-          slug: `cold-pressed-extra-virgin-avocado-oil-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-GRO-002`,
-          department: 'grocery',
-          category: 'pantry',
-          categoryName: 'Cold-Pressed Oils',
-          price: 1850,
-          compareAtPrice: 2400,
-          discountPercent: 23,
-          shortDescription: 'First cold-pressed Hass avocados with high 250°C smoke point and emerald hue.',
-          description: 'Rich in heart-healthy monounsaturated fats and Vitamin E. Imparts a subtle buttery richness to gourmet salads.',
-          features: ['Unrefined & unheated mechanical cold extraction', 'High smoke point of 250°C ideal for cooking'],
-          fabric: 'UV-Protected Dark Glass Bottle (500ml)',
-          careInstructions: ['Keep tightly sealed in cool pantry'],
-          images: [{ url: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?q=80&w=1000&auto=format&fit=crop', alt: 'Avocado Oil Bottle', isPrimary: true }],
-          colors: [{ name: 'Emerald Green', hex: '#50C878' }],
-          sizes: [{ size: '500ml Bottle', inStock: true, stockCount: 30 }],
-          rating: 4.8,
-          reviewCount: 57,
-          isFeatured: true,
-          badge: 'First Press',
-        },
-      ],
-      footwear: [
-        {
-          name: 'Retro High Hypecourt Leather Sneakers',
-          slug: `retro-high-hypecourt-leather-sneakers-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-FTW-001`,
-          department: 'footwear',
-          category: 'high-tops',
-          categoryName: 'Retro High-Tops',
-          price: 12999,
-          compareAtPrice: 16999,
-          discountPercent: 24,
-          shortDescription: 'Premium full-grain tumbled leather high-top with vintage sail midsole cushioning.',
-          description: 'Streetwear royalty. Features padded ankle collars for support, perforated toe box for breathability, and high-traction rubber outsoles.',
-          features: ['Full-grain Italian tumbled leather upper', 'Air-pocket encapsulated heel cushioning'],
-          fabric: 'Full-Grain Leather & Rubber Sole',
-          careInstructions: ['Clean with specialist sneaker foam cleaner'],
-          images: [{ url: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1000&auto=format&fit=crop', alt: 'Retro High Sneakers', isPrimary: true }],
-          colors: [{ name: 'Shadow Violet & White', hex: '#7C3AED' }],
-          sizes: [{ size: 'UK 8', inStock: true, stockCount: 8 }, { size: 'UK 9', inStock: true, stockCount: 14 }],
-          rating: 5.0,
-          reviewCount: 142,
-          isFeatured: true,
-          isBestSeller: true,
-          badge: 'Hype Drop',
-        },
-        {
-          name: 'Italian Burnished Leather Chelsea Boots',
-          slug: `italian-burnished-leather-chelsea-boots-${tenantSlug}`,
-          sku: `${tenantSlug.substring(0, 3).toUpperCase()}-FTW-002`,
-          department: 'footwear',
-          category: 'boots',
-          categoryName: 'Hand-Lasted Boots',
-          price: 15800,
-          compareAtPrice: 21000,
-          discountPercent: 25,
-          shortDescription: 'Goodyear welted Tuscan calfskin leather with elasticated side gussets and pull tabs.',
-          description: 'The pinnacle of smart casual refinement. Hand-burnished by Italian artisans in Tuscany.',
-          features: ['Goodyear-welted resoleable leather sole', 'Full leather lining with padded arch support'],
-          fabric: 'Tuscan Full-Grain Calfskin',
-          careInstructions: ['Treat with beeswax leather conditioner'],
-          images: [{ url: 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?q=80&w=1000&auto=format&fit=crop', alt: 'Leather Chelsea Boots', isPrimary: true }],
-          colors: [{ name: 'Burnished Walnut Brown', hex: '#5D4037' }],
-          sizes: [{ size: 'UK 8', inStock: true, stockCount: 5 }, { size: 'UK 9', inStock: true, stockCount: 9 }],
-          rating: 4.9,
-          reviewCount: 46,
-          isFeatured: true,
-          badge: 'Goodyear Welt',
-        },
-      ],
-    };
+    // Retrieve existing tenant info from platform registry if available
+    const existingTenant = await db.collection('tenants').findOne({
+      $or: [{ slug: tenantSlug }, { id: tenantSlug }, { id: `store_${tenantSlug}` }],
+    });
 
-    // Preset aliases
-    const resolvedPreset =
-      preset === 'fashion' ? 'apparel' :
-      preset === 'fitness' ? 'activewear' :
-      sampleProductsMap[preset] ? preset : 'apparel';
+    const storeName = existingTenant?.name || body.name || tenantSlug.charAt(0).toUpperCase() + tenantSlug.slice(1);
+    const tagline = existingTenant?.tagline || blueprint.tagline;
+    const currency = existingTenant?.currency || body.currency || blueprint.currency || 'USD';
+    const currencySymbol = currency === 'INR' ? '₹' : (blueprint.currencySymbol || '$');
 
-    const catalogToSeed = sampleProductsMap[resolvedPreset] || sampleProductsMap.apparel;
+    // 1. Prepare Seeded Products
+    let seededProducts: any[] = [];
+    if (blueprint.products && blueprint.products.length > 0) {
+      seededProducts = blueprint.products.map((p, idx) => ({
+        ...p,
+        id: `prod_${tenantSlug}_${idx + 1}_${Date.now()}`,
+        slug: `${(p.slug || `product-${idx + 1}`).replace(/-demo-[a-z]+$/, '')}-${tenantSlug}`,
+        sku: `${tenantSlug.substring(0, 3).toUpperCase()}-${(p.sku || `SKU-${idx + 1}`).split('-').slice(1).join('-') || `${idx + 1}`}`,
+        tenantSlug,
+        storeSlug: tenantSlug,
+        status: 'published',
+        createdAt: now,
+        updatedAt: now,
+      }));
+    } else {
+      seededProducts = DEMO_PRESETS[0].products.map((p, idx) => ({
+        ...p,
+        id: `prod_${tenantSlug}_${idx + 1}_${Date.now()}`,
+        slug: `${p.slug}-${tenantSlug}`,
+        sku: `${tenantSlug.substring(0, 3).toUpperCase()}-${(p.sku || `${idx + 1}`).split('-').slice(1).join('-')}`,
+        tenantSlug,
+        storeSlug: tenantSlug,
+        status: 'published',
+        createdAt: now,
+        updatedAt: now,
+      }));
+    }
 
-    const seededDocs = catalogToSeed.map((p, idx) => ({
-      ...p,
-      id: `prod_${tenantSlug}_${idx + 1}_${Date.now()}`,
+    // 2. Prepare Seeded Categories
+    let seededCategories: any[] = [];
+    if (blueprint.categories && blueprint.categories.length > 0) {
+      seededCategories = blueprint.categories.map((c, idx) => ({
+        ...c,
+        id: `cat_${tenantSlug}_${idx + 1}`,
+        tenantSlug,
+        slug: `${c.slug || `cat-${idx + 1}`}`,
+        createdAt: now,
+      }));
+    } else {
+      seededCategories = [
+        { id: `cat_${tenantSlug}_1`, name: 'New Arrivals', slug: `new-arrivals-${tenantSlug}`, tenantSlug, count: 4 },
+        { id: `cat_${tenantSlug}_2`, name: 'Signature Collection', slug: `signature-${tenantSlug}`, tenantSlug, count: 4 },
+        { id: `cat_${tenantSlug}_3`, name: 'Atelier Essentials', slug: `essentials-${tenantSlug}`, tenantSlug, count: 2 },
+        { id: `cat_${tenantSlug}_4`, name: 'Seasonal Lookbook', slug: `seasonal-${tenantSlug}`, tenantSlug, count: 2 },
+      ];
+    }
+
+    // 3. Prepare CMS Document from Blueprint Sections & Theme Styles
+    const cmsDoc = {
       tenantSlug,
-      storeSlug: tenantSlug,
-      tenantId: `store_${tenantSlug}`,
-      status: 'active',
-      isPublished: true,
-      inStock: true,
-      stockCount: 50,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
-
-    // 1. Seed products into dedicated tenant database (tenant_<slug>)
-    await tenantDb.collection('products').deleteMany({
-      $or: [{ tenantSlug }, { storeSlug: tenantSlug }],
-    });
-    const insertResult = await tenantDb.collection('products').insertMany(seededDocs);
-
-    // 2. Also seed products into platformDb for central fallback
-    await platformDb.collection('products').deleteMany({
-      $or: [{ tenantSlug }, { storeSlug: tenantSlug }, { tenantId: `store_${tenantSlug}` }],
-    });
-    await platformDb.collection('products').insertMany(seededDocs);
-
-    // 3. Update tenant metrics in both tenants and platform_tenants_registry
-    const metricsUpdate = {
-      'metrics.products': seededDocs.length,
-      'metrics.storageUsedMb': 45,
-      updatedAt: new Date().toISOString(),
+      type: 'homepage',
+      version: Date.now(),
+      status: 'published',
+      sections: blueprint.sections,
+      config: { sections: blueprint.sections },
+      styles: blueprint.themeStyles || {},
+      themeStyles: blueprint.themeStyles || {},
+      updatedAt: now,
+      publishedAt: now,
     };
-    await Promise.all([
-      platformDb.collection('tenants').updateOne({ $or: [{ slug: tenantSlug }, { id: `store_${tenantSlug}` }] }, { $set: metricsUpdate }),
-      platformDb.collection('platform_tenants_registry').updateOne({ $or: [{ slug: tenantSlug }, { id: `store_${tenantSlug}` }] }, { $set: metricsUpdate }),
-    ]);
 
-    // 4. Record activity log
-    await platformDb.collection('platform_activities').insertOne({
-      event: `Seeded ${seededDocs.length} ${resolvedPreset.toUpperCase()} products into tenant_${tenantSlug} database`,
-      actor: 'superadmin@platform.com',
-      tenantId: `store_${tenantSlug}`,
-      tenantName: tenantSlug,
-      ipAddress: '127.0.0.1',
-      severity: 'info',
-      timestamp: 'Just now',
-      createdAt: new Date().toISOString(),
-    });
+    // 4. Prepare Brand Configuration
+    const brandDoc = {
+      id: `store_${tenantSlug}`,
+      tenantId: tenantSlug,
+      slug: tenantSlug,
+      name: storeName,
+      tagline,
+      description: blueprint.description,
+      status: 'active',
+      category: rawPreset,
+      preset: rawPreset,
+      currency,
+      currencySymbol,
+      theme: {
+        ...blueprint.theme,
+        ...(existingTenant?.theme || {}),
+      },
+      contact: blueprint.contact,
+      announcements: blueprint.announcements,
+      navLinks: blueprint.navLinks,
+      footerShopLinks: blueprint.footerShopLinks,
+      footerCareLinks: blueprint.footerCareLinks,
+      updatedAt: now,
+    };
+
+    // 5. Seed Dedicated Tenant Database
+    let tenantDbSeeded = false;
+    try {
+      const tenantDb = await getTenantDatabase(tenantSlug);
+      if (tenantDb) {
+        await Promise.all([
+          // CMS Pages
+          tenantDb.collection('cms_pages').updateOne(
+            { $or: [{ tenantSlug, type: 'homepage' }, { type: 'homepage' }] },
+            { $set: cmsDoc },
+            { upsert: true }
+          ),
+          // Brand config
+          tenantDb.collection('tenants').updateOne(
+            { $or: [{ slug: tenantSlug }, { id: tenantSlug }, { id: `store_${tenantSlug}` }] },
+            { $set: brandDoc, $setOnInsert: { createdAt: now } },
+            { upsert: true }
+          ),
+          // Products
+          tenantDb.collection('products').deleteMany({
+            $or: [{ tenantSlug }, { storeSlug: tenantSlug }],
+          }).then(() => tenantDb.collection('products').insertMany(seededProducts)),
+          // Categories
+          tenantDb.collection('categories').deleteMany({ tenantSlug }).then(() =>
+            tenantDb.collection('categories').insertMany(seededCategories)
+          ),
+        ]);
+        tenantDbSeeded = true;
+      }
+    } catch (tenantErr) {
+      console.warn(`Tenant DB seeding notice for ${tenantSlug}:`, tenantErr);
+    }
+
+    // 6. Synchronize Platform Registry & Platform Fallbacks
+    const platformUpdate = {
+      name: storeName,
+      tagline,
+      description: blueprint.description,
+      status: 'active',
+      category: rawPreset,
+      preset: rawPreset,
+      databaseName: `tenant_${tenantSlug}`,
+      databaseIdentifier: `tenant_${tenantSlug}`,
+      theme: brandDoc.theme,
+      currency,
+      currencySymbol,
+      'metrics.products': seededProducts.length,
+      'metrics.storageUsedMb': 32,
+      updatedAt: now,
+    };
+
+    await Promise.allSettled([
+      db.collection('tenants').updateOne(
+        { $or: [{ slug: tenantSlug }, { id: tenantSlug }, { id: `store_${tenantSlug}` }] },
+        { $set: platformUpdate }
+      ),
+      db.collection('platform_tenants_registry').updateOne(
+        { $or: [{ slug: tenantSlug }, { id: tenantSlug }, { id: `store_${tenantSlug}` }] },
+        { $set: platformUpdate }
+      ),
+      db.collection('cms_pages').updateOne(
+        { $or: [{ tenantSlug, type: 'homepage' }] },
+        { $set: cmsDoc },
+        { upsert: true }
+      ),
+      db.collection('products').deleteMany({ $or: [{ tenantSlug }, { storeSlug: tenantSlug }] }).then(() =>
+        db.collection('products').insertMany(seededProducts)
+      ),
+      db.collection('categories').deleteMany({ tenantSlug }).then(() =>
+        db.collection('categories').insertMany(seededCategories)
+      ),
+      db.collection('platform_activities').insertOne({
+        event: `Seeded ${blueprint.name} blueprint (${seededProducts.length} SKUs, ${seededCategories.length} categories, ${blueprint.sections.length} CMS sections) into ${tenantSlug}`,
+        actor: 'superadmin@platform.com',
+        tenantId: `store_${tenantSlug}`,
+        tenantName: storeName,
+        ipAddress: '127.0.0.1',
+        severity: 'info',
+        timestamp: 'Just now',
+        createdAt: now,
+      }),
+    ]);
 
     return NextResponse.json(
       {
         success: true,
-        count: insertResult.insertedCount,
+        count: seededProducts.length,
+        categoriesCount: seededCategories.length,
+        sectionsCount: blueprint.sections.length,
         tenantSlug,
-        database: `tenant_${tenantSlug}`,
-        preset: resolvedPreset,
-        source: 'mongodb_atlas_multi_tenant',
+        preset: rawPreset,
+        blueprintName: blueprint.name,
+        tenantDbSeeded,
+        source: 'mongodb_atlas',
+        message: `Successfully seeded '${blueprint.name}' blueprint (${seededProducts.length} products, ${blueprint.sections.length} homepage sections) for '${storeName}' (${tenantSlug})!`,
       },
       { headers: corsHeaders() }
     );
   } catch (err: any) {
-    console.error('Admin seed products API error:', err);
+    console.error('Platform seed API error:', err);
     return NextResponse.json({ error: err.message }, { status: 500, headers: corsHeaders() });
   }
 }
