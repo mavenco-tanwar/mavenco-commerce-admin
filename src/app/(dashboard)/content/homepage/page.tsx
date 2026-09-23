@@ -66,6 +66,10 @@ import {
   SplitSquareVertical,
   Columns,
   View,
+  Gem,
+  Lock,
+  Zap,
+  Gift,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
@@ -1317,78 +1321,175 @@ function SectionVisualRenderer({
         >
           <div className={containerClass}>
             {/* Header respecting contentAlign */}
-            {(section.data?.heading || section.data?.tagline) && (
-              <div className={`mb-8 space-y-1.5 ${
-                align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
-              }`}>
-                {section.data?.tagline && (
-                  <span style={badgeStyle} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-1 shadow-xs">
-                    {section.data.tagline}
-                  </span>
-                )}
-                {section.data?.heading && (
-                  <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
-                    {section.data.heading}
-                  </h2>
-                )}
-                {section.data?.subheading && <p style={subtitleStyle} className="text-xs">{section.data.subheading}</p>}
-              </div>
-            )}
+            {(() => {
+              const badgeText = section.data?.tagline || section.data?.badgeText || (section.data?.badge && isNaN(Number(section.data?.badge)) ? section.data?.badge : '') || (section.badge && isNaN(Number(section.badge)) ? section.badge : '');
+              return (
+                (section.data?.heading || badgeText) && (
+                  <div className={`mb-8 space-y-1.5 ${
+                    align === 'center' ? 'text-center mx-auto max-w-xl' : align === 'right' ? 'text-right ml-auto max-w-xl' : 'text-left max-w-xl'
+                  }`}>
+                    {badgeText && (
+                      <span style={badgeStyle} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-1 shadow-xs">
+                        {badgeText}
+                      </span>
+                    )}
+                    {section.data?.heading && (
+                      <h2 style={headingStyle} className="text-2xl sm:text-3xl font-serif font-black">
+                        {section.data.heading}
+                      </h2>
+                    )}
+                    {section.data?.subheading && <p style={subtitleStyle} className="text-xs">{section.data.subheading}</p>}
+                  </div>
+                )
+              );
+            })()}
 
             {(() => {
               const vList = (section.data?.items as any[]) || [];
               const vCols = device === 'mobile' ? 1 : (section.data?.columns || 4);
               const cardStyle = section.data?.cardStyle || 'bordered';
 
+              const renderIcon = (iconName?: string) => {
+                const norm = (iconName || '').toLowerCase().trim();
+                switch (norm) {
+                  case 'award':
+                    return <Award className="w-4 h-4" />;
+                  case 'truck':
+                    return <Truck className="w-4 h-4" />;
+                  case 'shield':
+                  case 'shieldcheck':
+                    return <ShieldCheck className="w-4 h-4" />;
+                  case 'clock':
+                  case 'time':
+                    return <Clock className="w-4 h-4" />;
+                  case 'tag':
+                    return <Tag className="w-4 h-4" />;
+                  case 'star':
+                    return <Star className="w-4 h-4" />;
+                  case 'heart':
+                    return <Heart className="w-4 h-4" />;
+                  case 'refresh':
+                    return <RefreshCw className="w-4 h-4" />;
+                  case 'gem':
+                    return <Gem className="w-4 h-4" />;
+                  case 'lock':
+                    return <Lock className="w-4 h-4" />;
+                  case 'check':
+                    return <CheckCircle2 className="w-4 h-4" />;
+                  case 'zap':
+                    return <Zap className="w-4 h-4" />;
+                  case 'gift':
+                    return <Gift className="w-4 h-4" />;
+                  default:
+                    return <Sparkles className="w-4 h-4" />;
+                }
+              };
+
+              const btn1Text = section.data?.primaryBtnText || section.data?.btnText;
+              const btn2Text = section.data?.secondaryBtnText || section.data?.btn2Text;
+              const btn3Text = section.data?.tertiaryBtnText || section.data?.btn3Text;
+              const hasButtons = Boolean(btn1Text || btn2Text || btn3Text);
+
               return (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${vCols}, minmax(0, 1fr))`,
-                    gap: '1.25rem',
-                  }}
-                >
-                  {vList.map((v, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-4 flex items-start gap-3.5 transition-all ${
-                        cardStyle === 'tinted'
-                          ? 'bg-slate-900 text-white rounded-xl border border-slate-800 shadow-md'
-                          : cardStyle === 'minimal'
-                          ? 'bg-transparent border-0'
-                          : sectionBg
-                          ? 'bg-white/5 border border-white/10 rounded-xl shadow-xs'
-                          : 'bg-slate-50 border border-slate-200/80 rounded-xl shadow-xs'
-                      }`}
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0">
-                        <Sparkles className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-0.5">
-                        <h4
+                <>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${vCols}, minmax(0, 1fr))`,
+                      gap: '1.25rem',
+                    }}
+                  >
+                    {vList.map((v, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-4 flex items-start gap-3.5 transition-all ${
+                          v.cardBgColor
+                            ? 'rounded-xl border shadow-xs'
+                            : cardStyle === 'tinted'
+                            ? 'bg-slate-900 text-white rounded-xl border border-slate-800 shadow-md'
+                            : cardStyle === 'minimal'
+                            ? 'bg-transparent border-0'
+                            : sectionBg
+                            ? 'bg-white/5 border border-white/10 rounded-xl shadow-xs'
+                            : 'bg-slate-50 border border-slate-200/80 rounded-xl shadow-xs'
+                        }`}
+                        style={{
+                          ...(v.cardBgColor ? { backgroundColor: v.cardBgColor } : {}),
+                          ...(v.cardBorderColor ? { borderColor: v.cardBorderColor } : {}),
+                        }}
+                      >
+                        <div
+                          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
                           style={{
-                            fontFamily: headingFont && headingFont !== 'inherit' ? headingFont : undefined,
-                            color: section.data?.textColor || (cardStyle === 'tinted' ? '#FFFFFF' : (sectionBg ? '#FFFFFF' : '#0F172A')),
+                            backgroundColor: v.iconBgColor || 'rgba(244, 63, 94, 0.1)',
+                            color: v.iconColor || '#fb7185',
+                            border: v.iconBgColor ? '1px solid rgba(255,255,255,0.1)' : undefined,
                           }}
-                          className="font-bold text-xs"
                         >
-                          {v.title}
-                        </h4>
-                        <p
-                          style={{
-                            fontFamily: subtitleFont && subtitleFont !== 'inherit' ? subtitleFont : undefined,
-                            color: subtitleColor || (cardStyle === 'tinted' ? '#94A3B8' : (sectionBg ? '#CBD5E1' : '#64748B')),
-                            fontSize: subtitleSize || undefined,
-                            lineHeight: subtitleLineHeight || undefined,
-                          }}
-                          className="text-[11px] leading-relaxed"
-                        >
-                          {v.description}
-                        </p>
+                          {renderIcon(v.icon)}
+                        </div>
+                        <div className="space-y-0.5 min-w-0 flex-1">
+                          <h4
+                            style={{
+                              fontFamily: headingFont && headingFont !== 'inherit' ? headingFont : undefined,
+                              color: v.titleColor || section.data?.textColor || (v.cardBgColor || cardStyle === 'tinted' || sectionBg ? '#FFFFFF' : '#0F172A'),
+                            }}
+                            className="font-bold text-xs"
+                          >
+                            {v.title}
+                          </h4>
+                          <p
+                            style={{
+                              fontFamily: subtitleFont && subtitleFont !== 'inherit' ? subtitleFont : undefined,
+                              color: v.descColor || subtitleColor || (v.cardBgColor || cardStyle === 'tinted' ? '#94A3B8' : (sectionBg ? '#CBD5E1' : '#64748B')),
+                              fontSize: subtitleSize || undefined,
+                              lineHeight: subtitleLineHeight || undefined,
+                            }}
+                            className="text-[11px] leading-relaxed"
+                          >
+                            {v.description}
+                          </p>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* ACTION BUTTONS (UP TO 3) */}
+                  {hasButtons && (
+                    <div className={`mt-8 flex flex-wrap items-center gap-3 ${
+                      align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'
+                    }`}>
+                      {btn1Text && (
+                        <button
+                          type="button"
+                          style={primaryBtnStyle}
+                          className="px-5 py-2.5 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span>{btn1Text}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {btn2Text && (
+                        <button
+                          type="button"
+                          style={secondaryBtnStyle}
+                          className="px-5 py-2.5 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                        >
+                          {btn2Text}
+                        </button>
+                      )}
+                      {btn3Text && (
+                        <button
+                          type="button"
+                          style={tertiaryBtnStyle}
+                          className="px-5 py-2.5 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                        >
+                          {btn3Text}
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               );
             })()}
           </div>
@@ -2156,6 +2257,55 @@ export default function HomepageBuilderStudio() {
     currentSlides[targetIdx] = temp;
     updateSectionData('slides', currentSlides);
     setActiveSlideIdx(targetIdx);
+  };
+
+  // Value Prop Feature Card Handlers
+  const handleAddValuePropItem = () => {
+    if (!editingSection) return;
+    const currentItems = (editingSection.data?.items as any[]) || [];
+    const newItem = {
+      title: 'New Guarantee',
+      description: 'Describe this commitment or signature service highlight.',
+      icon: 'sparkles',
+      iconColor: '#fb7185',
+      iconBgColor: 'rgba(244, 63, 94, 0.1)',
+      cardBgColor: '',
+      cardBorderColor: '',
+    };
+    const nextItems = [...currentItems, newItem];
+    updateSectionData('items', nextItems);
+    showToast('New card added', 'success');
+  };
+
+  const handleUpdateValuePropItem = (idx: number, patch: Record<string, any>) => {
+    if (!editingSection) return;
+    const currentItems = [...((editingSection.data?.items as any[]) || [])];
+    if (!currentItems[idx]) return;
+    currentItems[idx] = { ...currentItems[idx], ...patch };
+    updateSectionData('items', currentItems);
+  };
+
+  const handleDeleteValuePropItem = (idx: number) => {
+    if (!editingSection) return;
+    const currentItems = [...((editingSection.data?.items as any[]) || [])];
+    if (currentItems.length <= 1) {
+      showToast('At least one card is required', 'info');
+      return;
+    }
+    currentItems.splice(idx, 1);
+    updateSectionData('items', currentItems);
+    showToast('Card removed', 'info');
+  };
+
+  const handleMoveValuePropItem = (idx: number, dir: 'up' | 'down') => {
+    if (!editingSection) return;
+    const currentItems = [...((editingSection.data?.items as any[]) || [])];
+    const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= currentItems.length) return;
+    const temp = currentItems[idx];
+    currentItems[idx] = currentItems[targetIdx];
+    currentItems[targetIdx] = temp;
+    updateSectionData('items', currentItems);
   };
 
   if (isLoading) {
@@ -3430,9 +3580,13 @@ export default function HomepageBuilderStudio() {
                             </label>
                             <input
                               type="text"
-                              value={editingSection.data?.tagline || ''}
-                              onChange={(e) => updateSectionData('tagline', e.target.value)}
+                              value={editingSection.data?.tagline ?? (editingSection.badge && isNaN(Number(editingSection.badge)) ? editingSection.badge : '')}
+                              onChange={(e) => {
+                                updateSectionMultipleData({ tagline: e.target.value, badge: e.target.value, badgeText: e.target.value });
+                                setEditingSection((prev) => prev ? { ...prev, badge: e.target.value } : null);
+                              }}
                               className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                              placeholder="e.g. FINE JEWELRY STANDARDS"
                             />
                           </div>
 
@@ -3662,6 +3816,222 @@ export default function HomepageBuilderStudio() {
                               </button>
                             )}
                           </div>
+
+                          {/* VALUE PROPS FEATURE CARDS MANAGER */}
+                          {editingSection.type === 'value_props' && (
+                            <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                                    <Layers className="w-3.5 h-3.5 text-rose-400" />
+                                    Feature Highlight Cards ({((editingSection.data?.items as any[]) || []).length})
+                                  </h4>
+                                  <p className="text-[11px] text-slate-400 mt-0.5">
+                                    Customize individual card content, icons, icon colors, and card background colors.
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={handleAddValuePropItem}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>+ Add Card</span>
+                                </button>
+                              </div>
+
+                              {/* Card Items List */}
+                              <div className="space-y-3">
+                                {((editingSection.data?.items as any[]) || []).map((card: any, cIdx: number) => (
+                                  <div
+                                    key={cIdx}
+                                    className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/90 space-y-3"
+                                  >
+                                    <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
+                                      <span className="text-xs font-bold text-white flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded-lg bg-rose-600/20 text-rose-400 text-[11px] font-bold flex items-center justify-center font-mono">
+                                          {cIdx + 1}
+                                        </span>
+                                        Card #{cIdx + 1}: {card.title || 'Untitled'}
+                                      </span>
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleMoveValuePropItem(cIdx, 'up')}
+                                          disabled={cIdx === 0}
+                                          className={`p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white ${
+                                            cIdx === 0 ? 'opacity-30 cursor-not-allowed' : ''
+                                          }`}
+                                          title="Move Up"
+                                        >
+                                          <MoveUp className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleMoveValuePropItem(cIdx, 'down')}
+                                          disabled={cIdx === ((editingSection.data?.items as any[]) || []).length - 1}
+                                          className={`p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white ${
+                                            cIdx === ((editingSection.data?.items as any[]) || []).length - 1 ? 'opacity-30 cursor-not-allowed' : ''
+                                          }`}
+                                          title="Move Down"
+                                        >
+                                          <MoveDown className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteValuePropItem(cIdx)}
+                                          className="p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
+                                          title="Delete Card"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Title & Description */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Card Title</label>
+                                        <input
+                                          type="text"
+                                          value={card.title || ''}
+                                          onChange={(e) => handleUpdateValuePropItem(cIdx, { title: e.target.value })}
+                                          className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                          placeholder="e.g. 100% GIA Certified"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Card Description</label>
+                                        <textarea
+                                          rows={2}
+                                          value={card.description || ''}
+                                          onChange={(e) => handleUpdateValuePropItem(cIdx, { description: e.target.value })}
+                                          className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                          placeholder="e.g. Laser inscribed with grading certificate..."
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Icon, Icon Color, Icon BG Color */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Card Icon</label>
+                                        <select
+                                          value={card.icon || 'sparkles'}
+                                          onChange={(e) => handleUpdateValuePropItem(cIdx, { icon: e.target.value })}
+                                          className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                                        >
+                                          <option value="sparkles">✨ Sparkles / Diamond</option>
+                                          <option value="award">🏆 Award / Certified</option>
+                                          <option value="shield">🛡️ Shield / Security / Armored</option>
+                                          <option value="clock">⏱️ Clock / Lifetime / Fast</option>
+                                          <option value="truck">🚚 Truck / Express Shipping</option>
+                                          <option value="tag">🏷️ Tag / Value / Direct</option>
+                                          <option value="heart">❤️ Heart / Handmade</option>
+                                          <option value="star">⭐ Star / Five Star</option>
+                                          <option value="gem">💎 Gem / Solitaire</option>
+                                          <option value="lock">🔒 Lock / Secure</option>
+                                          <option value="check">✔️ Check / Guarantee</option>
+                                          <option value="refresh">🔄 Refresh / Returns</option>
+                                          <option value="zap">⚡ Zap / Instant</option>
+                                          <option value="gift">🎁 Gift / Packaging</option>
+                                        </select>
+                                      </div>
+
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Icon Color</label>
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="color"
+                                            value={card.iconColor?.startsWith('#') ? card.iconColor : '#fb7185'}
+                                            onChange={(e) => handleUpdateValuePropItem(cIdx, { iconColor: e.target.value })}
+                                            className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={card.iconColor || ''}
+                                            placeholder="#fb7185"
+                                            onChange={(e) => handleUpdateValuePropItem(cIdx, { iconColor: e.target.value })}
+                                            className="flex-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Icon Background</label>
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="color"
+                                            value={card.iconBgColor?.startsWith('#') ? card.iconBgColor : '#1e1b4b'}
+                                            onChange={(e) => handleUpdateValuePropItem(cIdx, { iconBgColor: e.target.value })}
+                                            className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={card.iconBgColor || ''}
+                                            placeholder="e.g. rgba(...) or #hex"
+                                            onChange={(e) => handleUpdateValuePropItem(cIdx, { iconBgColor: e.target.value })}
+                                            className="flex-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Card Background Color & Card Border Color */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-800/40">
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Individual Card Background</label>
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="color"
+                                            value={card.cardBgColor?.startsWith('#') ? card.cardBgColor : '#111827'}
+                                            onChange={(e) => handleUpdateValuePropItem(cIdx, { cardBgColor: e.target.value })}
+                                            className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={card.cardBgColor || ''}
+                                            placeholder="Default theme background"
+                                            onChange={(e) => handleUpdateValuePropItem(cIdx, { cardBgColor: e.target.value })}
+                                            className="flex-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                          />
+                                          {card.cardBgColor && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleUpdateValuePropItem(cIdx, { cardBgColor: '' })}
+                                              className="text-[10px] text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 shrink-0"
+                                              title="Reset Card BG"
+                                            >
+                                              Reset
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block mb-1">Individual Card Border</label>
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="color"
+                                            value={card.cardBorderColor?.startsWith('#') ? card.cardBorderColor : '#374151'}
+                                            onChange={(e) => handleUpdateValuePropItem(cIdx, { cardBorderColor: e.target.value })}
+                                            className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={card.cardBorderColor || ''}
+                                            placeholder="Default border"
+                                            onChange={(e) => handleUpdateValuePropItem(cIdx, { cardBorderColor: e.target.value })}
+                                            className="flex-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           <div className="pt-2">
                             <ImageUploadInput
