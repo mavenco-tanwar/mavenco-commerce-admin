@@ -1,3 +1,4 @@
+import { getDefaultWebsitePages } from "@/lib/cms-page-presets";
 import { ApiClient } from './api';
 import { PlatformService } from './platform';
 import { INITIAL_HOMEPAGE_BLOCKS } from '@/lib/mock-data';
@@ -205,16 +206,22 @@ export class ContentService {
     return this.localBlocks;
   }
 
-  static async getPages(): Promise<Page[]> {
+  static async getPages(tenantSlug?: string): Promise<Page[]> {
+    const active = tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
     try {
-      const res = await ApiClient.get<any[]>('/api/v1/content/pages');
+      const res = await ApiClient.get<any[]>(`/api/v1/content/pages?tenant=${active}`);
       if (res.data && Array.isArray(res.data) && res.data.length > 0) {
         this.localPages = res.data.map((p: any) => ({
           id: p.id || `page_${Date.now()}`,
-          title: p.title || 'Page',
-          slug: p.slug || 'page-slug',
-          status: p.status || 'published',
+          title: p.title || "Page",
+          slug: p.slug || "page-slug",
+          status: p.status || "published",
+          type: p.type || "website-page",
           blocks: p.blocks || [],
+          sectionsEnabled: p.sectionsEnabled || { hero: true, body: true, customSections: true, valueProps: true },
+          customSections: p.customSections || [],
+          design: p.design || p.styles || {},
+          styles: p.styles || p.design || {},
           seo: p.seo || { title: p.title },
           createdAt: p.createdAt || new Date().toISOString(),
           updatedAt: p.updatedAt || new Date().toISOString(),
@@ -224,6 +231,23 @@ export class ContentService {
     } catch {
       // Fallback
     }
+    const tenantDoc = PlatformService.getActiveTenant();
+    const presets = getDefaultWebsitePages(active, tenantDoc);
+    this.localPages = presets.map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      status: p.status,
+      type: p.type,
+      blocks: p.blocks,
+      sectionsEnabled: p.sectionsEnabled,
+      customSections: p.customSections,
+      design: p.design,
+      styles: p.design,
+      seo: p.seo,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
     return this.localPages;
   }
 
@@ -240,7 +264,8 @@ export class ContentService {
     };
 
     try {
-      const res = await ApiClient.post<any>('/api/v1/content/pages', newP);
+      const tenantSlug = (page as any).tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
+      const res = await ApiClient.post<any>(`/api/v1/content/pages?tenant=${tenantSlug}`, newP);
       if (res.data) {
         const persisted = {
           id: res.data.id || newP.id,
@@ -265,7 +290,8 @@ export class ContentService {
 
   static async updatePage(id: string, updates: Partial<Page>): Promise<Page> {
     try {
-      await ApiClient.patch(`/api/v1/content/pages/${id}`, updates);
+      const tenantSlug = (updates as any).tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
+      await ApiClient.patch(`/api/v1/content/pages/${id}?tenant=${tenantSlug}`, updates);
     } catch {
       // Fallback
     }

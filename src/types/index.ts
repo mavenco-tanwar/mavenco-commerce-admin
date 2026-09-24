@@ -411,13 +411,32 @@ export interface Page {
   title: string;
   slug: string;
   status: 'draft' | 'published';
+  type?: string;
   blocks: ContentBlock[];
+  sectionsEnabled?: {
+    hero?: boolean;
+    body?: boolean;
+    customSections?: boolean;
+    valueProps?: boolean;
+  };
+  customSections?: Array<{
+    id: string;
+    title: string;
+    enabled: boolean;
+    html: string;
+    containerWidth?: 'full' | 'standard' | 'narrow';
+    backgroundColor?: string;
+    textColor?: string;
+  }>;
+  design?: Record<string, any>;
+  styles?: Record<string, any>;
   seo: {
     title?: string;
     description?: string;
   };
   updatedAt: string;
   createdAt: string;
+  tenantSlug?: string;
 }
 
 export interface NavigationItem {
