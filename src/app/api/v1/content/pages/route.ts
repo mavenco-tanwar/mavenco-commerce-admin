@@ -1,3 +1,4 @@
+import { getDefaultContactPageConfig, getDefaultAboutPageConfig } from "@/lib/cms-page-presets";
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantDatabase } from "@/lib/mongodb";
 
@@ -58,6 +59,52 @@ export async function GET(request: NextRequest) {
                 tenantSlug,
               },
               status: "success",
+            },
+            { headers: corsHeaders() }
+          );
+        }
+
+        if (targetSlug === "contact-page" || targetSlug === "contact") {
+          const tenantDoc = await db.collection("tenants").findOne({ slug: tenantSlug });
+          const contactConfig = getDefaultContactPageConfig(tenantSlug, tenantDoc);
+          return NextResponse.json(
+            {
+              success: true,
+              data: {
+                id: "contact-page",
+                type: "contact-page",
+                slug: "contact",
+                title: "Contact & Store Locator",
+                status: "published",
+                config: contactConfig,
+                styles: contactConfig.design,
+                tenantSlug,
+              },
+              status: "success",
+              source: "preset",
+            },
+            { headers: corsHeaders() }
+          );
+        }
+
+        if (targetSlug === "about-page" || targetSlug === "about") {
+          const tenantDoc = await db.collection("tenants").findOne({ slug: tenantSlug });
+          const aboutConfig = getDefaultAboutPageConfig(tenantSlug, tenantDoc);
+          return NextResponse.json(
+            {
+              success: true,
+              data: {
+                id: "about-page",
+                type: "about-page",
+                slug: "about",
+                title: "About Us & Atelier Heritage",
+                status: "published",
+                config: aboutConfig,
+                styles: aboutConfig.design,
+                tenantSlug,
+              },
+              status: "success",
+              source: "preset",
             },
             { headers: corsHeaders() }
           );
@@ -211,12 +258,12 @@ export async function PUT(request: NextRequest) {
     const pageId = body.id || `page_${Date.now()}`;
     const now = new Date().toISOString();
 
-    const updateDoc = {
+    const updateDoc: Record<string, any> = {
       id: pageId,
       title: body.title || cleanSlug,
       slug: cleanSlug,
       status: body.status || "published",
-      type: body.type || "page",
+      type: body.type || (cleanSlug === "contact" ? "contact-page" : cleanSlug === "about" ? "about-page" : "page"),
       blocks: body.blocks || [],
       seo: body.seo || { title: body.title },
       tenantSlug: tenantSlug,
@@ -224,11 +271,39 @@ export async function PUT(request: NextRequest) {
       updatedAt: now,
     };
 
+    if (body.config !== undefined) {
+      updateDoc.config = body.config;
+    }
+    if (body.styles !== undefined) {
+      updateDoc.styles = body.styles;
+    }
+    if (body.design !== undefined) {
+      updateDoc.design = body.design;
+    }
+
+    const filterOr: any[] = [
+      { id: pageId },
+      { slug: cleanSlug },
+      { slug: `/${cleanSlug}` },
+    ];
+    if (body.type) {
+      filterOr.push({ type: body.type });
+    }
+    if (cleanSlug === "contact" || body.type === "contact-page") {
+      filterOr.push({ type: "contact-page" }, { slug: "contact" });
+    }
+    if (cleanSlug === "about" || body.type === "about-page") {
+      filterOr.push({ type: "about-page" }, { slug: "about" });
+    }
+
     const db = await getTenantDatabase(tenantSlug);
     if (db) {
       await db.collection("cms_pages").updateOne(
-        { $or: [{ id: pageId }, { slug: cleanSlug }] },
-        { $set: updateDoc },
+        { $or: filterOr },
+        {
+          $set: updateDoc,
+          $setOnInsert: { createdAt: now },
+        },
         { upsert: true }
       );
     }

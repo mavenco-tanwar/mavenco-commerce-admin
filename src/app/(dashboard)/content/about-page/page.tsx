@@ -11,55 +11,67 @@ import {
   Quote,
   ShieldCheck,
   Award,
-  Video,
   Layers,
   Heart,
   Globe,
-  Check,
+  Plus,
+  Trash2,
+  Palette,
+  Store,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
 import { PlatformService } from '@/services/platform';
+import { getDefaultAboutPageConfig, AboutPageConfig } from '@/lib/cms-page-presets';
 
 export default function AboutPageBuilder() {
   const { showToast } = useToast();
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [activeTab, setActiveTab] = useState<'hero' | 'founder' | 'pillars' | 'press'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'founder' | 'pillars' | 'stats' | 'styling'>('hero');
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [config, setConfig] = useState({
-    heroBadge: 'SINCE 2018 • ATELIER HERITAGE',
-    heroHeadline: 'Crafting Timeless Elegance Through Pure Artisanry',
-    heroSubtext: 'Every weave and silhouette tells a story of generation-old handloom heritage blended with contemporary haute couture.',
-    heroImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&auto=format&fit=crop',
-    founderName: 'Ananya Singhania',
-    founderRole: 'Founder & Creative Director',
-    founderQuote: 'We believe luxury lies in patience, handspun threads, and empowering rural master weavers with 100% fair-wage commerce.',
-    founderImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop',
-    pillars: [
-      { title: '100% Handloom Certified', desc: 'Handcrafted on authentic wooden pit looms without synthetic blends.' },
-      { title: 'Zero Compromise Purity', desc: 'Pure mulberry silks, certified organic cottons, and genuine gold zari.' },
-      { title: 'Fair-Trade Artisans', desc: 'Direct partnership with over 450+ master weaver families across India.' },
-      { title: 'Conscious Luxury', desc: 'Plastic-free biodegradable packaging and carbon-neutral deliveries.' },
-    ],
-    showPressLogos: true,
-  });
+  const [activeTenant, setActiveTenant] = useState<any>(() => PlatformService.getActiveTenant());
+  const tenantSlug = (activeTenant?.slug || 'silvora').toLowerCase().trim();
+  const tenantName = activeTenant?.name || tenantSlug;
 
-  const tenantSlug = PlatformService.getActiveTenant().slug || 'jqtrends';
+  const [config, setConfig] = useState<AboutPageConfig>(() =>
+    getDefaultAboutPageConfig(tenantSlug, activeTenant)
+  );
 
-  // 1. Fetch live About config from MongoDB Atlas
+  // Listen to tenant switcher changes
+  useEffect(() => {
+    const handleTenantUpdate = (e: any) => {
+      const updated = e?.detail || PlatformService.getActiveTenant();
+      setActiveTenant(updated);
+    };
+    window.addEventListener('tenant_updated', handleTenantUpdate);
+    return () => window.removeEventListener('tenant_updated', handleTenantUpdate);
+  }, []);
+
+  // Fetch live About config from MongoDB Atlas whenever tenant changes
   useEffect(() => {
     async function fetchAboutConfig() {
       try {
         setIsLoading(true);
         const res = await ApiClient.get<any>(`/api/v1/content/pages?type=about-page&tenant=${tenantSlug}`);
         if (res.data?.config) {
-          setConfig((prev) => ({ ...prev, ...res.data.config }));
+          setConfig((prev) => ({
+            ...prev,
+            ...res.data.config,
+            design: {
+              ...prev.design,
+              ...(res.data.config?.design || {}),
+              ...(res.data.styles || {}),
+            },
+          }));
+        } else {
+          setConfig(getDefaultAboutPageConfig(tenantSlug, activeTenant));
         }
       } catch (err) {
         console.warn('Using local About defaults:', err);
+        setConfig(getDefaultAboutPageConfig(tenantSlug, activeTenant));
       } finally {
         setIsLoading(false);
       }
@@ -76,8 +88,10 @@ export default function AboutPageBuilder() {
         title: 'Brand Story & About Us',
         status: 'draft',
         config,
+        styles: config.design,
+        design: config.design,
       });
-      showToast('Brand Story draft synced to MongoDB Atlas!', 'success');
+      showToast(`Brand Story draft saved for ${tenantName}!`, 'success');
     } catch {
       showToast('Draft saved locally.', 'info');
     } finally {
@@ -94,8 +108,10 @@ export default function AboutPageBuilder() {
         title: 'Brand Story & About Us',
         status: 'published',
         config,
+        styles: config.design,
+        design: config.design,
       });
-      showToast('Published live to MongoDB Atlas & Storefront /about route!', 'success');
+      showToast(`Published live to ${tenantName} storefront (/about)!`, 'success');
     } catch {
       showToast('Published locally.', 'info');
     } finally {
@@ -104,25 +120,52 @@ export default function AboutPageBuilder() {
   };
 
   const handleReset = () => {
-    setConfig({
-      heroBadge: 'SINCE 2018 • ATELIER HERITAGE',
-      heroHeadline: 'Crafting Timeless Elegance Through Pure Artisanry',
-      heroSubtext: 'Every weave and silhouette tells a story of generation-old handloom heritage blended with contemporary haute couture.',
-      heroImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&auto=format&fit=crop',
-      founderName: 'Ananya Singhania',
-      founderRole: 'Founder & Creative Director',
-      founderQuote: 'We believe luxury lies in patience, handspun threads, and empowering rural master weavers with 100% fair-wage commerce.',
-      founderImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop',
-      pillars: [
-        { title: '100% Handloom Certified', desc: 'Handcrafted on authentic wooden pit looms without synthetic blends.' },
-        { title: 'Zero Compromise Purity', desc: 'Pure mulberry silks, certified organic cottons, and genuine gold zari.' },
-        { title: 'Fair-Trade Artisans', desc: 'Direct partnership with over 450+ master weaver families across India.' },
-        { title: 'Conscious Luxury', desc: 'Plastic-free biodegradable packaging and carbon-neutral deliveries.' },
-      ],
-      showPressLogos: true,
-    });
-    showToast('Reset to default brand story template', 'info');
+    const defaults = getDefaultAboutPageConfig(tenantSlug, activeTenant);
+    setConfig(defaults);
+    showToast(`Reset to default brand story template for ${tenantName}`, 'info');
   };
+
+  const addPillar = () => {
+    setConfig({
+      ...config,
+      pillars: [
+        ...config.pillars,
+        {
+          title: 'Master Commitment',
+          desc: 'Uncompromising standard in design, provenance, and artisan craftsmanship.',
+        },
+      ],
+    });
+  };
+
+  const removePillar = (idx: number) => {
+    if (config.pillars.length <= 1) return;
+    const updated = config.pillars.filter((_, i) => i !== idx);
+    setConfig({ ...config, pillars: updated });
+  };
+
+  const addStat = () => {
+    setConfig({
+      ...config,
+      stats: [...(config.stats || []), { value: '100%', label: 'Master Metric' }],
+    });
+  };
+
+  const removeStat = (idx: number) => {
+    const updated = (config.stats || []).filter((_, i) => i !== idx);
+    setConfig({ ...config, stats: updated });
+  };
+
+  const accentColor = config.design?.accentColor || '#EAB308';
+
+  const PRESET_COLORS = [
+    { label: 'Imperial Gold', hex: '#EAB308' },
+    { label: 'Haute Rose', hex: '#E11D48' },
+    { label: 'Deep Emerald', hex: '#10B981' },
+    { label: 'Sapphire Blue', hex: '#3B82F6' },
+    { label: 'Royal Violet', hex: '#8B5CF6' },
+    { label: 'Pure Platinum', hex: '#E2E8F0' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -130,16 +173,20 @@ export default function AboutPageBuilder() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase font-bold tracking-widest text-rose-400">
+            <span className="text-xs uppercase font-bold tracking-widest text-amber-400">
               Visual Headless CMS
             </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
               Brand Story &amp; About Page
             </span>
+            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
+              <Store className="w-3 h-3 text-amber-400" />
+              Store: <strong className="text-white">{tenantName}</strong> ({tenantSlug})
+            </span>
           </div>
-          <h1 className="text-2xl font-bold text-white mt-1">Brand Story &amp; About Builder</h1>
+          <h1 className="text-2xl font-bold text-white mt-1">Brand Story &amp; About Page Builder</h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Craft your brand's heritage narrative, founder statements, atelier photography, and sustainability pillars.
+            Full merchant control over the heritage narrative, founder statements, photography, craft pillars, and design styling.
           </p>
         </div>
 
@@ -190,7 +237,12 @@ export default function AboutPageBuilder() {
           <button
             onClick={handlePublishLive}
             disabled={isPublishing}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-black text-xs font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50"
+            style={{
+              background: `linear-gradient(135deg, ${accentColor}, #B45309)`,
+              color: '#000000',
+              fontWeight: 800,
+            }}
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>{isPublishing ? 'Publishing...' : 'Publish Live'}</span>
@@ -205,16 +257,17 @@ export default function AboutPageBuilder() {
           <div className="flex border-b border-slate-800 pb-2 gap-1 overflow-x-auto text-xs">
             {[
               { id: 'hero', label: '1. Atelier Hero' },
-              { id: 'founder', label: '2. Founder Quote' },
-              { id: 'pillars', label: '3. Craft Pillars' },
-              { id: 'press', label: '4. Press & Accolades' },
+              { id: 'founder', label: '2. Founder & Vision' },
+              { id: 'pillars', label: '3. Pillars' },
+              { id: 'stats', label: '4. Metrics & Stats' },
+              { id: 'styling', label: '5. Styling & Colors' },
             ].map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id as any)}
                 className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-all ${
                   activeTab === t.id
-                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -232,7 +285,7 @@ export default function AboutPageBuilder() {
                   type="text"
                   value={config.heroBadge}
                   onChange={(e) => setConfig({ ...config, heroBadge: e.target.value })}
-                  className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs"
+                  className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs font-bold"
                 />
               </div>
 
@@ -242,7 +295,7 @@ export default function AboutPageBuilder() {
                   type="text"
                   value={config.heroHeadline}
                   onChange={(e) => setConfig({ ...config, heroHeadline: e.target.value })}
-                  className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs"
+                  className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs font-bold"
                 />
               </div>
 
@@ -273,12 +326,12 @@ export default function AboutPageBuilder() {
             <div className="space-y-3.5 text-xs animate-in fade-in duration-150">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-semibold block">Founder Name</label>
+                  <label className="text-slate-300 font-semibold block">Founder / Director Name</label>
                   <input
                     type="text"
                     value={config.founderName}
                     onChange={(e) => setConfig({ ...config, founderName: e.target.value })}
-                    className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs"
+                    className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs font-bold"
                   />
                 </div>
                 <div className="space-y-1">
@@ -317,25 +370,46 @@ export default function AboutPageBuilder() {
           {/* Tab 3: Pillars */}
           {activeTab === 'pillars' && (
             <div className="space-y-3 text-xs animate-in fade-in duration-150">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-medium">Craft Pillars ({config.pillars.length}):</span>
+                <button
+                  type="button"
+                  onClick={addPillar}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30 font-bold text-[11px]"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Pillar</span>
+                </button>
+              </div>
+
               {config.pillars.map((pillar, idx) => (
                 <div key={idx} className="p-3 bg-[#0C0E17] rounded-xl border border-slate-800 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 font-bold flex items-center justify-center text-[10px]">
-                      {idx + 1}
+                  <div className="flex items-center justify-between">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-[10px]">
+                      0{idx + 1}
                     </span>
-                    <input
-                      type="text"
-                      value={pillar.title}
-                      onChange={(e) => {
-                        const updated = [...config.pillars];
-                        updated[idx].title = e.target.value;
-                        setConfig({ ...config, pillars: updated });
-                      }}
-                      className="w-full p-1.5 bg-[#161822] border border-slate-700 rounded text-white text-xs font-bold"
-                    />
+                    {config.pillars.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removePillar(idx)}
+                        className="text-slate-500 hover:text-rose-400 p-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                   <input
                     type="text"
+                    value={pillar.title}
+                    onChange={(e) => {
+                      const updated = [...config.pillars];
+                      updated[idx].title = e.target.value;
+                      setConfig({ ...config, pillars: updated });
+                    }}
+                    className="w-full p-1.5 bg-[#161822] border border-slate-700 rounded text-white text-xs font-bold"
+                  />
+                  <textarea
+                    rows={2}
                     value={pillar.desc}
                     onChange={(e) => {
                       const updated = [...config.pillars];
@@ -349,21 +423,117 @@ export default function AboutPageBuilder() {
             </div>
           )}
 
-          {/* Tab 4: Press */}
-          {activeTab === 'press' && (
+          {/* Tab 4: Metrics / Stats */}
+          {activeTab === 'stats' && (
             <div className="space-y-3 text-xs animate-in fade-in duration-150">
-              <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#0C0E17] border border-slate-800 cursor-pointer">
-                <div>
-                  <div className="font-semibold text-white">Display Editorial Press &amp; Fashion Week Mentions</div>
-                  <div className="text-[10px] text-slate-400">Vogue India, Elle Decor, Harper's Bazaar, GQ</div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-medium">Key Stats &amp; Counters:</span>
+                <button
+                  type="button"
+                  onClick={addStat}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30 font-bold text-[11px]"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Stat</span>
+                </button>
+              </div>
+
+              {(config.stats || []).map((st, idx) => (
+                <div key={idx} className="p-3 bg-[#0C0E17] rounded-xl border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-amber-400 uppercase font-bold">Metric #{idx + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeStat(idx)}
+                      className="text-slate-500 hover:text-rose-400 p-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={st.value}
+                      placeholder="e.g. 18K & 24K"
+                      onChange={(e) => {
+                        const updated = [...(config.stats || [])];
+                        updated[idx].value = e.target.value;
+                        setConfig({ ...config, stats: updated });
+                      }}
+                      className="p-1.5 bg-[#161822] border border-slate-700 rounded text-white text-xs font-bold"
+                    />
+                    <input
+                      type="text"
+                      value={st.label}
+                      placeholder="e.g. Solid Gold"
+                      onChange={(e) => {
+                        const updated = [...(config.stats || [])];
+                        updated[idx].label = e.target.value;
+                        setConfig({ ...config, stats: updated });
+                      }}
+                      className="p-1.5 bg-[#161822] border border-slate-700 rounded text-slate-300 text-xs"
+                    />
+                  </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={config.showPressLogos}
-                  onChange={(e) => setConfig({ ...config, showPressLogos: e.target.checked })}
-                  className="accent-rose-500 w-4 h-4 rounded"
-                />
-              </label>
+              ))}
+            </div>
+          )}
+
+          {/* Tab 5: Styling */}
+          {activeTab === 'styling' && (
+            <div className="space-y-4 text-xs animate-in fade-in duration-150">
+              <div className="space-y-2">
+                <label className="text-slate-300 font-semibold block flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5 text-amber-400" />
+                  Primary Brand Accent Color:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {PRESET_COLORS.map((c) => (
+                    <button
+                      key={c.hex}
+                      type="button"
+                      onClick={() =>
+                        setConfig({
+                          ...config,
+                          design: { ...config.design, accentColor: c.hex },
+                        })
+                      }
+                      className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
+                        accentColor.toLowerCase() === c.hex.toLowerCase()
+                          ? 'border-white bg-slate-800'
+                          : 'border-slate-800 bg-[#0C0E17] hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c.hex }} />
+                      <span className="text-[10px] text-slate-300 font-medium">{c.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="color"
+                    value={accentColor}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        design: { ...config.design, accentColor: e.target.value },
+                      })
+                    }
+                    className="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={accentColor}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        design: { ...config.design, accentColor: e.target.value },
+                      })
+                    }
+                    className="p-1.5 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -371,7 +541,7 @@ export default function AboutPageBuilder() {
         {/* Right Live Reactive Device Canvas (7 Cols) */}
         <div className="lg:col-span-7 bg-[#0A0C10] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-2xl flex flex-col items-center">
           <div className="w-full text-xs font-mono text-slate-400 flex items-center justify-between mb-3">
-            <span>LIVE BRAND STORY PREVIEW</span>
+            <span>LIVE BRAND STORY PREVIEW ({tenantName.toUpperCase()})</span>
             <span className="text-emerald-400 font-bold">● Active Story Engine</span>
           </div>
 
@@ -381,38 +551,69 @@ export default function AboutPageBuilder() {
             }`}
           >
             {/* Story Hero */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[16/9] border border-slate-800 flex items-center justify-center text-center p-6">
-              <img src={config.heroImage} alt="Hero" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+            <div
+              className="relative rounded-2xl overflow-hidden aspect-[16/9] border flex items-center justify-center text-center p-6"
+              style={{ borderColor: `${accentColor}30` }}
+            >
+              <img src={config.heroImage} alt="Hero" className="absolute inset-0 w-full h-full object-cover opacity-25" />
               <div className="relative space-y-2 max-w-md">
-                <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-widest bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                <span
+                  className="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase border"
+                  style={{
+                    backgroundColor: `${accentColor}1A`,
+                    color: accentColor,
+                    borderColor: `${accentColor}40`,
+                  }}
+                >
                   {config.heroBadge}
                 </span>
-                <h3 className="text-base sm:text-xl font-black text-white">{config.heroHeadline}</h3>
-                <p className="text-[11px] text-slate-300">{config.heroSubtext}</p>
+                <h3 className="text-base sm:text-xl font-black text-white font-serif">{config.heroHeadline}</h3>
+                <p className="text-[11px] text-slate-300 line-clamp-3">{config.heroSubtext}</p>
               </div>
             </div>
 
             {/* Founder Quote Card */}
             <div className="p-4 bg-[#141724] rounded-2xl border border-slate-800 flex gap-3 items-center">
-              <img src={config.founderImage} alt={config.founderName} className="w-12 h-12 rounded-full object-cover border-2 border-rose-500/40 shrink-0" />
+              <img
+                src={config.founderImage}
+                alt={config.founderName}
+                className="w-12 h-12 rounded-full object-cover border-2 shrink-0"
+                style={{ borderColor: accentColor }}
+              />
               <div className="space-y-0.5">
                 <p className="text-[11px] italic text-slate-200 font-serif">"{config.founderQuote}"</p>
-                <div className="text-[10px] font-bold text-rose-400">{config.founderName} — <span className="text-slate-400 font-normal">{config.founderRole}</span></div>
+                <div className="text-[10px] font-bold text-white">
+                  {config.founderName} — <span style={{ color: accentColor }}>{config.founderRole}</span>
+                </div>
               </div>
             </div>
 
-            {/* 4 Pillars Grid */}
+            {/* Pillars Grid */}
             <div className="grid grid-cols-2 gap-2">
               {config.pillars.map((pil, idx) => (
                 <div key={idx} className="p-2.5 bg-[#121522] rounded-xl border border-slate-800 space-y-1">
                   <div className="font-bold text-[11px] text-white flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-rose-400 shrink-0" />
+                    <Sparkles className="w-3 h-3 shrink-0" style={{ color: accentColor }} />
                     <span className="truncate">{pil.title}</span>
                   </div>
                   <p className="text-[10px] text-slate-400 leading-tight">{pil.desc}</p>
                 </div>
               ))}
             </div>
+
+            {/* Stats preview */}
+            {config.stats && config.stats.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-[#0A0C14] rounded-xl border border-slate-800 text-center">
+                {config.stats.map((st, i) => (
+                  <div key={i}>
+                    <div className="text-sm font-bold font-serif" style={{ color: accentColor }}>
+                      {st.value}
+                    </div>
+                    <div className="text-[9px] text-slate-400">{st.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
