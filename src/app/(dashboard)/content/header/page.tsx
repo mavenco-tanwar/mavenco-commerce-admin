@@ -1,5 +1,6 @@
-import { useConfirm } from '@/lib/modal-context';
 'use client';
+
+import { useConfirm } from '@/lib/modal-context';
 
 import React, { useState, useEffect, useRef } from 'react';
 import {

@@ -1,5 +1,6 @@
-import { useConfirm } from '@/lib/modal-context';
 'use client';
+
+import { useConfirm } from '@/lib/modal-context';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';

@@ -1,5 +1,6 @@
-import { showAlertModal } from '@/lib/modal-context';
 'use client';
+
+import { showAlertModal } from '@/lib/modal-context';
 
 import React, { useState, useEffect } from 'react';
 import {

@@ -1,5 +1,6 @@
-import { useConfirm } from '@/lib/modal-context';
 'use client';
+
+import { useConfirm } from '@/lib/modal-context';
 
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Plus, Trash2, Mail, Shield } from 'lucide-react';
