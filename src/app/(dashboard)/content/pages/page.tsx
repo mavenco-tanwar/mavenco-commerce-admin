@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -65,6 +66,7 @@ const PRESET_BG_COLORS = [
 
 export default function PagesManagerPage() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [activeTenant, setActiveTenant] = useState<any>(() => PlatformService.getActiveTenant());
   const [pages, setPages] = useState<Page[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -149,13 +151,14 @@ export default function PagesManagerPage() {
   }, []);
 
   const resetToCategoryDefaults = async () => {
-    if (
-      !confirm(
-        `Reset all website pages to default specifications for ${activeTenant?.name || 'this store'} (${activeTenant?.category || 'selected category'})? This will align all policy pages and brand narratives with your store category.`
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Reset Website Pages to Category Defaults?',
+      message: `Reset all website pages to default specifications for ${activeTenant?.name || 'this store'} (${activeTenant?.category || 'selected category'})? This will synchronize all policy pages and brand narratives with your store category.`,
+      confirmLabel: 'Reset to Defaults',
+      isDestructive: true,
+      type: 'warning',
+    });
+    if (!ok) return;
 
     const defaultPresets = getDefaultWebsitePages(activeTenant?.slug, activeTenant);
     for (const preset of defaultPresets) {
@@ -323,7 +326,15 @@ export default function PagesManagerPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this page?')) return;
+    const ok = await confirm({
+      title: 'Delete Website Page',
+      message: 'Are you sure you want to delete this page? This will permanently remove it from your store and database.',
+      confirmLabel: 'Delete Page',
+      cancelLabel: 'Keep Page',
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!ok) return;
     try {
       await ContentService.deletePage(id, activeTenant?.slug);
       showToast('Page deleted successfully from store database', 'info');

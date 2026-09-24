@@ -1,3 +1,4 @@
+import { showAlertModal } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -44,7 +45,7 @@ export function ImageUploadInput({
 
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please upload a valid image format (PNG, JPG, WEBP, SVG, GIF)');
+      showAlertModal({ title: 'Invalid Image Format', message: 'Please upload a valid image format (PNG, JPG, WEBP, SVG, GIF)', type: 'warning' });
       return;
     }
 

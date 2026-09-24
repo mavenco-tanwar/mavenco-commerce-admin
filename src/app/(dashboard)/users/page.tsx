@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,6 +11,7 @@ import type { AdminUser, Role } from '@/types';
 
 export default function UsersPage() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [activePlan, setActivePlan] = useState<TenantPlan | null>(null);
@@ -54,7 +56,14 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Revoke access for this admin user?')) return;
+    const ok = await confirm({
+      title: 'Revoke Admin Access',
+      message: 'Are you sure you want to revoke access for this admin user? They will immediately lose access to this dashboard.',
+      confirmLabel: 'Revoke Access',
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!ok) return;
     await UserService.deleteUser(id);
     showToast('Admin user removed', 'info');
     fetchData();

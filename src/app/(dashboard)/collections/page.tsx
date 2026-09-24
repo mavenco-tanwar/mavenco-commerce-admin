@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -29,6 +30,7 @@ import type { Collection, Product } from '@/types';
 
 export default function CollectionsPage() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -194,7 +196,14 @@ export default function CollectionsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this collection?')) return;
+    const ok = await confirm({
+      title: 'Delete Collection',
+      message: 'Are you sure you want to delete this collection? Products in this collection will not be deleted.',
+      confirmLabel: 'Delete Collection',
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!ok) return;
     try {
       await CollectionService.delete(id);
       showToast('Collection deleted', 'info');

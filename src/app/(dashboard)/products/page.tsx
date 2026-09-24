@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -31,6 +32,7 @@ import type { Product } from '@/types';
 
 export default function ProductsListPage() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activePlan, setActivePlan] = useState<TenantPlan | null>(null);
@@ -82,14 +84,28 @@ export default function ProductsListPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    const ok = await confirm({
+      title: 'Delete Product',
+      message: 'Are you sure you want to delete this product? This action cannot be undone.',
+      confirmLabel: 'Delete Product',
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!ok) return;
     await ProductService.delete(id);
     setProducts(products.filter((p) => p.id !== id));
     showToast('Product deleted', 'info');
   };
 
   const handleBulkDelete = async (ids: string[]) => {
-    if (!confirm(`Delete ${ids.length} selected products?`)) return;
+    const ok = await confirm({
+      title: 'Delete Selected Products',
+      message: `Are you sure you want to permanently delete ${ids.length} selected products?`,
+      confirmLabel: `Delete ${ids.length} Products`,
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!ok) return;
     await ProductService.bulkDelete(ids);
     setProducts(products.filter((p) => !ids.includes(p.id)));
     showToast(`Deleted ${ids.length} products`, 'info');

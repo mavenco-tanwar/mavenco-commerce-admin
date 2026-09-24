@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -24,6 +25,7 @@ const FOLDERS = ['All', 'Homepage', 'Products', 'Women', 'Kids', 'Banners', 'Cam
 
 export default function MediaLibraryPage() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [selectedFolder, setSelectedFolder] = useState('All');
   const [search, setSearch] = useState('');
@@ -169,7 +171,14 @@ export default function MediaLibraryPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this media asset?')) return;
+    const ok = await confirm({
+      title: 'Delete Media Asset',
+      message: 'Are you sure you want to delete this media asset? Any pages or products referencing this image may show a missing image.',
+      confirmLabel: 'Delete Media',
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!ok) return;
     await MediaService.delete(id);
     showToast('Media asset removed', 'info');
     fetchAssets();

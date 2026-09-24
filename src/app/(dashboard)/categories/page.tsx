@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -21,6 +22,7 @@ import type { Category } from '@/types';
 
 export default function CategoriesPage() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -139,7 +141,14 @@ export default function CategoriesPage() {
       ? 'Are you sure you want to delete this subcategory?'
       : 'Are you sure you want to delete this department? Any nested subcategories will also be deleted.';
 
-    if (!confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: isSub ? 'Delete Subcategory' : 'Delete Department',
+      message: confirmMsg,
+      confirmLabel: 'Delete',
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!ok) return;
     await CategoryService.delete(id);
     showToast(isSub ? 'Subcategory deleted' : 'Department deleted', 'info');
     fetchCategories();

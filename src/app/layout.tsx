@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast-context';
+import { ModalProvider } from '@/lib/modal-context';
 
 export const metadata: Metadata = {
   title: 'Mavenco Commerce Admin | Multi-Tenant Platform & Headless CMS',
@@ -29,10 +30,12 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#0F1117] text-slate-100 font-sans selection:bg-rose-500 selection:text-white">
         <AuthProvider>
           <ToastProvider>
-            <Suspense fallback={null}>
-              <TopLoadingProgressBar />
-            </Suspense>
-            {children}
+            <ModalProvider>
+              <Suspense fallback={null}>
+                <TopLoadingProgressBar />
+              </Suspense>
+              {children}
+            </ModalProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

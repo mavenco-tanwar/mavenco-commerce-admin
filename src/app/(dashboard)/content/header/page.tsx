@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -49,6 +50,7 @@ import { ImageUploadInput } from '@/components/ui/ImageUploadInput';
 
 export default function HeaderBuilderStudio() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [activeTab, setActiveTab] = useState<'canvas' | 'navigation' | 'theme' | 'mobile' | 'sticky'>('canvas');
   const [activeTenant, setActiveTenant] = useState(PlatformService.getActiveTenant());
@@ -299,8 +301,15 @@ export default function HeaderBuilderStudio() {
     }
   };
 
-  const handleResetToDefault = () => {
-    if (confirm('Reset header to default platform template for this store?')) {
+  const handleResetToDefault = async () => {
+    const ok = await confirm({
+      title: 'Reset Header Layout?',
+      message: 'Are you sure you want to reset the header navigation and announcement bars to default platform template for this store?',
+      confirmLabel: 'Reset Header',
+      isDestructive: true,
+      type: 'warning',
+    });
+    if (ok) {
       const def = getDefaultHeaderConfig(activeTenant.slug || 'lumina');
       setConfig(def);
       pushHistory(def);

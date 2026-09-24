@@ -1,3 +1,4 @@
+import { showAlertModal } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -86,7 +87,7 @@ export function MediaPickerModal({
 
   const processFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file (PNG, JPG, WEBP, SVG, GIF, AVIF)');
+      showAlertModal({ title: 'Invalid Image File', message: 'Please select a valid image file (PNG, JPG, WEBP, SVG, GIF, AVIF)', type: 'warning' });
       return;
     }
 
@@ -173,7 +174,7 @@ export function MediaPickerModal({
       onSelect(newAsset.url, newAsset);
       onClose();
     } catch (err: any) {
-      alert('Upload failed: ' + (err.message || 'Unknown error'));
+      showAlertModal({ title: 'Upload Failed', message: err.message || 'Unknown error during image upload', type: 'error' });
     } finally {
       setIsProcessing(false);
     }

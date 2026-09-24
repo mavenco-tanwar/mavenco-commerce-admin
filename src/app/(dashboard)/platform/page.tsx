@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -212,6 +213,7 @@ const CATEGORY_BLUEPRINTS: CategoryBlueprint[] = [
 
 function PlatformContent() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as any;
@@ -445,16 +447,21 @@ function PlatformContent() {
     showToast(`Exported JSON database backup for ${tenant.name}!`, 'success');
   };
 
-  const handleGenerateMagicLink = (tenant: TenantStore) => {
+  const handleGenerateMagicLink = async (tenant: TenantStore) => {
     const token = `mv_magic_${tenant.slug}_${Math.random().toString(36).substring(2, 10)}`;
     const magicUrl = `https://mavenco-admin.vercel.app/login?magic_auth=${token}&email=${encodeURIComponent(tenant.ownerEmail)}&tenant=${tenant.slug}`;
 
     navigator.clipboard.writeText(magicUrl);
     showToast(`1-Hour Magic Login Link generated & copied for ${tenant.ownerName}!`, 'success');
 
-    const confirmShare = window.confirm(
-      `Magic Login Link Copied to Clipboard!\n\nLink: ${magicUrl}\n\nClick OK to open WhatsApp and send this magic link directly to ${tenant.ownerName}.`
-    );
+    const confirmShare = await confirm({
+      title: "Magic Login Link Generated",
+      message: `Magic Login Link copied to clipboard! Would you like to open WhatsApp to send this access link directly to ${tenant.ownerName}?`,
+      confirmLabel: "Send via WhatsApp",
+      cancelLabel: "Done",
+      isDestructive: false,
+      type: "info",
+    });
     if (confirmShare) {
       const msg = `Hi ${tenant.ownerName},\n\nHere is your secure 1-hour Magic Login Link to access your merchant dashboard for *${tenant.name}*:\n\n${magicUrl}\n\nValid for 60 minutes.\n\nBest regards,\nMavenco Cloud Support`;
       const cleanPhone = '918239019096';
@@ -1091,7 +1098,14 @@ function PlatformContent() {
   };
 
   const handleDeleteInquiry = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this inquiry from the database?')) return;
+    const okInq = await confirm({
+      title: 'Delete Inquiry',
+      message: 'Are you sure you want to delete this inquiry from the database? This action cannot be undone.',
+      confirmLabel: 'Delete Inquiry',
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!okInq) return;
     const success = await PlatformService.deleteInquiry(id);
     if (success) {
       setInquiries((prev) => prev.filter((inq) => inq.id !== id));
@@ -1482,7 +1496,14 @@ function PlatformContent() {
   };
 
   const handleDeleteSaasReview = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this SaaS testimonial from MongoDB Atlas?')) return;
+    const okRev = await confirm({
+      title: 'Delete Testimonial',
+      message: 'Are you sure you want to delete this SaaS testimonial from MongoDB Atlas? This action cannot be undone.',
+      confirmLabel: 'Delete Testimonial',
+      isDestructive: true,
+      type: 'danger',
+    });
+    if (!okRev) return;
     try {
       const res = await ApiClient.delete(`/api/v1/reviews?id=${encodeURIComponent(id)}&type=saas`);
       if (res && res.success !== false) {

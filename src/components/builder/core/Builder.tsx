@@ -1,3 +1,4 @@
+import { showConfirmModal } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -545,8 +546,15 @@ export function Builder({
               {presets.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => {
-                    if (confirm(`Apply "${p.name}" preset? Your current canvas will be updated.`)) {
+                  onClick={async () => {
+                    const ok = await showConfirmModal({
+                      title: 'Apply Preset Layout?',
+                      message: `Apply "${p.name}" preset? Your current canvas will be updated with this layout.`,
+                      confirmLabel: 'Apply Preset',
+                      isDestructive: false,
+                      type: 'info',
+                    });
+                    if (!ok) return;
                       const applied: BuilderDocument = {
                         ...document,
                         ...(p.document as any),
@@ -557,7 +565,6 @@ export function Builder({
                       pushState(applied);
                       setIsPresetsOpen(false);
                       showToast(`Applied preset: ${p.name}`);
-                    }
                   }}
                   className="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-rose-500 transition-all cursor-pointer group"
                 >
@@ -618,7 +625,14 @@ export function Builder({
 
                     <button
                       onClick={async () => {
-                        if (confirm(`Rollback to version ${v.version}?`)) {
+                        const ok = await showConfirmModal({
+                          title: 'Rollback Version?',
+                          message: `Are you sure you want to rollback to version ${v.version}?`,
+                          confirmLabel: `Rollback to v${v.version}`,
+                          isDestructive: true,
+                          type: 'warning',
+                        });
+                        if (!ok) return;
                           if (onRestoreVersion) {
                             const restored = await onRestoreVersion(v.versionId || String(v.version));
                             if (restored) pushState(restored);
@@ -627,7 +641,6 @@ export function Builder({
                           }
                           setIsVersionsOpen(false);
                           showToast(`Restored version ${v.version}`);
-                        }
                       }}
                       className="px-3 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white font-bold text-xs flex items-center gap-1 transition-colors"
                     >

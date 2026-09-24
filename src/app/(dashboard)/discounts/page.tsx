@@ -1,3 +1,4 @@
+import { useConfirm } from '@/lib/modal-context';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -35,6 +36,7 @@ import {
 
 export default function PromotionsPage() {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const activeTenant = PlatformService.getActiveTenant();
   const tenantSlug = activeTenant.slug || 'lumina';
 
@@ -106,7 +108,14 @@ export default function PromotionsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to archive this promotion?')) return;
+    const ok = await confirm({
+      title: 'Archive Promotion',
+      message: 'Are you sure you want to archive this promotion? It will no longer be applied at checkout.',
+      confirmLabel: 'Archive Promotion',
+      isDestructive: true,
+      type: 'warning',
+    });
+    if (!ok) return;
     try {
       await ApiClient.delete(`/api/v1/promotions/${id}`);
       showToast('Promotion archived', 'info');
