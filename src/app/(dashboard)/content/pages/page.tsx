@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { MapPin } from 'lucide-react';
 import {
   FileText,
   Plus,
@@ -176,6 +178,75 @@ export default function PagesManagerPage() {
           <Plus className="w-4 h-4" />
           <span>+ Create Page</span>
         </button>
+      </div>
+
+      {/* Visual Builders Quick Launch Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 rounded-xl bg-gradient-to-br from-[#181b29] to-[#121522] border border-amber-500/20 shadow-lg flex flex-col justify-between space-y-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                <MapPin className="w-4 h-4" />
+              </span>
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Visual Page Builder</span>
+            </div>
+            <h3 className="text-base font-bold text-white">Contact &amp; Store Locator</h3>
+            <p className="text-xs text-slate-400">
+              Control physical retail boutique addresses, concierge email routing, operating hours, and inquiry forms.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Link
+              href="/content/contact-page"
+              className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Open Contact Builder</span>
+            </Link>
+            <a
+              href={getTenantStorefrontUrl(PlatformService.getActiveTenant().slug, 'contact')}
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1"
+            >
+              <Eye className="w-3.5 h-3.5 text-slate-400" />
+              <span>Live Preview</span>
+            </a>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-gradient-to-br from-[#1b1728] to-[#141220] border border-rose-500/20 shadow-lg flex flex-col justify-between space-y-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400">
+                <Sparkles className="w-4 h-4" />
+              </span>
+              <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">Visual Page Builder</span>
+            </div>
+            <h3 className="text-base font-bold text-white">Brand Story &amp; About Us</h3>
+            <p className="text-xs text-slate-400">
+              Control atelier heritage story, founder statement, portrait, craft pillars, and design styling.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Link
+              href="/content/about-page"
+              className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Open About Builder</span>
+            </Link>
+            <a
+              href={getTenantStorefrontUrl(PlatformService.getActiveTenant().slug, 'about')}
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1"
+            >
+              <Eye className="w-3.5 h-3.5 text-slate-400" />
+              <span>Live Preview</span>
+            </a>
+          </div>
+        </div>
       </div>
 
       <div className="bg-[#161822] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
