@@ -17,8 +17,10 @@ import {
   Plus,
   Trash2,
   Palette,
-  Check,
   Store,
+  Type,
+  Layers,
+  Sliders,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
@@ -29,6 +31,7 @@ export default function ContactPageBuilder() {
   const { showToast } = useToast();
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [activeTab, setActiveTab] = useState<'stores' | 'form' | 'hours' | 'styling'>('stores');
+  const [stylingSection, setStylingSection] = useState<'page' | 'header' | 'stores' | 'form'>('page');
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +44,6 @@ export default function ContactPageBuilder() {
     getDefaultContactPageConfig(tenantSlug, activeTenant)
   );
 
-  // Listen to tenant switcher changes
   useEffect(() => {
     const handleTenantUpdate = (e: any) => {
       const updated = e?.detail || PlatformService.getActiveTenant();
@@ -51,25 +53,24 @@ export default function ContactPageBuilder() {
     return () => window.removeEventListener('tenant_updated', handleTenantUpdate);
   }, []);
 
-  // Fetch live Contact config from MongoDB Atlas whenever tenant changes
   useEffect(() => {
     async function fetchContactConfig() {
       try {
         setIsLoading(true);
         const res = await ApiClient.get<any>(`/api/v1/content/pages?type=contact-page&tenant=${tenantSlug}`);
+        const defaults = getDefaultContactPageConfig(tenantSlug, activeTenant);
         if (res.data?.config) {
-          setConfig((prev) => ({
-            ...prev,
+          setConfig({
+            ...defaults,
             ...res.data.config,
             design: {
-              ...prev.design,
+              ...defaults.design,
               ...(res.data.config?.design || {}),
               ...(res.data.styles || {}),
             },
-          }));
+          });
         } else {
-          // Use tenant-aligned defaults
-          setConfig(getDefaultContactPageConfig(tenantSlug, activeTenant));
+          setConfig(defaults);
         }
       } catch (err) {
         console.warn('Using local Contact defaults:', err);
@@ -80,6 +81,16 @@ export default function ContactPageBuilder() {
     }
     fetchContactConfig();
   }, [tenantSlug]);
+
+  const updateDesign = (key: string, value: any) => {
+    setConfig((prev) => ({
+      ...prev,
+      design: {
+        ...prev.design,
+        [key]: value,
+      },
+    }));
+  };
 
   const handleSaveDraft = async () => {
     setIsSaving(true);
@@ -164,11 +175,27 @@ export default function ContactPageBuilder() {
     setConfig({ ...config, formSubjectOptions: updated });
   };
 
-  const accentColor = config.design?.accentColor || '#EAB308';
-  const badgeText = config.badgeText || config.design?.badgeText || 'DIRECT ATELIER ACCESS';
-  const buttonText = config.design?.buttonText || 'Send Direct Inquiry to Stylist Concierge';
+  const d = config.design || ({} as any);
 
-  const PRESET_COLORS = [
+  const FONT_OPTIONS = [
+    { label: 'Playfair Display (Haute Serif)', value: "'Playfair Display', serif" },
+    { label: 'Cinzel (Classical Luxury)', value: "'Cinzel', serif" },
+    { label: 'Cormorant Garamond (Fine Editorial)', value: "'Cormorant Garamond', serif" },
+    { label: 'Plus Jakarta Sans (Modern Clean)', value: "'Plus Jakarta Sans', sans-serif" },
+    { label: 'Inter (Contemporary Neutral)', value: "'Inter', sans-serif" },
+    { label: 'Montserrat (Bold Architectural)', value: "'Montserrat', sans-serif" },
+  ];
+
+  const PRESET_BG_COLORS = [
+    { label: 'Dark Atelier', hex: '#07090E' },
+    { label: 'Pure Obsidian', hex: '#0A0A0A' },
+    { label: 'Deep Midnight', hex: '#0F172A' },
+    { label: 'Imperial Emerald', hex: '#06130D' },
+    { label: 'Ivory Light', hex: '#FAFAF9' },
+    { label: 'Crisp White', hex: '#FFFFFF' },
+  ];
+
+  const PRESET_ACCENTS = [
     { label: 'Imperial Gold', hex: '#EAB308' },
     { label: 'Haute Rose', hex: '#E11D48' },
     { label: 'Deep Emerald', hex: '#10B981' },
@@ -196,7 +223,7 @@ export default function ContactPageBuilder() {
           </div>
           <h1 className="text-2xl font-bold text-white mt-1">Contact &amp; Store Locator Builder</h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Full merchant control over boutique locations, direct routing mailboxes, inquiry subjects, and design styles.
+            Full merchant control over boutique locations, direct routing mailboxes, inquiry subjects, background colors, fonts, and section styles.
           </p>
         </div>
 
@@ -249,7 +276,7 @@ export default function ContactPageBuilder() {
             disabled={isPublishing}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-black text-xs font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50"
             style={{
-              background: `linear-gradient(135deg, ${accentColor}, #B45309)`,
+              background: `linear-gradient(135deg, ${d.accentColor || '#EAB308'}, #B45309)`,
               color: '#000000',
               fontWeight: 800,
             }}
@@ -266,10 +293,10 @@ export default function ContactPageBuilder() {
         <div className="lg:col-span-5 space-y-4 bg-[#121522] border border-slate-800 p-5 rounded-2xl shadow-xl">
           <div className="flex border-b border-slate-800 pb-2 gap-1 overflow-x-auto text-xs">
             {[
-              { id: 'stores', label: '1. Boutiques & Salons' },
+              { id: 'stores', label: '1. Boutiques' },
               { id: 'form', label: '2. Page & Form' },
-              { id: 'hours', label: '3. Routing Mailbox' },
-              { id: 'styling', label: '4. Design & Colors' },
+              { id: 'hours', label: '3. Routing' },
+              { id: 'styling', label: '4. Section Styling' },
             ].map((t) => (
               <button
                 key={t.id}
@@ -465,76 +492,393 @@ export default function ContactPageBuilder() {
             </div>
           )}
 
-          {/* Tab 4: Design & Styles */}
+          {/* Tab 4: Granular Section Styling */}
           {activeTab === 'styling' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="space-y-2">
-                <label className="text-slate-300 font-semibold block flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5 text-amber-400" />
-                  Primary Accent Color:
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c.hex}
-                      type="button"
-                      onClick={() =>
-                        setConfig({
-                          ...config,
-                          design: { ...config.design, accentColor: c.hex },
-                        })
-                      }
-                      className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
-                        accentColor.toLowerCase() === c.hex.toLowerCase()
-                          ? 'border-white bg-slate-800'
-                          : 'border-slate-800 bg-[#0C0E17] hover:border-slate-700'
-                      }`}
-                    >
-                      <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c.hex }} />
-                      <span className="text-[10px] text-slate-300 font-medium">{c.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="color"
-                    value={accentColor}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        design: { ...config.design, accentColor: e.target.value },
-                      })
-                    }
-                    className="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={accentColor}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        design: { ...config.design, accentColor: e.target.value },
-                      })
-                    }
-                    className="p-1.5 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase"
-                  />
-                </div>
+              {/* Sub-navigation for sections */}
+              <div className="flex bg-[#0A0C14] p-1 rounded-xl border border-slate-800 gap-1">
+                {[
+                  { id: 'page', label: 'Page Level' },
+                  { id: 'header', label: 'Header' },
+                  { id: 'stores', label: 'Boutiques' },
+                  { id: 'form', label: 'Form & Button' },
+                ].map((sec) => (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => setStylingSection(sec.id as any)}
+                    className={`flex-1 py-1 px-2 rounded-lg font-bold text-[11px] transition-all ${
+                      stylingSection === sec.id
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {sec.label}
+                  </button>
+                ))}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-300 font-semibold block">Submit Button Text</label>
-                <input
-                  type="text"
-                  value={buttonText}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
-                      design: { ...config.design, buttonText: e.target.value },
-                    })
-                  }
-                  className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs font-bold"
-                />
-              </div>
+              {/* 1. Page Level Styles */}
+              {stylingSection === 'page' && (
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-semibold block">Page Background Color</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {PRESET_BG_COLORS.map((bg) => (
+                        <button
+                          key={bg.hex}
+                          type="button"
+                          onClick={() => updateDesign('backgroundColor', bg.hex)}
+                          className={`p-1.5 rounded-lg border text-[10px] flex items-center gap-1.5 ${
+                            d.backgroundColor === bg.hex ? 'border-amber-400 bg-slate-800' : 'border-slate-800 bg-[#0C0E17]'
+                          }`}
+                        >
+                          <span className="w-3 h-3 rounded-full border border-slate-600" style={{ backgroundColor: bg.hex }} />
+                          <span className="truncate text-slate-300">{bg.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="color"
+                        value={d.backgroundColor || '#07090E'}
+                        onChange={(e) => updateDesign('backgroundColor', e.target.value)}
+                        className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={d.backgroundColor || '#07090E'}
+                        onChange={(e) => updateDesign('backgroundColor', e.target.value)}
+                        className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Primary Text Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.textColor || '#F8FAFC'}
+                          onChange={(e) => updateDesign('textColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.textColor || '#F8FAFC'}
+                          onChange={(e) => updateDesign('textColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Muted Text Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.mutedTextColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('mutedTextColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.mutedTextColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('mutedTextColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-2">
+                    <label className="text-slate-300 font-semibold block">Heading Font Style</label>
+                    <select
+                      value={d.headingFont || "'Playfair Display', serif"}
+                      onChange={(e) => updateDesign('headingFont', e.target.value)}
+                      className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs"
+                    >
+                      {FONT_OPTIONS.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-semibold block">Body Font Style</label>
+                    <select
+                      value={d.bodyFont || "'Plus Jakarta Sans', sans-serif"}
+                      onChange={(e) => updateDesign('bodyFont', e.target.value)}
+                      className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs"
+                    >
+                      {FONT_OPTIONS.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2">
+                    <label className="text-slate-300 font-semibold block">Brand Accent / Highlight Color</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {PRESET_ACCENTS.map((c) => (
+                        <button
+                          key={c.hex}
+                          type="button"
+                          onClick={() => {
+                            updateDesign('accentColor', c.hex);
+                            updateDesign('headerBadgeText', c.hex);
+                            updateDesign('storeCardTitleColor', c.hex);
+                          }}
+                          className={`p-1.5 rounded-lg border text-[10px] flex items-center gap-1.5 ${
+                            d.accentColor === c.hex ? 'border-white bg-slate-800' : 'border-slate-800 bg-[#0C0E17]'
+                          }`}
+                        >
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: c.hex }} />
+                          <span className="truncate text-slate-300">{c.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Header Section Styles */}
+              {stylingSection === 'header' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Headline Title Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.headerTitleColor || '#FFFFFF'}
+                          onChange={(e) => updateDesign('headerTitleColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.headerTitleColor || '#FFFFFF'}
+                          onChange={(e) => updateDesign('headerTitleColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Subtitle Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.headerSubtitleColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('headerSubtitleColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.headerSubtitleColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('headerSubtitleColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-2">
+                    <label className="text-slate-300 font-semibold block">Badge Text Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={d.headerBadgeText || d.accentColor || '#EAB308'}
+                        onChange={(e) => updateDesign('headerBadgeText', e.target.value)}
+                        className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={d.headerBadgeText || d.accentColor || '#EAB308'}
+                        onChange={(e) => updateDesign('headerBadgeText', e.target.value)}
+                        className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Boutiques Section Styles */}
+              {stylingSection === 'stores' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Store Card Background</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.storeCardBg || '#0E111C'}
+                          onChange={(e) => updateDesign('storeCardBg', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.storeCardBg || '#0E111C'}
+                          onChange={(e) => updateDesign('storeCardBg', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Store Title Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.storeCardTitleColor || d.accentColor || '#EAB308'}
+                          onChange={(e) => updateDesign('storeCardTitleColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.storeCardTitleColor || d.accentColor || '#EAB308'}
+                          onChange={(e) => updateDesign('storeCardTitleColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Address / Text Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.storeCardTextColor || '#CBD5E1'}
+                          onChange={(e) => updateDesign('storeCardTextColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.storeCardTextColor || '#CBD5E1'}
+                          onChange={(e) => updateDesign('storeCardTextColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Icon Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.storeCardIconColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('storeCardIconColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.storeCardIconColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('storeCardIconColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Form & Button Styles */}
+              {stylingSection === 'form' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Form Card Background</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.formCardBg || '#101320'}
+                          onChange={(e) => updateDesign('formCardBg', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.formCardBg || '#101320'}
+                          onChange={(e) => updateDesign('formCardBg', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Input Fields Background</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.formInputBg || '#080A10'}
+                          onChange={(e) => updateDesign('formInputBg', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.formInputBg || '#080A10'}
+                          onChange={(e) => updateDesign('formInputBg', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-2">
+                    <label className="text-slate-300 font-semibold block">Button Text / CTA Label</label>
+                    <input
+                      type="text"
+                      value={d.buttonText || 'Send Direct Inquiry to Stylist Concierge'}
+                      onChange={(e) => updateDesign('buttonText', e.target.value)}
+                      className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs font-bold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Button Text Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.formButtonTextColor || '#000000'}
+                          onChange={(e) => updateDesign('formButtonTextColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.formButtonTextColor || '#000000'}
+                          onChange={(e) => updateDesign('formButtonTextColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Button Accent / Background</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.accentColor || '#EAB308'}
+                          onChange={(e) => {
+                            updateDesign('accentColor', e.target.value);
+                            updateDesign('formButtonBg', `linear-gradient(135deg, ${e.target.value}, #B45309)`);
+                          }}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.accentColor || '#EAB308'}
+                          onChange={(e) => {
+                            updateDesign('accentColor', e.target.value);
+                            updateDesign('formButtonBg', `linear-gradient(135deg, ${e.target.value}, #B45309)`);
+                          }}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -547,45 +891,89 @@ export default function ContactPageBuilder() {
           </div>
 
           <div
-            className={`w-full transition-all duration-300 border border-slate-700/60 rounded-2xl overflow-hidden bg-[#0D0F18] p-4 sm:p-6 space-y-6 ${
+            className={`w-full transition-all duration-300 border rounded-2xl overflow-hidden p-4 sm:p-6 space-y-6 ${
               device === 'mobile' ? 'max-w-xs' : device === 'tablet' ? 'max-w-md' : 'max-w-full'
             }`}
+            style={{
+              backgroundColor: d.backgroundColor || '#07090E',
+              color: d.textColor || '#F8FAFC',
+              fontFamily: d.bodyFont || 'inherit',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+            }}
           >
             {/* Header Mock */}
             <div className="text-center space-y-1">
               <span
                 className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border"
                 style={{
-                  backgroundColor: `${accentColor}1A`,
-                  color: accentColor,
-                  borderColor: `${accentColor}40`,
+                  backgroundColor: d.headerBadgeBg || `${d.accentColor}1A`,
+                  color: d.headerBadgeText || d.accentColor,
+                  borderColor: d.headerBadgeBorder || `${d.accentColor}40`,
                 }}
               >
-                {badgeText}
+                {config.badgeText || 'DIRECT ATELIER ACCESS'}
               </span>
-              <h3 className="text-base sm:text-xl font-bold text-white font-serif">{config.pageTitle}</h3>
-              <p className="text-[11px] text-slate-400 max-w-sm mx-auto">{config.pageSubtitle}</p>
+              <h3
+                className="text-base sm:text-xl font-bold"
+                style={{
+                  color: d.headerTitleColor || '#FFFFFF',
+                  fontFamily: d.headingFont || 'inherit',
+                }}
+              >
+                {config.pageTitle}
+              </h3>
+              <p
+                className="text-[11px] max-w-sm mx-auto"
+                style={{ color: d.headerSubtitleColor || d.mutedTextColor || '#94A3B8' }}
+              >
+                {config.pageSubtitle}
+              </p>
             </div>
 
             {/* Store Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {config.stores?.map((s, idx) => (
-                <div key={idx} className="p-3.5 bg-[#141724] rounded-2xl border border-slate-800 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-xs" style={{ color: accentColor }}>
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-2xl border space-y-2"
+                  style={{
+                    backgroundColor: d.storeCardBg || '#0E111C',
+                    borderColor: d.storeCardBorder || 'rgba(255, 255, 255, 0.08)',
+                  }}
+                >
+                  <div
+                    className="flex items-center gap-2 font-bold text-xs"
+                    style={{
+                      color: d.storeCardTitleColor || d.accentColor || '#EAB308',
+                      fontFamily: d.headingFont || 'inherit',
+                    }}
+                  >
                     <Building className="w-3.5 h-3.5" />
                     <span>{s.city}</span>
                   </div>
-                  <div className="text-[11px] text-slate-300 space-y-1">
+                  <div
+                    className="text-[11px] space-y-1"
+                    style={{ color: d.storeCardTextColor || '#CBD5E1' }}
+                  >
                     <div className="flex items-start gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                      <MapPin
+                        className="w-3.5 h-3.5 shrink-0 mt-0.5"
+                        style={{ color: d.storeCardIconColor || '#94A3B8' }}
+                      />
                       <span>{s.address}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <Phone
+                        className="w-3.5 h-3.5 shrink-0"
+                        style={{ color: d.storeCardIconColor || '#94A3B8' }}
+                      />
                       <span>{s.phone}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <Clock
+                        className="w-3.5 h-3.5 shrink-0"
+                        style={{ color: d.storeCardIconColor || '#94A3B8' }}
+                      />
                       <span>{s.hours}</span>
                     </div>
                   </div>
@@ -594,9 +982,21 @@ export default function ContactPageBuilder() {
             </div>
 
             {/* Form Mock */}
-            <div className="p-4 bg-[#121522] rounded-2xl border border-slate-800 space-y-3">
-              <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" style={{ color: accentColor }} />
+            <div
+              className="p-4 rounded-2xl border space-y-3"
+              style={{
+                backgroundColor: d.formCardBg || '#101320',
+                borderColor: d.formCardBorder || 'rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <div
+                className="text-xs font-bold flex items-center gap-1.5"
+                style={{
+                  color: d.formCardTitleColor || '#FFFFFF',
+                  fontFamily: d.headingFont || 'inherit',
+                }}
+              >
+                <Mail className="w-3.5 h-3.5" style={{ color: d.accentColor || '#EAB308' }} />
                 <span>Send a Direct Message to Our Concierge</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -604,19 +1004,34 @@ export default function ContactPageBuilder() {
                   type="text"
                   disabled
                   placeholder="Your Name"
-                  className="p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-[10px] text-slate-400"
+                  className="p-2 border rounded-lg text-[10px]"
+                  style={{
+                    backgroundColor: d.formInputBg || '#080A10',
+                    borderColor: d.formInputBorder || '#334155',
+                    color: d.formInputTextColor || '#FFFFFF',
+                  }}
                 />
                 <input
                   type="email"
                   disabled
                   placeholder="Your Email Address"
-                  className="p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-[10px] text-slate-400"
+                  className="p-2 border rounded-lg text-[10px]"
+                  style={{
+                    backgroundColor: d.formInputBg || '#080A10',
+                    borderColor: d.formInputBorder || '#334155',
+                    color: d.formInputTextColor || '#FFFFFF',
+                  }}
                 />
               </div>
 
               <select
                 disabled
-                className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-[10px] text-slate-300"
+                className="w-full p-2 border rounded-lg text-[10px]"
+                style={{
+                  backgroundColor: d.formInputBg || '#080A10',
+                  borderColor: d.formInputBorder || '#334155',
+                  color: d.formInputTextColor || '#FFFFFF',
+                }}
               >
                 {config.formSubjectOptions?.map((o, idx) => (
                   <option key={idx}>{o}</option>
@@ -627,20 +1042,25 @@ export default function ContactPageBuilder() {
                 disabled
                 rows={2}
                 placeholder={`How may our ${tenantName} concierge team assist your order or atelier visit?`}
-                className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-[10px] text-slate-400"
+                className="w-full p-2 border rounded-lg text-[10px]"
+                style={{
+                  backgroundColor: d.formInputBg || '#080A10',
+                  borderColor: d.formInputBorder || '#334155',
+                  color: d.formInputTextColor || '#FFFFFF',
+                }}
               />
               <button
                 type="button"
                 disabled
-                className="w-full py-2 text-black font-bold text-xs rounded-xl shadow opacity-90 flex items-center justify-center gap-1.5"
+                className="w-full py-2 font-bold text-xs rounded-xl shadow opacity-90 flex items-center justify-center gap-1.5"
                 style={{
-                  background: `linear-gradient(135deg, ${accentColor}, #B45309)`,
-                  color: '#000000',
+                  background: d.formButtonBg || `linear-gradient(135deg, ${d.accentColor || '#EAB308'}, #B45309)`,
+                  color: d.formButtonTextColor || '#000000',
                   fontWeight: 800,
                 }}
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{buttonText}</span>
+                <span>{d.buttonText || 'Send Direct Inquiry to Stylist Concierge'}</span>
               </button>
             </div>
           </div>

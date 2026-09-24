@@ -18,6 +18,8 @@ import {
   Trash2,
   Palette,
   Store,
+  Type,
+  Sliders,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast-context';
 import { ApiClient } from '@/services/api';
@@ -28,6 +30,7 @@ export default function AboutPageBuilder() {
   const { showToast } = useToast();
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [activeTab, setActiveTab] = useState<'hero' | 'founder' | 'pillars' | 'stats' | 'styling'>('hero');
+  const [stylingSection, setStylingSection] = useState<'page' | 'hero' | 'founder' | 'pillars' | 'stats_cta'>('page');
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +43,6 @@ export default function AboutPageBuilder() {
     getDefaultAboutPageConfig(tenantSlug, activeTenant)
   );
 
-  // Listen to tenant switcher changes
   useEffect(() => {
     const handleTenantUpdate = (e: any) => {
       const updated = e?.detail || PlatformService.getActiveTenant();
@@ -50,24 +52,24 @@ export default function AboutPageBuilder() {
     return () => window.removeEventListener('tenant_updated', handleTenantUpdate);
   }, []);
 
-  // Fetch live About config from MongoDB Atlas whenever tenant changes
   useEffect(() => {
     async function fetchAboutConfig() {
       try {
         setIsLoading(true);
         const res = await ApiClient.get<any>(`/api/v1/content/pages?type=about-page&tenant=${tenantSlug}`);
+        const defaults = getDefaultAboutPageConfig(tenantSlug, activeTenant);
         if (res.data?.config) {
-          setConfig((prev) => ({
-            ...prev,
+          setConfig({
+            ...defaults,
             ...res.data.config,
             design: {
-              ...prev.design,
+              ...defaults.design,
               ...(res.data.config?.design || {}),
               ...(res.data.styles || {}),
             },
-          }));
+          });
         } else {
-          setConfig(getDefaultAboutPageConfig(tenantSlug, activeTenant));
+          setConfig(defaults);
         }
       } catch (err) {
         console.warn('Using local About defaults:', err);
@@ -78,6 +80,16 @@ export default function AboutPageBuilder() {
     }
     fetchAboutConfig();
   }, [tenantSlug]);
+
+  const updateDesign = (key: string, value: any) => {
+    setConfig((prev) => ({
+      ...prev,
+      design: {
+        ...prev.design,
+        [key]: value,
+      },
+    }));
+  };
 
   const handleSaveDraft = async () => {
     setIsSaving(true);
@@ -156,9 +168,27 @@ export default function AboutPageBuilder() {
     setConfig({ ...config, stats: updated });
   };
 
-  const accentColor = config.design?.accentColor || '#EAB308';
+  const d = config.design || ({} as any);
 
-  const PRESET_COLORS = [
+  const FONT_OPTIONS = [
+    { label: 'Playfair Display (Haute Serif)', value: "'Playfair Display', serif" },
+    { label: 'Cinzel (Classical Luxury)', value: "'Cinzel', serif" },
+    { label: 'Cormorant Garamond (Fine Editorial)', value: "'Cormorant Garamond', serif" },
+    { label: 'Plus Jakarta Sans (Modern Clean)', value: "'Plus Jakarta Sans', sans-serif" },
+    { label: 'Inter (Contemporary Neutral)', value: "'Inter', sans-serif" },
+    { label: 'Montserrat (Bold Architectural)', value: "'Montserrat', sans-serif" },
+  ];
+
+  const PRESET_BG_COLORS = [
+    { label: 'Dark Atelier', hex: '#07090E' },
+    { label: 'Pure Obsidian', hex: '#0A0A0A' },
+    { label: 'Deep Midnight', hex: '#0F172A' },
+    { label: 'Imperial Emerald', hex: '#06130D' },
+    { label: 'Ivory Light', hex: '#FAFAF9' },
+    { label: 'Crisp White', hex: '#FFFFFF' },
+  ];
+
+  const PRESET_ACCENTS = [
     { label: 'Imperial Gold', hex: '#EAB308' },
     { label: 'Haute Rose', hex: '#E11D48' },
     { label: 'Deep Emerald', hex: '#10B981' },
@@ -186,7 +216,7 @@ export default function AboutPageBuilder() {
           </div>
           <h1 className="text-2xl font-bold text-white mt-1">Brand Story &amp; About Page Builder</h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Full merchant control over the heritage narrative, founder statements, photography, craft pillars, and design styling.
+            Full merchant control over the heritage narrative, founder statements, photography, craft pillars, and granular section styling.
           </p>
         </div>
 
@@ -239,7 +269,7 @@ export default function AboutPageBuilder() {
             disabled={isPublishing}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-black text-xs font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50"
             style={{
-              background: `linear-gradient(135deg, ${accentColor}, #B45309)`,
+              background: `linear-gradient(135deg, ${d.accentColor || '#EAB308'}, #B45309)`,
               color: '#000000',
               fontWeight: 800,
             }}
@@ -259,8 +289,8 @@ export default function AboutPageBuilder() {
               { id: 'hero', label: '1. Atelier Hero' },
               { id: 'founder', label: '2. Founder & Vision' },
               { id: 'pillars', label: '3. Pillars' },
-              { id: 'stats', label: '4. Metrics & Stats' },
-              { id: 'styling', label: '5. Styling & Colors' },
+              { id: 'stats', label: '4. Stats' },
+              { id: 'styling', label: '5. Section Styling' },
             ].map((t) => (
               <button
                 key={t.id}
@@ -479,61 +509,370 @@ export default function AboutPageBuilder() {
             </div>
           )}
 
-          {/* Tab 5: Styling */}
+          {/* Tab 5: Granular Section Styling */}
           {activeTab === 'styling' && (
             <div className="space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="space-y-2">
-                <label className="text-slate-300 font-semibold block flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5 text-amber-400" />
-                  Primary Brand Accent Color:
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c.hex}
-                      type="button"
-                      onClick={() =>
-                        setConfig({
-                          ...config,
-                          design: { ...config.design, accentColor: c.hex },
-                        })
-                      }
-                      className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
-                        accentColor.toLowerCase() === c.hex.toLowerCase()
-                          ? 'border-white bg-slate-800'
-                          : 'border-slate-800 bg-[#0C0E17] hover:border-slate-700'
-                      }`}
-                    >
-                      <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c.hex }} />
-                      <span className="text-[10px] text-slate-300 font-medium">{c.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="color"
-                    value={accentColor}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        design: { ...config.design, accentColor: e.target.value },
-                      })
-                    }
-                    className="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={accentColor}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        design: { ...config.design, accentColor: e.target.value },
-                      })
-                    }
-                    className="p-1.5 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase"
-                  />
-                </div>
+              {/* Sub-nav for styling sections */}
+              <div className="flex bg-[#0A0C14] p-1 rounded-xl border border-slate-800 gap-1 overflow-x-auto">
+                {[
+                  { id: 'page', label: 'Page' },
+                  { id: 'hero', label: 'Hero' },
+                  { id: 'founder', label: 'Founder' },
+                  { id: 'pillars', label: 'Pillars' },
+                  { id: 'stats_cta', label: 'Stats & CTA' },
+                ].map((sec) => (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => setStylingSection(sec.id as any)}
+                    className={`flex-1 py-1 px-2 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all ${
+                      stylingSection === sec.id
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {sec.label}
+                  </button>
+                ))}
               </div>
+
+              {/* 1. Page Level Styles */}
+              {stylingSection === 'page' && (
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-semibold block">Page Background Color</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {PRESET_BG_COLORS.map((bg) => (
+                        <button
+                          key={bg.hex}
+                          type="button"
+                          onClick={() => updateDesign('backgroundColor', bg.hex)}
+                          className={`p-1.5 rounded-lg border text-[10px] flex items-center gap-1.5 ${
+                            d.backgroundColor === bg.hex ? 'border-amber-400 bg-slate-800' : 'border-slate-800 bg-[#0C0E17]'
+                          }`}
+                        >
+                          <span className="w-3 h-3 rounded-full border border-slate-600" style={{ backgroundColor: bg.hex }} />
+                          <span className="truncate text-slate-300">{bg.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="color"
+                        value={d.backgroundColor || '#07090E'}
+                        onChange={(e) => updateDesign('backgroundColor', e.target.value)}
+                        className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={d.backgroundColor || '#07090E'}
+                        onChange={(e) => updateDesign('backgroundColor', e.target.value)}
+                        className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Primary Text Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.textColor || '#F8FAFC'}
+                          onChange={(e) => updateDesign('textColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.textColor || '#F8FAFC'}
+                          onChange={(e) => updateDesign('textColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Muted Text Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.mutedTextColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('mutedTextColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.mutedTextColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('mutedTextColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-2">
+                    <label className="text-slate-300 font-semibold block">Heading Font Style</label>
+                    <select
+                      value={d.headingFont || "'Playfair Display', serif"}
+                      onChange={(e) => updateDesign('headingFont', e.target.value)}
+                      className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs"
+                    >
+                      {FONT_OPTIONS.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-semibold block">Body Font Style</label>
+                    <select
+                      value={d.bodyFont || "'Plus Jakarta Sans', sans-serif"}
+                      onChange={(e) => updateDesign('bodyFont', e.target.value)}
+                      className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs"
+                    >
+                      {FONT_OPTIONS.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2">
+                    <label className="text-slate-300 font-semibold block">Brand Accent Color</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {PRESET_ACCENTS.map((c) => (
+                        <button
+                          key={c.hex}
+                          type="button"
+                          onClick={() => {
+                            updateDesign('accentColor', c.hex);
+                            updateDesign('heroBadgeText', c.hex);
+                            updateDesign('founderRoleColor', c.hex);
+                            updateDesign('statNumberColor', c.hex);
+                          }}
+                          className={`p-1.5 rounded-lg border text-[10px] flex items-center gap-1.5 ${
+                            d.accentColor === c.hex ? 'border-white bg-slate-800' : 'border-slate-800 bg-[#0C0E17]'
+                          }`}
+                        >
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: c.hex }} />
+                          <span className="truncate text-slate-300">{c.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Hero Section Styles */}
+              {stylingSection === 'hero' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Headline Title Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.heroTitleColor || '#FFFFFF'}
+                          onChange={(e) => updateDesign('heroTitleColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.heroTitleColor || '#FFFFFF'}
+                          onChange={(e) => updateDesign('heroTitleColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Subtext Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.heroSubtextColor || '#CBD5E1'}
+                          onChange={(e) => updateDesign('heroSubtextColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.heroSubtextColor || '#CBD5E1'}
+                          onChange={(e) => updateDesign('heroSubtextColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-2">
+                    <label className="text-slate-300 font-semibold block">Hero Image Opacity ({Math.round((d.heroOverlayOpacity ?? 0.35) * 100)}%)</label>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="0.8"
+                      step="0.05"
+                      value={d.heroOverlayOpacity ?? 0.35}
+                      onChange={(e) => updateDesign('heroOverlayOpacity', parseFloat(e.target.value))}
+                      className="w-full accent-amber-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Founder Section Styles */}
+              {stylingSection === 'founder' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Founder Name Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.founderNameColor || '#FFFFFF'}
+                          onChange={(e) => updateDesign('founderNameColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.founderNameColor || '#FFFFFF'}
+                          onChange={(e) => updateDesign('founderNameColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Role / Title Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.founderRoleColor || d.accentColor || '#EAB308'}
+                          onChange={(e) => updateDesign('founderRoleColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.founderRoleColor || d.accentColor || '#EAB308'}
+                          onChange={(e) => updateDesign('founderRoleColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-1">
+                    <label className="text-slate-300 font-semibold block">Quote Text Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={d.founderQuoteColor || '#F8FAFC'}
+                        onChange={(e) => updateDesign('founderQuoteColor', e.target.value)}
+                        className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={d.founderQuoteColor || '#F8FAFC'}
+                        onChange={(e) => updateDesign('founderQuoteColor', e.target.value)}
+                        className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Pillars Section Styles */}
+              {stylingSection === 'pillars' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Pillar Card Background</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.pillarCardBg || '#0E111C'}
+                          onChange={(e) => updateDesign('pillarCardBg', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.pillarCardBg || '#0E111C'}
+                          onChange={(e) => updateDesign('pillarCardBg', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Pillar Title Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.pillarTitleColor || '#FFFFFF'}
+                          onChange={(e) => updateDesign('pillarTitleColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.pillarTitleColor || '#FFFFFF'}
+                          onChange={(e) => updateDesign('pillarTitleColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Stats & CTA Section Styles */}
+              {stylingSection === 'stats_cta' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Stat Number Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.statNumberColor || d.accentColor || '#EAB308'}
+                          onChange={(e) => updateDesign('statNumberColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.statNumberColor || d.accentColor || '#EAB308'}
+                          onChange={(e) => updateDesign('statNumberColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold block">Stat Label Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={d.statLabelColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('statLabelColor', e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={d.statLabelColor || '#94A3B8'}
+                          onChange={(e) => updateDesign('statLabelColor', e.target.value)}
+                          className="p-1 bg-[#0C0E17] border border-slate-700 rounded text-slate-200 text-xs font-mono uppercase flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-2">
+                    <label className="text-slate-300 font-semibold block">CTA Button Label</label>
+                    <input
+                      type="text"
+                      value={d.ctaButtonText || 'Book Private Salon Session'}
+                      onChange={(e) => updateDesign('ctaButtonText', e.target.value)}
+                      className="w-full p-2 bg-[#0C0E17] border border-slate-700 rounded-lg text-white text-xs font-bold"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -546,70 +885,152 @@ export default function AboutPageBuilder() {
           </div>
 
           <div
-            className={`w-full transition-all duration-300 border border-slate-700/60 rounded-2xl overflow-hidden bg-[#0D0F18] p-4 sm:p-6 space-y-6 ${
+            className={`w-full transition-all duration-300 border rounded-2xl overflow-hidden p-4 sm:p-6 space-y-6 ${
               device === 'mobile' ? 'max-w-xs' : device === 'tablet' ? 'max-w-md' : 'max-w-full'
             }`}
+            style={{
+              backgroundColor: d.backgroundColor || '#07090E',
+              color: d.textColor || '#F8FAFC',
+              fontFamily: d.bodyFont || 'inherit',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+            }}
           >
             {/* Story Hero */}
             <div
               className="relative rounded-2xl overflow-hidden aspect-[16/9] border flex items-center justify-center text-center p-6"
-              style={{ borderColor: `${accentColor}30` }}
+              style={{ borderColor: d.heroBadgeBorder || `${d.accentColor || '#EAB308'}30` }}
             >
-              <img src={config.heroImage} alt="Hero" className="absolute inset-0 w-full h-full object-cover opacity-25" />
+              <img
+                src={config.heroImage}
+                alt="Hero"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ opacity: d.heroOverlayOpacity ?? 0.35 }}
+              />
               <div className="relative space-y-2 max-w-md">
                 <span
                   className="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase border"
                   style={{
-                    backgroundColor: `${accentColor}1A`,
-                    color: accentColor,
-                    borderColor: `${accentColor}40`,
+                    backgroundColor: d.heroBadgeBg || `${d.accentColor || '#EAB308'}1A`,
+                    color: d.heroBadgeText || d.accentColor || '#EAB308',
+                    borderColor: d.heroBadgeBorder || `${d.accentColor || '#EAB308'}40`,
                   }}
                 >
                   {config.heroBadge}
                 </span>
-                <h3 className="text-base sm:text-xl font-black text-white font-serif">{config.heroHeadline}</h3>
-                <p className="text-[11px] text-slate-300 line-clamp-3">{config.heroSubtext}</p>
+                <h3
+                  className="text-base sm:text-xl font-black"
+                  style={{
+                    color: d.heroTitleColor || '#FFFFFF',
+                    fontFamily: d.headingFont || 'inherit',
+                  }}
+                >
+                  {config.heroHeadline}
+                </h3>
+                <p
+                  className="text-[11px] line-clamp-3"
+                  style={{ color: d.heroSubtextColor || d.mutedTextColor || '#CBD5E1' }}
+                >
+                  {config.heroSubtext}
+                </p>
               </div>
             </div>
 
             {/* Founder Quote Card */}
-            <div className="p-4 bg-[#141724] rounded-2xl border border-slate-800 flex gap-3 items-center">
+            <div
+              className="p-4 rounded-2xl border flex gap-3 items-center"
+              style={{
+                background: d.founderCardBg || 'linear-gradient(135deg, #121522, #170E1A)',
+                borderColor: d.founderCardBorder || 'rgba(255, 255, 255, 0.08)',
+              }}
+            >
               <img
                 src={config.founderImage}
                 alt={config.founderName}
                 className="w-12 h-12 rounded-full object-cover border-2 shrink-0"
-                style={{ borderColor: accentColor }}
+                style={{ borderColor: d.founderRoleColor || d.accentColor || '#EAB308' }}
               />
               <div className="space-y-0.5">
-                <p className="text-[11px] italic text-slate-200 font-serif">"{config.founderQuote}"</p>
-                <div className="text-[10px] font-bold text-white">
-                  {config.founderName} — <span style={{ color: accentColor }}>{config.founderRole}</span>
+                <p
+                  className="text-[11px] italic font-serif"
+                  style={{ color: d.founderQuoteColor || '#F8FAFC' }}
+                >
+                  &ldquo;{config.founderQuote}&rdquo;
+                </p>
+                <div
+                  className="text-[10px] font-bold"
+                  style={{
+                    color: d.founderNameColor || '#FFFFFF',
+                    fontFamily: d.headingFont || 'inherit',
+                  }}
+                >
+                  {config.founderName} —{' '}
+                  <span style={{ color: d.founderRoleColor || d.accentColor || '#EAB308' }}>
+                    {config.founderRole}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Pillars Grid */}
             <div className="grid grid-cols-2 gap-2">
-              {config.pillars.map((pil, idx) => (
-                <div key={idx} className="p-2.5 bg-[#121522] rounded-xl border border-slate-800 space-y-1">
-                  <div className="font-bold text-[11px] text-white flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 shrink-0" style={{ color: accentColor }} />
+              {config.pillars?.map((pil, idx) => (
+                <div
+                  key={idx}
+                  className="p-2.5 rounded-xl border space-y-1"
+                  style={{
+                    backgroundColor: d.pillarCardBg || '#0E111C',
+                    borderColor: d.pillarCardBorder || 'rgba(255, 255, 255, 0.08)',
+                  }}
+                >
+                  <div
+                    className="font-bold text-[11px] flex items-center gap-1.5"
+                    style={{
+                      color: d.pillarTitleColor || '#FFFFFF',
+                      fontFamily: d.headingFont || 'inherit',
+                    }}
+                  >
+                    <Sparkles
+                      className="w-3 h-3 shrink-0"
+                      style={{ color: d.pillarBadgeText || d.accentColor || '#EAB308' }}
+                    />
                     <span className="truncate">{pil.title}</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-tight">{pil.desc}</p>
+                  <p
+                    className="text-[10px] leading-tight"
+                    style={{ color: d.pillarDescColor || d.mutedTextColor || '#94A3B8' }}
+                  >
+                    {pil.desc}
+                  </p>
                 </div>
               ))}
             </div>
 
             {/* Stats preview */}
             {config.stats && config.stats.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-[#0A0C14] rounded-xl border border-slate-800 text-center">
+              <div
+                className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 rounded-xl border text-center"
+                style={{
+                  backgroundColor: d.statsContainerBg || '#0B0D16',
+                  borderColor: d.statsContainerBorder || 'rgba(255, 255, 255, 0.08)',
+                }}
+              >
                 {config.stats.map((st, i) => (
                   <div key={i}>
-                    <div className="text-sm font-bold font-serif" style={{ color: accentColor }}>
+                    <div
+                      className="text-sm font-bold"
+                      style={{
+                        color: d.statNumberColor || d.accentColor || '#EAB308',
+                        fontFamily: d.headingFont || 'inherit',
+                      }}
+                    >
                       {st.value}
                     </div>
-                    <div className="text-[9px] text-slate-400">{st.label}</div>
+                    <div
+                      className="text-[9px]"
+                      style={{ color: d.statLabelColor || d.mutedTextColor || '#94A3B8' }}
+                    >
+                      {st.label}
+                    </div>
                   </div>
                 ))}
               </div>

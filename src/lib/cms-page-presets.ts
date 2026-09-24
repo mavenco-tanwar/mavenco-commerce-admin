@@ -13,10 +13,41 @@ export interface ContactPageConfig {
   stores: ContactStoreLocation[];
   formSubjectOptions: string[];
   design: {
+    // 1. Page-level styles
+    backgroundColor: string;
+    textColor: string;
+    mutedTextColor: string;
+    headingFont: string;
+    bodyFont: string;
     accentColor: string;
-    badgeText: string;
+
+    // 2. Header & Intro Section
+    headerBadgeBg: string;
+    headerBadgeText: string;
+    headerBadgeBorder: string;
+    headerTitleColor: string;
+    headerSubtitleColor: string;
+
+    // 3. Boutiques & Salons Section
+    storeCardBg: string;
+    storeCardBorder: string;
+    storeCardTitleColor: string;
+    storeCardTextColor: string;
+    storeCardIconColor: string;
+
+    // 4. Concierge Form Section
+    formCardBg: string;
+    formCardBorder: string;
+    formCardTitleColor: string;
+    formInputBg: string;
+    formInputBorder: string;
+    formInputTextColor: string;
+    formButtonBg: string;
+    formButtonTextColor: string;
     buttonText: string;
-    themeMode: 'dark' | 'light' | 'luxury';
+
+    badgeText?: string;
+    themeMode?: 'dark' | 'light' | 'luxury';
     showMap?: boolean;
   };
 }
@@ -44,8 +75,55 @@ export interface AboutPageConfig {
   stats: AboutStat[];
   showPressLogos: boolean;
   design: {
+    // 1. Page-level styles
+    backgroundColor: string;
+    textColor: string;
+    mutedTextColor: string;
+    headingFont: string;
+    bodyFont: string;
     accentColor: string;
-    themeMode: 'dark' | 'light' | 'luxury';
+
+    // 2. Atelier Hero Section
+    heroBadgeBg: string;
+    heroBadgeText: string;
+    heroBadgeBorder: string;
+    heroTitleColor: string;
+    heroSubtextColor: string;
+    heroOverlayOpacity: number;
+
+    // 3. Founder Statement Section
+    founderCardBg: string;
+    founderCardBorder: string;
+    founderQuoteColor: string;
+    founderNameColor: string;
+    founderRoleColor: string;
+    founderBadgeBg: string;
+
+    // 4. Craft Pillars Section
+    pillarSectionTitleColor: string;
+    pillarCardBg: string;
+    pillarCardBorder: string;
+    pillarBadgeBg: string;
+    pillarBadgeText: string;
+    pillarTitleColor: string;
+    pillarDescColor: string;
+
+    // 5. Key Metrics & Stats Section
+    statsContainerBg: string;
+    statsContainerBorder: string;
+    statNumberColor: string;
+    statLabelColor: string;
+
+    // 6. Concierge CTA Section
+    ctaBannerBg: string;
+    ctaBannerBorder: string;
+    ctaBannerTitleColor: string;
+    ctaBannerTextColor: string;
+    ctaButtonBg: string;
+    ctaButtonTextColor: string;
+    ctaButtonText: string;
+
+    themeMode?: 'dark' | 'light' | 'luxury';
   };
 }
 
@@ -63,9 +141,11 @@ export function getDefaultContactPageConfig(tenantSlug: string, tenantDoc?: any)
   const contact = tenantDoc?.contact || {};
   const phone = contact.phone || '+91 98765 43210';
   const email = contact.email || `care@${cleanSlug}.com`;
-  const address = contact.address || (isJewelry 
-    ? `${storeName} High Jewelry Salon, Connaught Place, New Delhi, India`
-    : `${storeName} Flagship Store, Indiranagar, Bengaluru, Karnataka 560038`);
+  const address =
+    contact.address ||
+    (isJewelry
+      ? `${storeName} High Jewelry Salon, Connaught Place, New Delhi, India`
+      : `${storeName} Flagship Store, Indiranagar, Bengaluru, Karnataka 560038`);
   const accentColor = tenantDoc?.theme?.accentColor || (isJewelry ? '#EAB308' : '#F43F5E');
 
   if (isJewelry) {
@@ -96,9 +176,40 @@ export function getDefaultContactPageConfig(tenantSlug: string, tenantDoc?: any)
         'Insured Armored Courier & Order Status',
       ],
       design: {
+        // Page-level
+        backgroundColor: '#07090E',
+        textColor: '#F8FAFC',
+        mutedTextColor: '#94A3B8',
+        headingFont: 'Playfair Display, serif',
+        bodyFont: 'Plus Jakarta Sans, sans-serif',
         accentColor: accentColor,
-        badgeText: 'DIRECT ATELIER ACCESS',
+
+        // Header
+        headerBadgeBg: `${accentColor}1A`,
+        headerBadgeText: accentColor,
+        headerBadgeBorder: `${accentColor}40`,
+        headerTitleColor: '#FFFFFF',
+        headerSubtitleColor: '#94A3B8',
+
+        // Stores
+        storeCardBg: '#0E111C',
+        storeCardBorder: 'rgba(255, 255, 255, 0.08)',
+        storeCardTitleColor: accentColor,
+        storeCardTextColor: '#CBD5E1',
+        storeCardIconColor: '#94A3B8',
+
+        // Form
+        formCardBg: '#101320',
+        formCardBorder: 'rgba(255, 255, 255, 0.1)',
+        formCardTitleColor: '#FFFFFF',
+        formInputBg: '#080A10',
+        formInputBorder: '#334155',
+        formInputTextColor: '#FFFFFF',
+        formButtonBg: `linear-gradient(135deg, ${accentColor}, #B45309)`,
+        formButtonTextColor: '#000000',
         buttonText: 'Send Direct Inquiry to Stylist Concierge',
+
+        badgeText: 'DIRECT ATELIER ACCESS',
         themeMode: 'dark',
         showMap: true,
       },
@@ -131,9 +242,36 @@ export function getDefaultContactPageConfig(tenantSlug: string, tenantDoc?: any)
       'Press & Media Collaborations',
     ],
     design: {
+      backgroundColor: '#07090E',
+      textColor: '#F8FAFC',
+      mutedTextColor: '#94A3B8',
+      headingFont: 'Playfair Display, serif',
+      bodyFont: 'Plus Jakarta Sans, sans-serif',
       accentColor: accentColor,
-      badgeText: 'DIRECT ATELIER ACCESS',
+
+      headerBadgeBg: `${accentColor}1A`,
+      headerBadgeText: accentColor,
+      headerBadgeBorder: `${accentColor}40`,
+      headerTitleColor: '#FFFFFF',
+      headerSubtitleColor: '#94A3B8',
+
+      storeCardBg: '#0E111C',
+      storeCardBorder: 'rgba(255, 255, 255, 0.08)',
+      storeCardTitleColor: accentColor,
+      storeCardTextColor: '#CBD5E1',
+      storeCardIconColor: '#94A3B8',
+
+      formCardBg: '#101320',
+      formCardBorder: 'rgba(255, 255, 255, 0.1)',
+      formCardTitleColor: '#FFFFFF',
+      formInputBg: '#080A10',
+      formInputBorder: '#334155',
+      formInputTextColor: '#FFFFFF',
+      formButtonBg: `linear-gradient(135deg, ${accentColor}, #B45309)`,
+      formButtonTextColor: '#000000',
       buttonText: 'Send Direct Inquiry to Stylist Concierge',
+
+      badgeText: 'DIRECT ATELIER ACCESS',
       themeMode: 'dark',
       showMap: true,
     },
@@ -189,7 +327,48 @@ export function getDefaultAboutPageConfig(tenantSlug: string, tenantDoc?: any): 
       ],
       showPressLogos: true,
       design: {
+        backgroundColor: '#07090E',
+        textColor: '#F8FAFC',
+        mutedTextColor: '#94A3B8',
+        headingFont: 'Playfair Display, serif',
+        bodyFont: 'Plus Jakarta Sans, sans-serif',
         accentColor: accentColor,
+
+        heroBadgeBg: `${accentColor}1A`,
+        heroBadgeText: accentColor,
+        heroBadgeBorder: `${accentColor}40`,
+        heroTitleColor: '#FFFFFF',
+        heroSubtextColor: '#CBD5E1',
+        heroOverlayOpacity: 0.35,
+
+        founderCardBg: 'linear-gradient(135deg, #121522, #170E1A)',
+        founderCardBorder: 'rgba(255, 255, 255, 0.08)',
+        founderQuoteColor: '#F8FAFC',
+        founderNameColor: '#FFFFFF',
+        founderRoleColor: accentColor,
+        founderBadgeBg: accentColor,
+
+        pillarSectionTitleColor: '#FFFFFF',
+        pillarCardBg: '#0E111C',
+        pillarCardBorder: 'rgba(255, 255, 255, 0.08)',
+        pillarBadgeBg: `${accentColor}1A`,
+        pillarBadgeText: accentColor,
+        pillarTitleColor: '#FFFFFF',
+        pillarDescColor: '#94A3B8',
+
+        statsContainerBg: '#0B0D16',
+        statsContainerBorder: 'rgba(255, 255, 255, 0.08)',
+        statNumberColor: accentColor,
+        statLabelColor: '#94A3B8',
+
+        ctaBannerBg: 'linear-gradient(135deg, #111422, #1A1320)',
+        ctaBannerBorder: 'rgba(255, 255, 255, 0.08)',
+        ctaBannerTitleColor: '#FFFFFF',
+        ctaBannerTextColor: '#94A3B8',
+        ctaButtonBg: `linear-gradient(135deg, ${accentColor}, #B45309)`,
+        ctaButtonTextColor: '#000000',
+        ctaButtonText: 'Book Private Salon Session',
+
         themeMode: 'dark',
       },
     };
@@ -230,7 +409,48 @@ export function getDefaultAboutPageConfig(tenantSlug: string, tenantDoc?: any): 
     ],
     showPressLogos: true,
     design: {
+      backgroundColor: '#07090E',
+      textColor: '#F8FAFC',
+      mutedTextColor: '#94A3B8',
+      headingFont: 'Playfair Display, serif',
+      bodyFont: 'Plus Jakarta Sans, sans-serif',
       accentColor: accentColor,
+
+      heroBadgeBg: `${accentColor}1A`,
+      heroBadgeText: accentColor,
+      heroBadgeBorder: `${accentColor}40`,
+      heroTitleColor: '#FFFFFF',
+      heroSubtextColor: '#CBD5E1',
+      heroOverlayOpacity: 0.35,
+
+      founderCardBg: 'linear-gradient(135deg, #121522, #170E1A)',
+      founderCardBorder: 'rgba(255, 255, 255, 0.08)',
+      founderQuoteColor: '#F8FAFC',
+      founderNameColor: '#FFFFFF',
+      founderRoleColor: accentColor,
+      founderBadgeBg: accentColor,
+
+      pillarSectionTitleColor: '#FFFFFF',
+      pillarCardBg: '#0E111C',
+      pillarCardBorder: 'rgba(255, 255, 255, 0.08)',
+      pillarBadgeBg: `${accentColor}1A`,
+      pillarBadgeText: accentColor,
+      pillarTitleColor: '#FFFFFF',
+      pillarDescColor: '#94A3B8',
+
+      statsContainerBg: '#0B0D16',
+      statsContainerBorder: 'rgba(255, 255, 255, 0.08)',
+      statNumberColor: accentColor,
+      statLabelColor: '#94A3B8',
+
+      ctaBannerBg: 'linear-gradient(135deg, #111422, #1A1320)',
+      ctaBannerBorder: 'rgba(255, 255, 255, 0.08)',
+      ctaBannerTitleColor: '#FFFFFF',
+      ctaBannerTextColor: '#94A3B8',
+      ctaButtonBg: `linear-gradient(135deg, ${accentColor}, #B45309)`,
+      ctaButtonTextColor: '#000000',
+      ctaButtonText: 'Book Private Viewing Session',
+
       themeMode: 'dark',
     },
   };
