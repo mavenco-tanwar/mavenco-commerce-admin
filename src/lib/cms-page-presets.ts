@@ -3,6 +3,16 @@ export interface ContactStoreLocation {
   address: string;
   phone: string;
   hours: string;
+  image?: string;
+}
+
+export interface CustomHtmlSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  html: string;
+  containerWidth?: 'full' | 'standard' | 'narrow';
+  backgroundColor?: string;
 }
 
 export interface ContactPageConfig {
@@ -12,6 +22,13 @@ export interface ContactPageConfig {
   notificationEmail: string;
   stores: ContactStoreLocation[];
   formSubjectOptions: string[];
+  sectionsEnabled?: {
+    header?: boolean;
+    stores?: boolean;
+    form?: boolean;
+    customSections?: boolean;
+  };
+  customSections?: CustomHtmlSection[];
   design: {
     // 1. Page-level styles
     backgroundColor: string;
@@ -74,6 +91,15 @@ export interface AboutPageConfig {
   pillars: AboutPillar[];
   stats: AboutStat[];
   showPressLogos: boolean;
+  sectionsEnabled?: {
+    hero?: boolean;
+    founder?: boolean;
+    pillars?: boolean;
+    stats?: boolean;
+    cta?: boolean;
+    customSections?: boolean;
+  };
+  customSections?: CustomHtmlSection[];
   design: {
     // 1. Page-level styles
     backgroundColor: string;
@@ -148,6 +174,15 @@ export function getDefaultContactPageConfig(tenantSlug: string, tenantDoc?: any)
       : `${storeName} Flagship Store, Indiranagar, Bengaluru, Karnataka 560038`);
   const accentColor = tenantDoc?.theme?.accentColor || (isJewelry ? '#EAB308' : '#F43F5E');
 
+  const sectionsEnabled = {
+    header: true,
+    stores: true,
+    form: true,
+    customSections: true,
+  };
+
+  const customSections: CustomHtmlSection[] = [];
+
   if (isJewelry) {
     return {
       pageTitle: `Visit Our Haute Salons & Concierge Desk`,
@@ -160,12 +195,14 @@ export function getDefaultContactPageConfig(tenantSlug: string, tenantDoc?: any)
           address: address,
           phone: phone,
           hours: 'Mon-Sun: 10:30 AM – 8:30 PM (Private Salon by Appointment)',
+          image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&auto=format&fit=crop',
         },
         {
           city: `${storeName} Mumbai High Jewelry Atelier`,
           address: 'Kala Ghoda Heritage Arts Precinct, Fort, Mumbai, Maharashtra 400001',
           phone: '+91 98765 43211',
           hours: 'Mon-Sat: 11:00 AM – 8:00 PM',
+          image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&auto=format&fit=crop',
         },
       ],
       formSubjectOptions: [
@@ -175,6 +212,8 @@ export function getDefaultContactPageConfig(tenantSlug: string, tenantDoc?: any)
         'Heirloom Restyling & Gem Valuation',
         'Insured Armored Courier & Order Status',
       ],
+      sectionsEnabled,
+      customSections,
       design: {
         // Page-level
         backgroundColor: '#07090E',
@@ -227,12 +266,14 @@ export function getDefaultContactPageConfig(tenantSlug: string, tenantDoc?: any)
         address: address,
         phone: phone,
         hours: 'Mon-Sun: 11:00 AM – 9:00 PM',
+        image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop',
       },
       {
         city: `${storeName} Design Studio`,
         address: 'Kala Ghoda Arts Precinct, Fort, Mumbai, Maharashtra 400001',
         phone: '+91 82390 19096',
         hours: 'Mon-Sat: 10:30 AM – 8:00 PM',
+        image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&auto=format&fit=crop',
       },
     ],
     formSubjectOptions: [
@@ -241,6 +282,8 @@ export function getDefaultContactPageConfig(tenantSlug: string, tenantDoc?: any)
       'Order Delivery & Exchange Assistance',
       'Press & Media Collaborations',
     ],
+    sectionsEnabled,
+    customSections,
     design: {
       backgroundColor: '#07090E',
       textColor: '#F8FAFC',
@@ -291,6 +334,17 @@ export function getDefaultAboutPageConfig(tenantSlug: string, tenantDoc?: any): 
   const storeName = tenantDoc?.name || (cleanSlug.charAt(0).toUpperCase() + cleanSlug.slice(1));
   const accentColor = tenantDoc?.theme?.accentColor || (isJewelry ? '#EAB308' : '#F43F5E');
 
+  const sectionsEnabled = {
+    hero: true,
+    founder: true,
+    pillars: true,
+    stats: true,
+    cta: true,
+    customSections: true,
+  };
+
+  const customSections: CustomHtmlSection[] = [];
+
   if (isJewelry) {
     return {
       heroBadge: 'HERITAGE HAUTE JOAILLERIE • EST. 2018',
@@ -326,6 +380,8 @@ export function getDefaultAboutPageConfig(tenantSlug: string, tenantDoc?: any): 
         { value: 'Lifetime', label: 'Complimentary Care' },
       ],
       showPressLogos: true,
+      sectionsEnabled,
+      customSections,
       design: {
         backgroundColor: '#07090E',
         textColor: '#F8FAFC',
@@ -408,6 +464,8 @@ export function getDefaultAboutPageConfig(tenantSlug: string, tenantDoc?: any): 
       { value: 'Zero', label: 'Synthetic Blends' },
     ],
     showPressLogos: true,
+    sectionsEnabled,
+    customSections,
     design: {
       backgroundColor: '#07090E',
       textColor: '#F8FAFC',
