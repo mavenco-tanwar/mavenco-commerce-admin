@@ -307,23 +307,30 @@ export default function PagesManagerPage() {
       tenantSlug: activeTenant?.slug,
     };
 
-    if (editingPage) {
-      await ContentService.updatePage(editingPage.id, payload);
-      showToast('Page content and styling updated live', 'success');
-    } else {
-      await ContentService.createPage(payload);
-      showToast('New website page published live', 'success');
+    try {
+      if (editingPage) {
+        await ContentService.updatePage(editingPage.id, payload, activeTenant?.slug);
+        showToast('Page content and styling updated live in database', 'success');
+      } else {
+        await ContentService.createPage(payload, activeTenant?.slug);
+        showToast('New website page published live in database', 'success');
+      }
+      setIsModalOpen(false);
+      await fetchPages(activeTenant?.slug);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save page', 'error');
     }
-
-    setIsModalOpen(false);
-    fetchPages();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this page?')) return;
-    await ContentService.deletePage(id);
-    showToast('Page deleted', 'info');
-    fetchPages();
+    try {
+      await ContentService.deletePage(id, activeTenant?.slug);
+      showToast('Page deleted successfully from store database', 'info');
+      await fetchPages(activeTenant?.slug);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete page', 'error');
+    }
   };
 
   // Custom HTML section helpers

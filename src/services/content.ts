@@ -210,7 +210,7 @@ export class ContentService {
     const active = tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
     try {
       const res = await ApiClient.get<any[]>(`/api/v1/content/pages?tenant=${active}`);
-      if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && res.data && Array.isArray(res.data)) {
         this.localPages = res.data.map((p: any) => ({
           id: p.id || `page_${Date.now()}`,
           title: p.title || "Page",
@@ -223,14 +223,16 @@ export class ContentService {
           design: p.design || p.styles || {},
           styles: p.styles || p.design || {},
           seo: p.seo || { title: p.title },
+          tenantSlug: p.tenantSlug || active,
           createdAt: p.createdAt || new Date().toISOString(),
           updatedAt: p.updatedAt || new Date().toISOString(),
         }));
         return this.localPages;
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn(`[ContentService] Failed to fetch pages from DB for tenant ${active}:`, err);
     }
+
     const tenantDoc = PlatformService.getActiveTenant();
     const presets = getDefaultWebsitePages(active, tenantDoc);
     this.localPages = presets.map((p: any) => ({
@@ -245,71 +247,91 @@ export class ContentService {
       design: p.design,
       styles: p.design,
       seo: p.seo,
+      tenantSlug: active,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     }));
     return this.localPages;
   }
 
-  static async createPage(page: Partial<Page>): Promise<Page> {
+  static async createPage(page: Partial<Page>, tenantSlug?: string): Promise<Page> {
+    const active = tenantSlug || (page as any).tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
     const newP: Page = {
-      id: `page_${Date.now()}`,
-      title: page.title || 'New Page',
+      id: page.id || `page_${Date.now()}`,
+      title: page.title || "New Page",
       slug: page.slug || `page-${Date.now()}`,
-      status: page.status || 'draft',
+      status: page.status || "published",
+      type: page.type || "website-page",
       blocks: page.blocks || [],
+      sectionsEnabled: (page as any).sectionsEnabled || { hero: true, body: true, customSections: true, valueProps: true },
+      customSections: (page as any).customSections || [],
+      design: (page as any).design || (page as any).styles || {},
+      styles: (page as any).styles || (page as any).design || {},
       seo: page.seo || { title: page.title },
+      tenantSlug: active,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     try {
-      const tenantSlug = (page as any).tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
-      const res = await ApiClient.post<any>(`/api/v1/content/pages?tenant=${tenantSlug}`, newP);
-      if (res.data) {
+      const res = await ApiClient.post<any>(`/api/v1/content/pages?tenant=${active}`, {
+        ...newP,
+        tenantSlug: active,
+      });
+      if (res && res.data) {
         const persisted = {
+          ...newP,
+          ...res.data,
           id: res.data.id || newP.id,
-          title: res.data.title || newP.title,
-          slug: res.data.slug || newP.slug,
-          status: res.data.status || newP.status,
-          blocks: res.data.blocks || newP.blocks,
-          seo: res.data.seo || newP.seo,
-          createdAt: res.data.createdAt || newP.createdAt,
-          updatedAt: res.data.updatedAt || newP.updatedAt,
         };
         this.localPages.push(persisted);
         return persisted;
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn(`[ContentService] Error creating page in DB for tenant ${active}:`, err);
     }
 
     this.localPages.push(newP);
     return newP;
   }
 
-  static async updatePage(id: string, updates: Partial<Page>): Promise<Page> {
+  static async updatePage(id: string, updates: Partial<Page>, tenantSlug?: string): Promise<Page> {
+    const active = tenantSlug || (updates as any).tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
+    const payload = {
+      id,
+      ...updates,
+      tenantSlug: active,
+    };
+
     try {
-      const tenantSlug = (updates as any).tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
-      await ApiClient.patch(`/api/v1/content/pages/${id}?tenant=${tenantSlug}`, updates);
-    } catch {
-      // Fallback
+      await ApiClient.put(`/api/v1/content/pages?tenant=${active}`, payload);
+    } catch (err) {
+      try {
+        await ApiClient.patch(`/api/v1/content/pages/${id}?tenant=${active}`, payload);
+      } catch (err2) {
+        console.warn(`[ContentService] Error updating page in DB for tenant ${active}:`, err2);
+      }
     }
 
     this.localPages = this.localPages.map((p) =>
       p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
     );
     const updated = this.localPages.find((p) => p.id === id);
-    if (!updated) throw new Error('Page not found');
+    if (!updated) throw new Error("Page not found");
     return updated;
   }
 
-  static async deletePage(id: string): Promise<void> {
+  static async deletePage(id: string, tenantSlug?: string): Promise<void> {
+    const active = tenantSlug || PlatformService.getActiveTenant().slug || "jqtrends";
     try {
-      await ApiClient.delete(`/api/v1/content/pages/${id}`);
-    } catch {
-      // Fallback
+      await ApiClient.delete(`/api/v1/content/pages?id=${encodeURIComponent(id)}&tenant=${active}`);
+    } catch (err) {
+      try {
+        await ApiClient.delete(`/api/v1/content/pages/${encodeURIComponent(id)}?tenant=${active}`);
+      } catch (err2) {
+        console.warn(`[ContentService] Error deleting page from DB for tenant ${active}:`, err2);
+      }
     }
-    this.localPages = this.localPages.filter((p) => p.id !== id);
+    this.localPages = this.localPages.filter((p) => p.id !== id && p.slug !== id);
   }
 }
