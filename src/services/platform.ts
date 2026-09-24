@@ -50,6 +50,12 @@ export interface TenantStore {
   primaryDomain: string;
   adminCustomDomain?: string;
   domains: TenantDomain[];
+  category?: string;
+  preset?: string;
+  categoryLabel?: string;
+  navLinks?: Array<{ label: string; href: string; badge?: string }>;
+  footerShopLinks?: Array<{ label: string; href: string }>;
+  footerCareLinks?: Array<{ label: string; href: string }>;
   theme: {
     logoUrl?: string;
     primaryColor: string;

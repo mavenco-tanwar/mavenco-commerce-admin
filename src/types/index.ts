@@ -423,7 +423,7 @@ export interface Page {
 export interface NavigationItem {
   id: string;
   label: string;
-  type: 'category' | 'collection' | 'page' | 'custom';
+  type: 'category' | 'collection' | 'page' | 'custom' | 'link';
   targetId?: string;
   url: string;
   isVisible: boolean;

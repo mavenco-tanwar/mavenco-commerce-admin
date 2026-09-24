@@ -209,6 +209,58 @@ export async function POST(request: NextRequest) {
           tenantDb.collection('categories').deleteMany({ tenantSlug }).then(() =>
             tenantDb.collection('categories').insertMany(seededCategories)
           ),
+          // Navigation Menus
+          ...[
+            {
+              id: `menu_header_${tenantSlug}`,
+              title: `${storeName} Header Navigation`,
+              slug: 'header-menu',
+              items: (blueprint.navLinks || []).map((l: any, i: number) => ({
+                id: `nav_${i + 1}`,
+                label: l.label,
+                type: 'link',
+                url: l.href.startsWith('/stores/') || l.href.startsWith('http') ? l.href : `/stores/${tenantSlug}${l.href.startsWith('/') ? '' : '/'}${l.href || ''}`,
+                badge: l.badge,
+                isVisible: true,
+              })),
+              tenantSlug,
+              updatedAt: now,
+            },
+            {
+              id: `menu_footer_shop_${tenantSlug}`,
+              title: `${storeName} Footer Shop Links`,
+              slug: 'footer-menu-shop',
+              items: (blueprint.footerShopLinks || []).map((l: any, i: number) => ({
+                id: `nav_f_${i + 1}`,
+                label: l.label,
+                type: 'link',
+                url: l.href.startsWith('/stores/') || l.href.startsWith('http') ? l.href : `/stores/${tenantSlug}${l.href.startsWith('/') ? '' : '/'}${l.href || ''}`,
+                isVisible: true,
+              })),
+              tenantSlug,
+              updatedAt: now,
+            },
+            {
+              id: `menu_footer_care_${tenantSlug}`,
+              title: `${storeName} Customer Care`,
+              slug: 'footer-menu-care',
+              items: (blueprint.footerCareLinks || []).map((l: any, i: number) => ({
+                id: `nav_care_${i + 1}`,
+                label: l.label,
+                type: 'link',
+                url: l.href.startsWith('/stores/') || l.href.startsWith('http') ? l.href : `/stores/${tenantSlug}${l.href.startsWith('/') ? '' : '/'}${l.href || ''}`,
+                isVisible: true,
+              })),
+              tenantSlug,
+              updatedAt: now,
+            },
+          ].map((menu) =>
+            tenantDb.collection('cms_menus').updateOne(
+              { slug: menu.slug },
+              { $set: menu },
+              { upsert: true }
+            )
+          ),
         ]);
         tenantDbSeeded = true;
       }
